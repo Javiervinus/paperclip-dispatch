@@ -162,13 +162,22 @@ macos/build.sh
     dirección con botón para copiarla y «Buscar ahora», que muestra el resultado y la hora ahí mismo, sin
     alertas.
   - Medidas, colores y tiempos comunes en `SettingsDesign`.
-  - Ensayo visual, para revisar el diseño sin abrir nada en pantalla: `macos/snapshot.zsh settings
+  - Ensayo visual, para revisar el diseño sin tapar nada en pantalla: `macos/snapshot.zsh settings
     [carpeta]` (`Snapshot.swift`). Abre una segunda copia de la app, sin ícono ni foco, que pone cada
     pestaña en una ventana fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin
     vincular). El script las captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal
     necesita permiso de Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot
-    ni avisa. Con `window` en vez de `settings`, captura la ventana de Paperclip en sus dos modos. En las
-    capturas los interruptores y el vidrio salen más apagados, porque la ventana no está activa.
+    ni avisa. En las capturas los interruptores y el vidrio salen más apagados, porque la ventana no está
+    activa.
+    - macOS solo captura ventanas que tocan una pantalla: cada una queda con un punto adentro, en el borde
+      izquierdo (`SnapshotableWindow` evita que macOS la acomode). Con la pantalla bloqueada no captura.
+    - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos.
+    - `page <ruta>` captura una página de Paperclip con la app, para mostrarla: con los ajustes de la app
+      (modo y apariencia), de `SIZE` puntos (por defecto 1512x982) y con la sombra de la ventana, para
+      ponerla sobre un fondo. Con `ANCHORS="|En qué se fue la semana"` saca una por ancla, con la página
+      desplazada hasta ese texto (vacía = arriba de todo). Ejemplo, la página del plugin de consumo:
+      `SIZE=1512x982 ANCHORS="|En qué se fue la semana|Cada semana de" macos/snapshot.zsh page
+      /VIN/agent-usage`.
 - **La versión de Paperclip, arriba a la derecha** (en la barra de la ventana; con Liquid Glass, sobre la
   barra de la ruta de Paperclip). Si es la última dice «Al día · 2026.1023.0», discreto;
   con un clic vuelve a revisar. Si sale una nueva, cambia a «Actualizar a …», en el color de acento. La app
