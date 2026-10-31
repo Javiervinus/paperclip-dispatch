@@ -7,11 +7,14 @@ enum SettingsDesign {
     /// Fija, como Ajustes del Sistema: lo que no cabe se desplaza por debajo de la barra.
     static let windowSize = CGSize(width: 580, height: 620)
     static let glowHeight: CGFloat = 340
-    static let iconSize: CGFloat = 64
-    static let appIconSize: CGFloat = 76
+    static let iconSize: CGFloat = 54
+    /// El ícono de la app trae un margen transparente (el dibujo ocupa 824 de 1024 px): se dibuja más grande
+    /// y ocupa lo mismo que los demás, para que quede alineado con ellos.
+    static let appIconSize: CGFloat = iconSize * 1024 / 824
+    /// Aire entre el selector de la barra y el encabezado de la pestaña.
+    static let heroTopSpacing: CGFloat = 18
     /// El redondeo de los íconos de macOS: un 22,5 % del lado.
     static let iconCornerRatio: CGFloat = 0.225
-    static let heroTextWidth: CGFloat = 400
     static let thumbnailSize = CGSize(width: 88, height: 58)
     static let paneAnimation: Animation = .smooth(duration: 0.4)
     static let animation: Animation = .smooth(duration: 0.3)
@@ -302,6 +305,7 @@ private struct PaperclipPane: View {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .frame(width: SettingsDesign.appIconSize, height: SettingsDesign.appIconSize)
+                        .frame(width: SettingsDesign.iconSize, height: SettingsDesign.iconSize)
                         .accessibilityHidden(true)
                 } accessory: {
                     updateAccessory
@@ -402,7 +406,8 @@ struct SettingsForm<Content: View>: View {
     }
 }
 
-/// Arriba de cada pestaña, centrado como en las páginas de iOS 26: ícono grande, de qué se trata y su estado.
+/// Arriba de cada pestaña, como en Ajustes del Sistema: el ícono a la izquierda, alineado con el texto de
+/// las filas de abajo, de qué se trata a su lado y el estado a la derecha.
 struct PaneHero<Icon: View, Accessory: View>: View {
     let title: String
     let subtitle: String
@@ -410,9 +415,9 @@ struct PaneHero<Icon: View, Accessory: View>: View {
     @ViewBuilder let accessory: Accessory
 
     var body: some View {
-        VStack(spacing: 12) {
+        HStack(spacing: 14) {
             icon
-            VStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.title2)
                     .bold()
@@ -420,16 +425,14 @@ struct PaneHero<Icon: View, Accessory: View>: View {
                 Text(subtitle)
                     .font(.body)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: SettingsDesign.heroTextWidth)
                     .fixedSize(horizontal: false, vertical: true)
                     .contentTransition(.opacity)
             }
+            Spacer(minLength: 12)
             accessory
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
-        .padding(.bottom, 8)
+        .padding(.top, SettingsDesign.heroTopSpacing)
+        .padding(.bottom, 14)
         .textCase(nil)
         .animation(SettingsDesign.animation, value: subtitle)
     }
