@@ -17,18 +17,10 @@ struct TelegramPane: View {
     @State private var working = false
     @State private var message: String?
     @State private var testSent = false
-    @State private var bounce = 0
     @State private var confirmingRemoval = false
 
     var body: some View {
         SettingsForm {
-            Section {} header: {
-                PaneHero(title: "Telegram", subtitle: subtitle) {
-                    GlassIcon(symbol: "paperplane.fill", color: SettingsPane.telegram.color, bounce: bounce)
-                } accessory: {
-                    badge
-                }
-            }
             switch phase {
             case .disconnected: connectSection
             case .pairing: pairingSection
@@ -46,10 +38,6 @@ struct TelegramPane: View {
         } message: {
             Text("Se borra su token del llavero y deja de mandarte las decisiones. Para volver, hay que conectarlo de nuevo.")
         }
-        .onChange(of: phase) {
-            // Al vincular el chat, el avión celebra.
-            if phase == .connected { bounce += 1 }
-        }
     }
 
     private var phase: Phase {
@@ -59,25 +47,6 @@ struct TelegramPane: View {
 
     private var botName: String {
         telegram.state.botUsername.map { "@\($0)" } ?? "tu bot"
-    }
-
-    private var subtitle: String {
-        switch phase {
-        case .disconnected: "Las decisiones te llegan al teléfono con sus botones, para contestarlas desde ahí."
-        case .pairing: "\(botName) está listo: falta vincular tu chat."
-        case .connected where telegram.state.enabled: "Las decisiones te llegan a tu chat con \(botName)."
-        case .connected: "En pausa: no se manda nada a \(botName)."
-        }
-    }
-
-    @ViewBuilder private var badge: some View {
-        switch phase {
-        case .disconnected: EmptyView()
-        case .pairing: StatusBadge(text: "Sin vincular", symbol: "link", tint: .orange)
-        case .connected where telegram.state.enabled:
-            StatusBadge(text: "Conectado", symbol: "checkmark.circle.fill", tint: .green)
-        case .connected: StatusBadge(text: "En pausa", symbol: "pause.circle.fill", tint: .secondary)
-        }
     }
 
     // MARK: Conectar
@@ -109,7 +78,7 @@ struct TelegramPane: View {
         } header: {
             Text("Conectar un bot")
         } footer: {
-            Text("El bot es solo tuyo y el token queda en el llavero de esta Mac, nunca en archivos. No hace falta una dirección pública: la app le pregunta a Telegram.")
+            Text("Las decisiones te llegan al teléfono con sus botones, para contestarlas desde ahí. El bot es solo tuyo y el token queda en el llavero de esta Mac, nunca en archivos. No hace falta una dirección pública: la app le pregunta a Telegram.")
                 .settingsFootnote()
         }
     }
@@ -218,7 +187,6 @@ struct TelegramPane: View {
             message = await telegram.sendTest()
             working = false
             guard message == nil else { return }
-            bounce += 1
             testSent = true
             try? await Task.sleep(for: SettingsDesign.feedbackDuration)
             testSent = false

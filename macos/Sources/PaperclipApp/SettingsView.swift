@@ -9,10 +9,10 @@ enum SettingsDesign {
     static let glowHeight: CGFloat = 340
     static let iconSize: CGFloat = 54
     /// El ícono de la app trae un margen transparente (el dibujo ocupa 824 de 1024 px): se dibuja más grande
-    /// y ocupa lo mismo que los demás, para que quede alineado con ellos.
+    /// y ocupa lo de `iconSize`, para que quede alineado con el texto de las filas.
     static let appIconSize: CGFloat = iconSize * 1024 / 824
-    /// Aire entre el selector de la barra y el encabezado de la pestaña.
-    static let heroTopSpacing: CGFloat = 18
+    /// Aire entre el selector de la barra y lo primero de cada pestaña.
+    static let contentTopSpacing: CGFloat = 16
     /// El redondeo de los íconos de macOS: un 22,5 % del lado.
     static let iconCornerRatio: CGFloat = 0.225
     static let thumbnailSize = CGSize(width: 88, height: 58)
@@ -51,11 +51,6 @@ private struct GeneralPane: View {
 
     var body: some View {
         SettingsForm {
-            Section {} header: {
-                PaneHero(title: "General", subtitle: "Cómo se ve la app y si se abre sola al prender la Mac.") {
-                    GlassIcon(symbol: "gearshape.fill", color: SettingsPane.general.color)
-                }
-            }
             Section {
                 AppearancePicker(selection: $preferences.appearance)
             } header: {
@@ -225,34 +220,24 @@ private struct NotificationsPane: View {
     let status: AppStatus
     let actions: SettingsActions
 
-    @State private var tests = 0
+    @State private var testSent = false
 
     var body: some View {
         SettingsForm {
-            Section {} header: {
-                PaneHero(
-                    title: "Avisos",
-                    subtitle: "Cuando una decisión espera por ti, te avisa en la Mac aunque estés en otra app."
-                ) {
-                    GlassIcon(
-                        symbol: preferences.decisionNotifications ? "bell.badge.fill" : "bell.slash.fill",
-                        color: SettingsPane.notifications.color,
-                        bounce: tests
-                    )
-                } accessory: {
-                    permissionBadge
-                }
-            }
-            if status.notificationPermission == "denied" {
-                Section {
-                    LabeledContent {
+            Section {
+                LabeledContent {
+                    if status.notificationPermission == "denied" {
                         Button("Abrir Ajustes del Sistema", action: openNotificationSettings)
                             .buttonStyle(.glass)
-                    } label: {
-                        WarningRow(text: "macOS tiene bloqueados los avisos de esta app.")
+                    } else {
+                        permissionBadge
                     }
+                } label: {
+                    Text("Permiso de macOS")
+                    Text(permissionDetail)
                 }
             }
+            .animation(SettingsDesign.animation, value: status.notificationPermission)
             Section {
                 Toggle(isOn: $preferences.decisionNotifications) {
                     Text("Avisar cuando llegue una decisión")
@@ -270,12 +255,16 @@ private struct NotificationsPane: View {
             }
             Section {
                 LabeledContent {
-                    Button("Probar") {
-                        tests += 1
-                        actions.sendTestNotification()
+                    Button(action: sendTest) {
+                        if testSent {
+                            Label("Enviado", systemImage: "checkmark")
+                        } else {
+                            Text("Probar")
+                        }
                     }
                     .buttonStyle(.glass)
                     .disabled(status.notificationPermission == "denied")
+                    .animation(SettingsDesign.animation, value: testSent)
                 } label: {
                     Text("Aviso de prueba")
                     Text("Para ver cómo se ve y si macOS lo deja pasar.")
@@ -290,8 +279,24 @@ private struct NotificationsPane: View {
     @ViewBuilder private var permissionBadge: some View {
         switch status.notificationPermission {
         case "granted": StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
-        case "denied": StatusBadge(text: "Bloqueados", symbol: "xmark.circle.fill", tint: .orange)
         default: StatusBadge(text: "Sin pedir", symbol: "questionmark.circle.fill", tint: .secondary)
+        }
+    }
+
+    private var permissionDetail: String {
+        switch status.notificationPermission {
+        case "granted": "Te avisa cuando una decisión espera por ti, aunque estés en otra app."
+        case "denied": "macOS tiene bloqueados los avisos de esta app."
+        default: "La app lo pide al abrirse; sin él no puede avisarte."
+        }
+    }
+
+    private func sendTest() {
+        actions.sendTestNotification()
+        testSent = true
+        Task {
+            try? await Task.sleep(for: SettingsDesign.feedbackDuration)
+            testSent = false
         }
     }
 
@@ -414,11 +419,13 @@ struct SettingsForm<Content: View>: View {
         Form { content }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
+            .contentMargins(.top, SettingsDesign.contentTopSpacing, for: .scrollContent)
     }
 }
 
-/// Arriba de cada pestaña, como en Ajustes del Sistema: el ícono a la izquierda, alineado con el texto de
-/// las filas de abajo, de qué se trata a su lado y el estado a la derecha.
+/// Arriba de la pestaña Paperclip, como en Ajustes del Sistema: el ícono de la app a la izquierda, alineado
+/// con el texto de las filas de abajo, la versión a su lado y el estado a la derecha. Las otras pestañas no
+/// llevan: repetirían el nombre que ya dice el selector.
 struct PaneHero<Icon: View, Accessory: View>: View {
     let title: String
     let subtitle: String
@@ -442,50 +449,9 @@ struct PaneHero<Icon: View, Accessory: View>: View {
             Spacer(minLength: 12)
             accessory
         }
-        .padding(.top, SettingsDesign.heroTopSpacing)
         .padding(.bottom, 14)
         .textCase(nil)
         .animation(SettingsDesign.animation, value: subtitle)
-    }
-}
-
-extension PaneHero where Accessory == EmptyView {
-    init(title: String, subtitle: String, @ViewBuilder icon: () -> Icon) {
-        self.init(title: title, subtitle: subtitle, icon: icon, accessory: { EmptyView() })
-    }
-}
-
-/// El ícono de una pestaña en Liquid Glass sobre una mancha de su color, que el vidrio refracta: así se ve
-/// de color aunque la ventana no esté activa (macOS le quita el tinte al vidrio de las ventanas inactivas).
-/// `bounce` lo hace saltar cada vez que cambia (p. ej. al mandar una prueba).
-struct GlassIcon<Trigger: Equatable>: View {
-    let symbol: String
-    let color: Color
-    var bounce: Trigger
-
-    var body: some View {
-        let shape = RoundedRectangle(cornerRadius: SettingsDesign.iconSize * SettingsDesign.iconCornerRatio)
-        Image(systemName: symbol)
-            .font(.largeTitle)
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
-            .contentTransition(.symbolEffect(.replace))
-            .symbolEffect(.bounce, value: bounce)
-            .frame(width: SettingsDesign.iconSize, height: SettingsDesign.iconSize)
-            .glassEffect(.regular.tint(color.opacity(0.7)), in: shape)
-            .background {
-                shape
-                    .fill(color.gradient)
-                    .padding(SettingsDesign.iconSize * 0.03)
-                    .blur(radius: 2)
-            }
-            .accessibilityHidden(true)
-    }
-}
-
-extension GlassIcon where Trigger == Int {
-    init(symbol: String, color: Color) {
-        self.init(symbol: symbol, color: color, bounce: 0)
     }
 }
 
