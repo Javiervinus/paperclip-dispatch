@@ -6,6 +6,7 @@
 #       SIZE=1512x982 (tamaño de la ventana, en puntos)
 #       ANCHORS="|En qué se fue la semana" (una captura por ancla, separadas por «|»; vacía = arriba)
 #       La captura de page lleva la sombra de la ventana, para ponerla sobre un fondo.
+#   SHADOW=1 deja la sombra también en settings y window.
 # Por defecto usa una carpeta temporal e imprime cuál. Abre una segunda copia de la app instalada, que pone
 # las ventanas fuera de la pantalla y anota sus números en windows.txt. Aquí se capturan con
 # screencapture -l, que dibuja el Liquid Glass de verdad. La terminal necesita permiso de Grabación de
@@ -16,7 +17,7 @@ USAGE="Uso: snapshot.zsh settings|window [carpeta] · snapshot.zsh page <ruta> [
 KIND=${1:?$USAGE}
 APP_NAME=${APP_NAME:-Paperclip Swift}
 EXTRA=()
-SHADOW=(-o)
+NO_SHADOW=(-o)
 case $KIND in
   settings|window)
     OUT=${2:-$(mktemp -d)/$KIND} ;;
@@ -25,10 +26,11 @@ case $KIND in
     OUT=${3:-$(mktemp -d)/$KIND}
     EXTRA=(-PaperclipSnapshotPath "$ROUTE" -PaperclipSnapshotSize "${SIZE:-1512x982}"
       -PaperclipSnapshotAnchors "${ANCHORS:-}")
-    SHADOW=() ;;
+    NO_SHADOW=() ;;
   *)
     print -u2 "$USAGE"; exit 2 ;;
 esac
+[[ ${SHADOW:-} == 1 ]] && NO_SHADOW=()
 mkdir -p "$OUT"
 rm -f "$OUT/windows.txt" "$OUT/captured"
 
@@ -41,7 +43,7 @@ done
 [[ -s $OUT/windows.txt ]] || { print -u2 "La app no anotó sus ventanas en 90 s."; exit 1; }
 
 while read -r window file || [[ -n ${window:-} ]]; do
-  screencapture -x "${SHADOW[@]}" -l "$window" "$OUT/$file"
+  screencapture -x "${NO_SHADOW[@]}" -l "$window" "$OUT/$file"
 done < "$OUT/windows.txt"
 touch "$OUT/captured"
 print "$OUT"
