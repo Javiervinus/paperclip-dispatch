@@ -1,6 +1,6 @@
 import Foundation
 
-/// Comandos con el shell de inicio de Javier (`zsh -l`), que trae el PATH de paperclipai, node y python.
+/// Comandos con el shell de inicio (`zsh -l`), que trae el PATH de quien usa la Mac: paperclipai, node, npx.
 enum Shell {
     struct Result: Sendable {
         let status: Int32

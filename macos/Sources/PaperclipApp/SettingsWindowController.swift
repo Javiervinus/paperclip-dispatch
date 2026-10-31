@@ -42,7 +42,11 @@ struct SettingsActions {
     let checkForUpdate: () -> Void
     let installUpdate: () -> Void
     let sendTestNotification: () -> Void
+    /// Abre la bienvenida para elegir otro Paperclip.
+    let changeServer: () -> Void
     let serverURL: URL
+    /// Paperclip corre en esta Mac (y se actualiza desde aquí).
+    let isLocalServer: Bool
 }
 
 /// La ventana Ajustes (Cmd+,): de tamaño fijo, como Ajustes del Sistema, con un selector de Liquid Glass en
@@ -154,7 +158,7 @@ private struct SettingsRoot: View {
 }
 
 /// Un resplandor del color de la pestaña detrás de la barra y del encabezado: el vidrio lo refleja.
-private struct PaneGlow: View {
+struct PaneGlow: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let color: Color
@@ -187,7 +191,14 @@ enum SettingsSnapshot {
         let preferences = Preferences()
         let status = AppStatus()
         await load(status)
-        let actions = SettingsActions(checkForUpdate: {}, installUpdate: {}, sendTestNotification: {}, serverURL: config.serverURL)
+        let actions = SettingsActions(
+            checkForUpdate: {},
+            installUpdate: {},
+            sendTestNotification: {},
+            changeServer: {},
+            serverURL: config.serverURL,
+            isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL)
+        )
         func channel(_ state: TelegramChannel.State?, hasToken: Bool = true) -> TelegramChannel {
             let resolver = DecisionResolver(api: api)
             let explainer = DecisionExplainer(api: api)

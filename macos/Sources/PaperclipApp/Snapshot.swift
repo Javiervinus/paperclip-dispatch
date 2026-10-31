@@ -11,14 +11,19 @@ final class SnapshotableWindow: NSWindow {
 }
 
 /// Ensayos visuales, para revisar el diseño sin tapar nada en pantalla. Los corre `macos/snapshot.zsh`: abre
-/// una segunda copia de la app con `-PaperclipSnapshot <settings|window|page>` y `-PaperclipSnapshotDirectory
-/// <carpeta>`, que pone lo pedido en ventanas fuera de la pantalla y anota sus números en `windows.txt`. El
-/// script las captura con `screencapture -l`, que sí dibuja el vidrio, y deja `captured` para que la copia
-/// se cierre.
+/// una segunda copia de la app con `-PaperclipSnapshot <settings|window|page|welcome>` y
+/// `-PaperclipSnapshotDirectory <carpeta>`, que pone lo pedido en ventanas fuera de la pantalla y anota sus
+/// números en `windows.txt`. El script las captura con `screencapture -l`, que sí dibuja el vidrio, y deja
+/// `captured` para que la copia se cierre.
+///
+/// Fuera de la pantalla las ventanas se ven inactivas (botones grises). Con `-PaperclipSnapshotActive YES`
+/// (ACTIVE=1 en el script) se muestran de a una en el centro de la pantalla, al frente: para capturas de
+/// muestra, cuando nadie está usando la Mac. Cada una se anota en `window-<n>.txt`; el script deja
+/// `captured-<n>` y, al final, la app deja `done`.
 @MainActor
 enum Snapshot {
     enum Kind: String {
-        case settings, window, page
+        case settings, window, page, welcome
     }
 
     struct Window {
@@ -28,7 +33,16 @@ enum Snapshot {
 
     private static let kindKey = "PaperclipSnapshot"
     private static let directoryKey = "PaperclipSnapshotDirectory"
+    private static let activeKey = "PaperclipSnapshotActive"
     private static let captureTimeout = 90
+    /// Lo que tarda una ventana recién puesta al frente en dibujarse como activa.
+    private static let activeSettleTime: Duration = .seconds(1.5)
+
+    /// Para ensayar sin dirección elegida: no responde nada ahí. No sirve un puerto de los que WebKit bloquea
+    /// (como el 9): con esos no avisa que la carga falló.
+    static let placeholderServerURL = URL(string: "http://127.0.0.1:65535")!
+
+    static var active: Bool { UserDefaults.standard.bool(forKey: activeKey) }
 
     static var requested: (Kind, URL)? {
         let defaults = UserDefaults.standard
@@ -75,6 +89,10 @@ enum Snapshot {
     /// Anota las ventanas, espera a que el script las capture y las cierra.
     static func capture(_ windows: [Window], in directory: URL) async {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if active {
+            await captureActive(windows, in: directory)
+            return
+        }
         let manifest = windows.map { "\($0.window.windowNumber) \($0.file)" }.joined(separator: "\n")
         try? manifest.write(to: directory.appending(path: "windows.txt"), atomically: true, encoding: .utf8)
         let captured = directory.appending(path: "captured")
@@ -82,6 +100,100 @@ enum Snapshot {
             try? await Task.sleep(for: .seconds(1))
         }
         windows.forEach { $0.window.orderOut(nil) }
+    }
+
+    /// De a una, en el centro de la pantalla y al frente, para que se vean como la ventana en uso.
+    private static func captureActive(_ windows: [Window], in directory: URL) async {
+        windows.forEach { $0.window.orderOut(nil) }
+        for (index, item) in windows.enumerated() {
+            let window = item.window
+            (window as? SnapshotableWindow)?.keepsFrame = false
+            window.center()
+            NSApp.activate()
+            window.makeKeyAndOrderFront(nil)
+            try? await Task.sleep(for: activeSettleTime)
+            let number = index + 1
+            try? "\(window.windowNumber) \(item.file)"
+                .write(to: directory.appending(path: "window-\(number).txt"), atomically: true, encoding: .utf8)
+            let captured = directory.appending(path: "captured-\(number)")
+            for _ in 0..<captureTimeout where !FileManager.default.fileExists(atPath: captured.path) {
+                try? await Task.sleep(for: .seconds(1))
+            }
+            window.orderOut(nil)
+        }
+        try? Data().write(to: directory.appending(path: "done"))
+    }
+}
+
+/// Ensayo de la bienvenida (`macos/snapshot.zsh welcome`): cada paso, en claro y en oscuro, con datos de
+/// muestra (no busca ni enciende nada), y la ventana de Paperclip cuando no responde.
+@MainActor
+enum WelcomeSnapshot {
+    private static let offlineContentSize = NSSize(width: 960, height: 620)
+    /// Lo que tarda en fallar la carga de la dirección muerta y en mostrarse el aviso.
+    private static let settleTime: Duration = .seconds(4)
+
+    static func run(to directory: URL) async {
+        let version = await Snapshot.installedVersion()?.currentVersion ?? "2026.1023.0"
+        let local = LocalPaperclip(
+            instanceId: "default",
+            url: URL(string: "http://127.0.0.1:\(PaperclipLocator.defaultPort)")!,
+            port: PaperclipLocator.defaultPort,
+            hasService: true
+        )
+        let health = PaperclipHealth(status: "ok", deploymentMode: "local_trusted", version: version)
+        let cases: [(file: String, make: () -> WelcomeModel)] = [
+            ("encontrado", { WelcomeModel(mode: .firstRun, step: .found(local, health)) }),
+            ("apagado", { WelcomeModel(mode: .firstRun, step: .stopped(local)) }),
+            ("no-encontrado", { WelcomeModel(mode: .firstRun, step: .notFound) }),
+            ("instalar", {
+                let model = WelcomeModel(mode: .firstRun, step: .install)
+                model.node = .ready("v24.11.1")
+                return model
+            }),
+            ("instalar-sin-node", {
+                let model = WelcomeModel(mode: .firstRun, step: .install)
+                model.node = .missing
+                return model
+            }),
+            ("direccion", {
+                let model = WelcomeModel(mode: .firstRun, step: .address)
+                model.address = "192.168.1.20:3100"
+                return model
+            }),
+            ("direccion-error", {
+                let model = WelcomeModel(mode: .firstRun, step: .address)
+                model.address = "192.168.1.20:3100"
+                model.addressError = PaperclipLocator.ProbeError.unreachable.message
+                return model
+            }),
+            ("cambiar", { WelcomeModel(mode: .change(current: local.url), step: .found(local, health)) }),
+        ]
+        var controllers: [NSWindowController] = []
+        var windows: [Snapshot.Window] = []
+        for (name, appearance) in [("claro", NSAppearance.Name.aqua), ("oscuro", .darkAqua)] {
+            for item in cases {
+                let controller = WelcomeWindowController(model: item.make())
+                guard let window = controller.window else { continue }
+                window.appearance = NSAppearance(named: appearance)
+                Snapshot.hide(window)
+                controllers.append(controller)
+                windows.append(Snapshot.Window(window: window, file: "\(item.file)-\(name).png"))
+            }
+            let offline = MainWindowController(
+                config: AppConfig(serverURL: Snapshot.placeholderServerURL),
+                liquidGlass: false,
+                rehearsal: true
+            )
+            if let window = offline.window {
+                window.appearance = NSAppearance(named: appearance)
+                Snapshot.hide(window, contentSize: offlineContentSize)
+                controllers.append(offline)
+                windows.append(Snapshot.Window(window: window, file: "sin-conexion-\(name).png"))
+            }
+        }
+        try? await Task.sleep(for: settleTime)
+        await Snapshot.capture(windows, in: directory)
     }
 }
 

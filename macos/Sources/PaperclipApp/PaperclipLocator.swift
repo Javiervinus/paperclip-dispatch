@@ -1,0 +1,235 @@
+import AppKit
+
+/// Un Paperclip instalado en esta Mac, como lo deja su CLI en `~/.paperclip/instances/<id>/`.
+struct LocalPaperclip: Equatable, Sendable {
+    let instanceId: String
+    /// La dirección que da Paperclip (`dashboardUrl`, la de su login); sin ella, la de esta Mac.
+    let url: URL
+    let port: Int
+    /// Corre como servicio de launchd (`paperclipai service install`): se enciende sin abrir la Terminal.
+    let hasService: Bool
+}
+
+/// Lo que responde `GET /api/health`, que no pide sesión. En modo `authenticated` no trae la versión.
+struct PaperclipHealth: Decodable, Equatable, Sendable {
+    let status: String
+    let deploymentMode: String
+    let version: String?
+
+    /// Hay que iniciar sesión en la página (en `local_trusted` se entra directo).
+    var needsSignIn: Bool { deploymentMode != "local_trusted" }
+}
+
+/// Busca Paperclip en esta Mac, comprueba direcciones y lo enciende o lo instala con sus comandos oficiales.
+/// Lee lo mismo que su CLI: `PAPERCLIP_HOME` (por defecto `~/.paperclip`) y `PAPERCLIP_INSTANCE_ID`.
+enum PaperclipLocator {
+    enum Detection: Equatable, Sendable {
+        /// Responde: se puede abrir.
+        case running(LocalPaperclip, PaperclipHealth)
+        /// Está instalado, pero no responde.
+        case stopped(LocalPaperclip)
+        case notInstalled
+    }
+
+    enum ProbeError: Error, Equatable {
+        case unreachable
+        case notPaperclip
+        case starting
+
+        var message: String {
+            switch self {
+            case .unreachable: "No responde. Revisa la dirección y que Paperclip esté encendido."
+            case .notPaperclip: "Responde, pero no es Paperclip."
+            case .starting: "Paperclip está arrancando: espera unos segundos."
+            }
+        }
+    }
+
+    static let defaultPort = 3100
+    static let serviceLabel = "ing.paperclip.paperclipai"
+    static let installCommand = "npx paperclipai@latest onboard --yes"
+    static let websiteURL = URL(string: "https://paperclip.ing")
+    static let nodeDownloadURL = URL(string: "https://nodejs.org/es/download")
+    /// Node.js que pide Paperclip (campo `engines` de su paquete).
+    static let minimumNode = (major: 24, minor: 11)
+    private static let probeTimeout: TimeInterval = 3
+
+    // MARK: Buscar
+
+    static func detect() async -> Detection {
+        guard let local = installed() else {
+            // Sin instalación conocida, igual puede estar corriendo en el puerto de siempre.
+            let url = loopbackURL(port: defaultPort)
+            if case let .success(health) = await probe(url) {
+                let local = LocalPaperclip(instanceId: defaultInstanceId, url: url, port: defaultPort, hasService: false)
+                return .running(local, health)
+            }
+            return .notInstalled
+        }
+        if case let .success(health) = await probe(local.url) { return .running(local, health) }
+        // La dirección de Paperclip puede no responder (p. ej. Tailscale apagado) con el servidor encendido.
+        let loopback = loopbackURL(port: local.port)
+        if loopback != local.url, case let .success(health) = await probe(loopback) {
+            return .running(LocalPaperclip(instanceId: local.instanceId, url: loopback, port: local.port, hasService: local.hasService), health)
+        }
+        return .stopped(local)
+    }
+
+    /// La instancia que usaría el CLI, si existe su configuración.
+    static func installed() -> LocalPaperclip? {
+        let instances = home.appending(path: "instances", directoryHint: .isDirectory)
+        var ids = [defaultInstanceId]
+        if let others = try? FileManager.default.contentsOfDirectory(atPath: instances.path) {
+            ids += others.sorted().filter { $0 != defaultInstanceId }
+        }
+        for id in ids {
+            let folder = instances.appending(path: id, directoryHint: .isDirectory)
+            guard let config = readJSON(folder.appending(path: "config.json")) else { continue }
+            let runtime = readJSON(folder.appending(path: "runtime-info.json"))
+            let server = config["server"] as? [String: Any]
+            let auth = config["auth"] as? [String: Any]
+            let port = (runtime?["port"] as? Int) ?? (server?["port"] as? Int) ?? defaultPort
+            let url = [runtime?["dashboardUrl"], auth?["publicBaseUrl"]]
+                .compactMap { ($0 as? String).flatMap(serverURL) }
+                .first ?? loopbackURL(port: port)
+            return LocalPaperclip(instanceId: id, url: url, port: port, hasService: hasService)
+        }
+        return nil
+    }
+
+    /// Si esa dirección es la del Paperclip de esta Mac: la de su instalación o una de la propia Mac.
+    static func isOnThisMac(_ url: URL) -> Bool {
+        let host = url.host()?.lowercased() ?? ""
+        if ["127.0.0.1", "localhost", "::1", "[::1]"].contains(host) { return true }
+        return installed().map { $0.url.host()?.lowercased() == host } ?? false
+    }
+
+    /// Comprueba que en esa dirección haya un Paperclip.
+    static func probe(_ url: URL) async -> Result<PaperclipHealth, ProbeError> {
+        var request = URLRequest(url: url.appending(path: "api/health"), timeoutInterval: probeTimeout)
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = probeTimeout
+        let session = URLSession(configuration: configuration)
+        defer { session.finishTasksAndInvalidate() }
+        guard let (data, response) = try? await session.data(for: request) else { return .failure(.unreachable) }
+        guard let health = try? JSONDecoder().decode(PaperclipHealth.self, from: data) else {
+            return .failure(.notPaperclip)
+        }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status), health.status == "ok" else { return .failure(.starting) }
+        return .success(health)
+    }
+
+    /// Lo que escribe la persona («192.168.1.20:3100», «https://mac.tail…ts.net») como dirección completa.
+    static func serverURL(_ text: String) -> URL? {
+        var text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        if !text.contains("://") { text = "http://" + text }
+        guard var components = URLComponents(string: text),
+              let scheme = components.scheme?.lowercased(), ["http", "https"].contains(scheme),
+              let host = components.host, !host.isEmpty
+        else { return nil }
+        // Solo el servidor: Paperclip abre su propia página de inicio.
+        components.path = ""
+        components.query = nil
+        components.fragment = nil
+        return components.url
+    }
+
+    // MARK: Encender e instalar
+
+    /// Enciende un Paperclip apagado: con su servicio de launchd o, si no tiene, en la Terminal. Devuelve un
+    /// error para mostrar, o nil si lo pidió (arranca en unos segundos).
+    static func start(_ local: LocalPaperclip) async -> String? {
+        guard local.hasService else {
+            openInTerminal(
+                named: "start-paperclip",
+                title: "Encendiendo Paperclip. Deja esta ventana abierta: aquí corre.",
+                command: "if command -v paperclipai >/dev/null; then paperclipai run --instance \(local.instanceId); "
+                    + "else npx paperclipai@latest run --instance \(local.instanceId); fi"
+            )
+            return nil
+        }
+        let domain = "gui/\(getuid())"
+        let kickstart = await Shell.run(["-c", "launchctl kickstart \(domain)/\(serviceLabel)"])
+        if kickstart.status == 0 { return nil }
+        // Si el servicio no está cargado, se carga (y arranca solo: RunAtLoad).
+        let plist = servicePlist.path.replacingOccurrences(of: "'", with: "'\\''")
+        let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) '\(plist)'"])
+        return bootstrap.status == 0 ? nil : "macOS no pudo encender el servicio de Paperclip: \(bootstrap.tail(2))"
+    }
+
+    /// Abre la Terminal con el instalador oficial (`onboard --yes`: modo local, sin login, y lo enciende).
+    static func openInstaller() {
+        openInTerminal(
+            named: "install-paperclip",
+            title: "Instalando Paperclip con su comando oficial. Al terminar queda encendido en esta ventana.",
+            command: installCommand
+        )
+    }
+
+    /// La versión de Node.js del shell de inicio, o nil si no está.
+    static func nodeVersion() async -> (major: Int, minor: Int, text: String)? {
+        let result = await Shell.run(["-c", "node -v"], timeout: 10)
+        guard result.status == 0,
+              let match = result.output.firstMatch(of: #/v(\d+)\.(\d+)\.\d+/#),
+              let major = Int(match.1), let minor = Int(match.2)
+        else { return nil }
+        return (major, minor, String(match.0))
+    }
+
+    static func meetsNodeRequirement(_ version: (major: Int, minor: Int, text: String)) -> Bool {
+        (version.major, version.minor) >= minimumNode
+    }
+
+    /// Un `.command` en la caché de la app, que macOS abre en la Terminal sin pedir permisos. Usa el shell de
+    /// inicio, con el PATH de node y npx.
+    static func openInTerminal(named name: String, title: String, command: String) {
+        let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appending(path: Bundle.main.bundleIdentifier ?? "PaperclipApp", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let script = folder.appending(path: "\(name).command")
+        let text = """
+            #!/bin/zsh -l
+            clear
+            print -P "%B\(title.replacingOccurrences(of: "\"", with: "'"))%b"
+            print
+            \(command)
+            """
+        guard (try? text.write(to: script, atomically: true, encoding: .utf8)) != nil else { return }
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+        NSWorkspace.shared.open(script)
+    }
+
+    // MARK: Rutas
+
+    private static var home: URL {
+        if let custom = ProcessInfo.processInfo.environment["PAPERCLIP_HOME"], !custom.isEmpty {
+            return URL(fileURLWithPath: (custom as NSString).expandingTildeInPath, isDirectory: true)
+        }
+        return FileManager.default.homeDirectoryForCurrentUser.appending(path: ".paperclip", directoryHint: .isDirectory)
+    }
+
+    private static var defaultInstanceId: String {
+        ProcessInfo.processInfo.environment["PAPERCLIP_INSTANCE_ID"].flatMap { $0.isEmpty ? nil : $0 } ?? "default"
+    }
+
+    private static var servicePlist: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/LaunchAgents/\(serviceLabel).plist")
+    }
+
+    private static var hasService: Bool {
+        FileManager.default.fileExists(atPath: servicePlist.path)
+    }
+
+    private static func loopbackURL(port: Int) -> URL {
+        URL(string: "http://127.0.0.1:\(port)")!
+    }
+
+    private static func readJSON(_ url: URL) -> [String: Any]? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+}

@@ -11,30 +11,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var decisions: DecisionsMonitor?
     private var telegram: TelegramChannel?
     private var settingsWindow: SettingsWindowController?
+    private var welcome: WelcomeWindowController?
     private var appearanceObservation: NSKeyValueObservation?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // Los ensayos corren como una segunda copia: sin ícono en el Dock ni foco.
-        if Snapshot.requested != nil { NSApp.setActivationPolicy(.accessory) }
+        // Los ensayos corren como una segunda copia: sin ícono en el Dock ni foco. Salvo los de ventanas
+        // activas, que tienen que poder pasar al frente.
+        if Snapshot.requested != nil, !Snapshot.active { NSApp.setActivationPolicy(.accessory) }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard let config = AppConfig.load() else {
-            let alert = NSAlert()
-            alert.messageText = "Falta la dirección de Paperclip"
-            alert.informativeText = "Vuelve a armar la app con macos/build.sh: la dirección sale de tailscale serve."
-            alert.runModal()
-            NSApp.terminate(nil)
-            return
-        }
-        self.config = config
         if let (kind, directory) = Snapshot.requested {
-            // No atiende el bot ni avisa: solo dibuja lo pedido y se cierra.
+            // No atiende el bot ni avisa: solo dibuja lo pedido y se cierra. Sin dirección elegida, la ventana
+            // de Paperclip sale sin conexión, pero Ajustes y la bienvenida se ven igual.
+            let config = AppConfig.load() ?? AppConfig(serverURL: Snapshot.placeholderServerURL)
             Task {
                 switch kind {
                 case .settings: await SettingsSnapshot.run(config: config, to: directory)
                 case .window: await MainWindowSnapshot.run(config: config, to: directory)
                 case .page: await PageSnapshot.run(config: config, to: directory)
+                case .welcome: await WelcomeSnapshot.run(to: directory)
                 }
                 NSApp.terminate(nil)
             }
@@ -43,10 +39,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = MainMenu.build(appName: AppConfig.appName)
         // Antes de crear la ventana, para que la página cargue ya con el tema elegido.
         NSApp.appearance = preferences.appearance.nsAppearance
+        if let config = AppConfig.load() {
+            connect(config)
+        } else {
+            showWelcome(.firstRun)
+        }
+    }
 
+    /// Arma todo alrededor del Paperclip elegido: la ventana, las versiones, los avisos y el bot.
+    private func connect(_ config: AppConfig) {
+        self.config = config
         let windowController = MainWindowController(config: config, liquidGlass: preferences.liquidGlassPage)
         self.windowController = windowController
-        updates = UpdateController(config: config, host: windowController, notifications: notifications, status: status)
+        updates = UpdateController(
+            config: config,
+            isLocal: PaperclipLocator.isOnThisMac(config.serverURL),
+            host: windowController,
+            notifications: notifications,
+            status: status
+        )
         let api = PaperclipAPI(serverURL: config.serverURL)
         let decisions = DecisionsMonitor(api: api, preferences: preferences, notifications: notifications) {
             [weak windowController] in windowController?.isInFront ?? false
@@ -67,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowController.onThemeChosen = { [weak self] dark in
             self?.preferences.appearance = dark ? .dark : .light
         }
+        windowController.onChangeServer = { [weak self] in self?.changeServer() }
         // La apariencia efectiva cambia con Ajustes y, en «Sistema», cuando la Mac pasa a claro u oscuro.
         // KVO de NSApp avisa en el hilo principal.
         appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) {
@@ -103,8 +115,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // Clic en el ícono del Dock con la ventana cerrada: se vuelve a mostrar.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        windowController?.showWindow(nil)
+        if let windowController {
+            windowController.showWindow(nil)
+        } else {
+            showWelcome(.firstRun)
+        }
         return true
+    }
+
+    // MARK: - Bienvenida
+
+    private func showWelcome(_ mode: WelcomeModel.Mode) {
+        if let welcome {
+            welcome.show()
+            return
+        }
+        let model = WelcomeModel(mode: mode)
+        let controller = WelcomeWindowController(model: model)
+        model.onConnect = { [weak self] url in self?.choose(url) }
+        model.onCancel = { [weak self] in
+            self?.welcome?.dismiss()
+            self?.welcome = nil
+        }
+        controller.onClose = { [weak self] in
+            self?.welcome = nil
+            // La primera vez, cerrar la bienvenida es no usar la app todavía.
+            if self?.config == nil { NSApp.terminate(nil) }
+        }
+        welcome = controller
+        controller.show()
+        model.start()
+    }
+
+    private func changeServer() {
+        guard let config else { return }
+        showWelcome(.change(current: config.serverURL))
+    }
+
+    /// La primera vez se conecta ahí mismo. Al cambiar de Paperclip, la app se vuelve a abrir: la ventana,
+    /// los avisos y el bot quedan atados a la dirección con que arrancaron.
+    private func choose(_ url: URL) {
+        welcome?.dismiss()
+        welcome = nil
+        AppConfig.save(serverURL: url)
+        guard let current = config else {
+            connect(AppConfig(serverURL: url))
+            return
+        }
+        if current.serverURL != url { relaunch() }
+    }
+
+    private func relaunch() {
+        let reopen = Process()
+        reopen.executableURL = URL(fileURLWithPath: "/bin/sh")
+        // Espera a que esta copia termine de cerrarse antes de abrir la nueva.
+        reopen.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        try? reopen.run()
+        NSApp.terminate(nil)
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool { true }
@@ -126,7 +193,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     checkForUpdate: { [weak self] in self?.updates?.checkNow() },
                     installUpdate: { [weak self] in self?.updates?.requestUpdate() },
                     sendTestNotification: { [weak self] in self?.sendTestNotification() },
-                    serverURL: config.serverURL
+                    changeServer: { [weak self] in self?.changeServer() },
+                    serverURL: config.serverURL,
+                    isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL)
                 )
             )
         }

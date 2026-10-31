@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import WebKit
 
 /// Contenedor con el origen arriba a la izquierda, como la página: los rectángulos que manda glass.js
@@ -34,6 +35,12 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private static let accessoryMargin: CGFloat = 16
     /// Aire sobre el texto al que se desplaza el ensayo de páginas, en píxeles de la página.
     private static let anchorMargin = 24
+    /// Lo que responde un proxy cuando Paperclip no está detrás.
+    private static let unavailableStatusCodes: Set<Int> = [502, 503, 504]
+    /// Cada cuánto se vuelve a probar un Paperclip que no responde.
+    private static let offlineRetryInterval: Duration = .seconds(3)
+    /// WebKit corta la carga cuando la respuesta se vuelve descarga (WebKitErrorFrameLoadInterruptedByPolicyChange).
+    private static let interruptedByPolicyCode = 102
 
     private let config: AppConfig
     private static let toolbarIdentifier = "PaperclipMainToolbar"
@@ -63,8 +70,19 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     /// En la vista angosta de Paperclip (móvil) la barra de arriba es otra y no hay lugar para el botón.
     private var pageIsDesktop = true
 
+    private let offline = OfflineModel()
+    private var offlineView: NSView?
+    private var offlineWatch: Task<Void, Never>?
+    /// La página que no cargó, para volver a ella cuando Paperclip responda.
+    private var failedURL: URL?
+
     /// Se eligió el tema en el menú de Paperclip (true = oscuro): la app lo adopta como ajuste.
     var onThemeChosen: ((_ dark: Bool) -> Void)?
+    /// «Cambiar dirección…» cuando Paperclip no responde.
+    var onChangeServer: (() -> Void)? {
+        get { offline.onChangeServer }
+        set { offline.onChangeServer = newValue }
+    }
 
     /// `rehearsal`: para los ensayos, que la ponen fuera de la pantalla. No lee ni guarda dónde quedó la
     /// ventana.
@@ -223,6 +241,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         let item = NSToolbarItem(itemIdentifier: itemIdentifier)
         item.label = "Versión de Paperclip"
         item.view = glass ? nil : updateButton
+        item.isHidden = updateButton == nil || !updateButtonWanted
         versionItem = item
         return item
     }
@@ -271,7 +290,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     // MARK: - Lo que usan el AppDelegate y UpdateController
 
     func reload() {
-        webView.reload()
+        if offlineView != nil {
+            retryOffline()
+        } else {
+            webView.reload()
+        }
     }
 
     /// Abre una ruta de Paperclip (`/VIN/agent-usage`) cargando la página de nuevo. Para el ensayo de páginas.
@@ -352,10 +375,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     /// Con vidrio, hasta que glass.js informa el alto de la barra, el botón no tiene dónde centrarse.
     private func refreshUpdateButton() {
+        // Sin botón (o sin versión que mostrar), el ítem no se ve: quedaría un círculo de vidrio vacío.
+        versionItem?.isHidden = updateButton == nil || !updateButtonWanted
         guard let updateButton else { return }
         guard glass else {
             updateButton.isHidden = false
-            versionItem?.isHidden = !updateButtonWanted
             return
         }
         updateButtonCenterY?.constant = topBarHeight / 2
@@ -509,7 +533,15 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async
         -> WKNavigationResponsePolicy
     {
-        navigationResponse.canShowMIMEType ? .allow : .download
+        // Con un proxy delante (tailscale serve, Caddy), Paperclip apagado no falla: responde 502.
+        if navigationResponse.isForMainFrame, let http = navigationResponse.response as? HTTPURLResponse,
+           Self.unavailableStatusCodes.contains(http.statusCode)
+        {
+            failedURL = http.url.flatMap { config.isInternal($0) ? $0 : nil } ?? config.serverURL
+            showOffline(reason: "Respondió con un error \(http.statusCode): Paperclip puede estar apagado detrás.")
+            return .cancel
+        }
+        return navigationResponse.canShowMIMEType ? .allow : .download
     }
 
     func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
@@ -521,11 +553,86 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        hideOffline()
         syncPageState()
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        let error = error as NSError
+        let interrupted = error.domain == "WebKitErrorDomain" && error.code == Self.interruptedByPolicyCode
+        guard !(error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled), !interrupted else { return }
+        let failing = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL
+        failedURL = failing.flatMap { config.isInternal($0) ? $0 : nil } ?? config.serverURL
+        showOffline(reason: OfflineModel.reason(for: error))
     }
 
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         webView.reload()
+    }
+
+    // MARK: - Sin conexión
+
+    /// Tapa la página con OfflineView y vuelve a probar sola hasta que Paperclip responda.
+    private func showOffline(reason: String) {
+        offline.serverURL = config.serverURL
+        offline.reason = reason
+        offline.startError = nil
+        if offlineView == nil, let container = window?.contentView {
+            let hosting = NSHostingView(rootView: OfflineView(model: offline))
+            hosting.frame = container.bounds
+            hosting.autoresizingMask = [.width, .height]
+            container.addSubview(hosting, positioned: .above, relativeTo: webView)
+            offlineView = hosting
+            // Sin página cargada, WKWebView se queda con los atajos (⌘, ⌘R…) y no se los pasa al menú.
+            window?.makeFirstResponder(nil)
+            webView.isHidden = true
+        }
+        Task { await findStoppedPaperclip() }
+        watchOffline()
+    }
+
+    /// Si la dirección es la del Paperclip de esta Mac y está apagado, se ofrece encenderlo.
+    private func findStoppedPaperclip() async {
+        guard PaperclipLocator.isOnThisMac(config.serverURL) else {
+            offline.local = nil
+            return
+        }
+        if case let .stopped(local) = await PaperclipLocator.detect() {
+            offline.local = local
+        } else {
+            offline.local = nil
+        }
+    }
+
+    private func watchOffline() {
+        offlineWatch?.cancel()
+        offline.onRetry = { [weak self] in self?.retryOffline() }
+        offlineWatch = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.offlineRetryInterval)
+                guard !Task.isCancelled, let self else { return }
+                if case .success = await PaperclipLocator.probe(config.serverURL) {
+                    retryOffline()
+                    return
+                }
+            }
+        }
+    }
+
+    private func retryOffline() {
+        webView.load(URLRequest(url: failedURL ?? config.serverURL))
+    }
+
+    private func hideOffline() {
+        offlineWatch?.cancel()
+        offlineWatch = nil
+        offline.starting = false
+        guard let offlineView else { return }
+        offlineView.removeFromSuperview()
+        self.offlineView = nil
+        failedURL = nil
+        webView.isHidden = false
+        window?.makeFirstResponder(webView)
     }
 
     // MARK: - Ventanas nuevas, archivos y diálogos de la página

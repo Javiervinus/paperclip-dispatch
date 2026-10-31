@@ -1,22 +1,39 @@
 import Foundation
 
-/// Lo que build.sh deja en el Info.plist. Nada de esto se escribe en el código.
+/// A qué Paperclip se conecta la app. La dirección la elige cada uno en la bienvenida (o en Ajustes →
+/// Paperclip → Cambiar…) y queda en UserDefaults; nada de esto se escribe en el código.
 struct AppConfig: Sendable {
-    /// Dirección de Paperclip por Tailscale (`tailscale serve`).
+    private static let serverURLKey = "serverURL"
+
     let serverURL: URL
-    /// El update.sh de Paperclip, que actualiza sin caer en el bug #13697. Sin él no hay botón «Actualizar».
+    /// Un script propio para actualizar Paperclip (build.sh lo deja en el Info.plist si se pide con
+    /// PAPERCLIP_UPDATE_SCRIPT). Sin él, se actualiza con el comando oficial en la Terminal.
     let updateScript: URL?
 
-    static func load(from bundle: Bundle = .main) -> AppConfig? {
-        guard let raw = bundle.object(forInfoDictionaryKey: "PaperclipServerURL") as? String,
-              let serverURL = URL(string: raw), serverURL.host() != nil
-        else { return nil }
-        let updateScript = (bundle.object(forInfoDictionaryKey: "PaperclipUpdateScript") as? String)
+    init(serverURL: URL, bundle: Bundle = .main) {
+        self.serverURL = serverURL
+        updateScript = (bundle.object(forInfoDictionaryKey: "PaperclipUpdateScript") as? String)
             .flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) }
-        return AppConfig(serverURL: serverURL, updateScript: updateScript)
     }
 
-    /// Nombre de la app, para los menús.
+    /// La dirección guardada. Un build puede traer una de fábrica (PAPERCLIP_SERVER_URL en build.sh): se
+    /// adopta la primera vez como si se hubiera elegido.
+    static func load(defaults: UserDefaults = .standard, bundle: Bundle = .main) -> AppConfig? {
+        if let saved = defaults.string(forKey: serverURLKey).flatMap(PaperclipLocator.serverURL) {
+            return AppConfig(serverURL: saved, bundle: bundle)
+        }
+        guard let built = (bundle.object(forInfoDictionaryKey: "PaperclipServerURL") as? String)
+            .flatMap(PaperclipLocator.serverURL)
+        else { return nil }
+        save(serverURL: built, defaults: defaults)
+        return AppConfig(serverURL: built, bundle: bundle)
+    }
+
+    static func save(serverURL: URL, defaults: UserDefaults = .standard) {
+        defaults.set(serverURL.absoluteString, forKey: serverURLKey)
+    }
+
+    /// Nombre de la app, para los menús y la bienvenida.
     static var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ProcessInfo.processInfo.processName
     }

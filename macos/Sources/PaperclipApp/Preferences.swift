@@ -100,8 +100,10 @@ final class AppStatus {
     /// Por qué falló la última revisión, para mostrarlo en Ajustes.
     var updateCheckError: String?
     var lastCheckedAt: Date?
-    /// El paso de update.sh mientras actualiza.
+    /// El paso de la actualización mientras corre.
     var updateProgress: String?
+    /// Por qué no se revisan versiones desde aquí (Paperclip en otra computadora, falta su CLI).
+    var updatesUnavailable: String?
     /// Con los nombres de la API web: "granted", "denied" o "default".
     var notificationPermission = "default"
 }

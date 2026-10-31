@@ -328,37 +328,56 @@ private struct PaperclipPane: View {
                 }
             }
             Section {
-                LabeledContent("Dirección") {
-                    HStack(spacing: 6) {
-                        Text(actions.serverURL.absoluteString)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .textSelection(.enabled)
-                        CopyButton(text: actions.serverURL.absoluteString)
-                    }
-                }
                 LabeledContent {
-                    Button(action: actions.checkForUpdate) {
-                        if status.checkingUpdate {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Text("Buscar ahora")
-                        }
+                    HStack(spacing: 6) {
+                        CopyButton(text: actions.serverURL.absoluteString)
+                        Button("Cambiar…", action: actions.changeServer)
+                            .buttonStyle(.glass)
                     }
-                    .buttonStyle(.glass)
-                    .disabled(status.checkingUpdate || status.updateProgress != nil)
                 } label: {
-                    Text("Versiones nuevas")
-                    Text(checkLine)
-                        .contentTransition(.opacity)
-                        .animation(SettingsDesign.animation, value: checkLine)
+                    Text("Dirección")
+                    Text(actions.serverURL.absoluteString)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
                 }
-                if let error = status.updateCheckError {
-                    WarningRow(text: error)
+                if let reason = status.updatesUnavailable {
+                    LabeledContent {
+                        if actions.isLocalServer {
+                            CopyButton(text: UpdateController.installCLICommand)
+                        }
+                    } label: {
+                        Text("Versiones nuevas")
+                        Text(actions.isLocalServer
+                            ? "\(reason) Se instala con \(UpdateController.installCLICommand) y se ve al volver a abrir la app."
+                            : reason)
+                    }
+                } else {
+                    LabeledContent {
+                        Button(action: actions.checkForUpdate) {
+                            if status.checkingUpdate {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Text("Buscar ahora")
+                            }
+                        }
+                        .buttonStyle(.glass)
+                        .disabled(status.checkingUpdate || status.updateProgress != nil)
+                    } label: {
+                        Text("Versiones nuevas")
+                        Text(checkLine)
+                            .contentTransition(.opacity)
+                            .animation(SettingsDesign.animation, value: checkLine)
+                    }
+                    if let error = status.updateCheckError {
+                        WarningRow(text: error)
+                    }
                 }
             } footer: {
-                Text("Paperclip nunca se actualiza solo: reiniciarlo corta lo que estén haciendo los agentes, así que tú eliges cuándo.")
-                    .settingsFootnote()
+                if status.updatesUnavailable == nil {
+                    Text("Paperclip nunca se actualiza solo: reiniciarlo corta lo que estén haciendo los agentes, así que tú eliges cuándo.")
+                        .settingsFootnote()
+                }
             }
             Section {} footer: {
                 Text("\(AppConfig.appName) \(Self.appVersion)")
@@ -370,6 +389,9 @@ private struct PaperclipPane: View {
     }
 
     private var versionLine: String {
+        if status.updatesUnavailable != nil {
+            return actions.isLocalServer ? "Instalado en esta Mac." : "En \(actions.serverURL.host() ?? "otra computadora")."
+        }
         guard let current = status.paperclipVersion else {
             return status.updateCheckError != nil ? "No pude leer la versión instalada." : "Revisando la versión…"
         }
