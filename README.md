@@ -67,8 +67,30 @@ macos/build.sh
 - Pide Xcode 26 (SDK de macOS 26) y `rsvg-convert`. Compila con `swift build`, arma el .app, lo firma
   con la identidad «Developer ID Application» del llavero y lo instala en `/Applications`. Tarda
   segundos.
-- Variables: `APP_NAME`, `APP_ID`, `PAPERCLIP_UPDATE_SCRIPT` (por defecto el `update.sh` de
-  `Personal/paperclip/scripts`) y `SIGN_IDENTITY`.
+- Variables: `APP_NAME`, `APP_ID`, `INSTALL_DIR` (por defecto `/Applications`), `PAPERCLIP_SERVER_URL`,
+  `PAPERCLIP_UPDATE_SCRIPT` y `SIGN_IDENTITY`. Las de una Mac en particular van en `macos/build.local.env`,
+  que no se sube. En esta Mac lleva `PAPERCLIP_UPDATE_SCRIPT` con el `update.sh` de
+  `Personal/paperclip/scripts`; con `PAPERCLIP_UPDATE_SCRIPT=` (vacía) se arma como para cualquiera.
+- **No trae ninguna dirección escrita.** La dirección se guarda en los ajustes de la app (`serverURL`). Si
+  un build trae `PAPERCLIP_SERVER_URL`, la app la adopta la primera vez.
+- **Bienvenida** (`WelcomeView.swift`, `PaperclipLocator.swift`). Se abre la primera vez y desde Ajustes →
+  Paperclip → «Cambiar…». Busca Paperclip donde lo deja su CLI: `~/.paperclip/instances/<id>/`, o
+  `PAPERCLIP_HOME` y `PAPERCLIP_INSTANCE_ID` (`config.json`, `runtime-info.json`, y el LaunchAgent
+  `ing.paperclip.paperclipai`). Lo comprueba con `GET /api/health`, que no pide sesión.
+  - Si responde, ofrece abrirlo con la dirección que da Paperclip (`dashboardUrl`; aquí, la de Tailscale).
+  - Si está instalado pero apagado, lo enciende con su servicio (`launchctl kickstart` o `bootstrap`) o, sin
+    servicio, con `paperclipai run` en la Terminal. Sigue buscando hasta que responde.
+  - Si no está, ofrece instalarlo o escribir la dirección de otro. Instalar revisa Node.js (24.11 o más)
+    y abre la Terminal con el comando oficial (`npx paperclipai@latest onboard --yes`: modo local, sin
+    contraseña). La Terminal se abre con un `.command` en la caché de la app, sin pedir permisos.
+  - Una dirección escrita se guarda solo si responde un Paperclip.
+  - La primera vez, cerrar la bienvenida cierra la app. Al cambiar de Paperclip, la app se vuelve a abrir:
+    la ventana, los avisos y el bot quedan atados a la dirección con que arrancaron.
+- **Sin conexión** (`OfflineView.swift`). Si Paperclip no responde (o un proxy como `tailscale serve`
+  contesta 502, 503 o 504), la ventana lo dice en vez de quedar en blanco. Vuelve a probar cada 3 s y
+  regresa sola a la página. Ofrece «Reintentar», «Cambiar dirección…» y, si es el de esta Mac y está
+  apagado, «Encender Paperclip». Los errores de conexión van traducidos, porque el proceso de red de WebKit
+  no usa el idioma de la app.
 - **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
   debajo de una barra de ventana de macOS con el título de la página y el botón de la versión: no depende
   de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
@@ -159,8 +181,8 @@ macos/build.sh
     centro, por eso va con corrección alta), y ya conectado: envío, prueba, «Explicar decisiones» y quitar
     el bot (pide confirmación). Al vincular, la pestaña pasa sola a lo de conectado.
   - **Paperclip:** versión, «Actualizar a …» si hay una nueva (lo mismo que el botón de arriba), la
-    dirección con botón para copiarla y «Buscar ahora», que muestra el resultado y la hora ahí mismo, sin
-    alertas.
+    dirección con botones para copiarla y para cambiarla (abre la bienvenida), y «Buscar ahora», que
+    muestra el resultado y la hora ahí mismo, sin alertas.
   - Medidas, colores y tiempos comunes en `SettingsDesign`.
   - Ensayo visual, para revisar el diseño sin tapar nada en pantalla: `macos/snapshot.zsh settings
     [carpeta]` (`Snapshot.swift`). Abre una segunda copia de la app, sin ícono ni foco, que pone cada
@@ -172,9 +194,12 @@ macos/build.sh
     - macOS solo captura ventanas que tocan una pantalla: cada una queda con un punto adentro, en el borde
       izquierdo (`SnapshotableWindow` evita que macOS la acomode). Con la pantalla bloqueada no captura.
     - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos.
-    - `SHADOW=1` deja la sombra de la ventana también en `settings` y `window`. Para que una captura salga
-      como ventana activa (interruptores de color), tiene que ser la ventana real con el foco: macOS no
-      la dibuja activa en una copia en segundo plano.
+    - `welcome` captura cada paso de la bienvenida, con datos de muestra, y la ventana sin conexión.
+    - `SHADOW=1` deja la sombra de la ventana también en `settings`, `window` y `welcome`.
+    - Fuera de la pantalla las ventanas salen inactivas (botones e interruptores grises). `ACTIVE=1` las
+      muestra de a una en el centro de la pantalla, al frente (el script la pone al frente con System
+      Events), para capturas de muestra. Tapa la pantalla unos segundos por ventana: solo cuando nadie usa
+      la Mac.
     - `page <ruta>` captura una página de Paperclip con la app, para mostrarla: con los ajustes de la app
       (modo y apariencia), de `SIZE` puntos (por defecto 1512x982) y con la sombra de la ventana, para
       ponerla sobre un fondo. Con `ANCHORS="|En qué se fue la semana"` saca una por ancla, con la página
@@ -186,11 +211,16 @@ macos/build.sh
   con un clic vuelve a revisar. Si sale una nueva, cambia a «Actualizar a …», en el color de acento. La app
   revisa con `paperclipai update --check --latest --json` cada 6 h y desde el menú «Buscar actualización de
   Paperclip…». Con Liquid Glass, en la vista angosta de Paperclip (menos de 768 px) no se muestra.
-  - Al apretarlo pide confirmación y corre `update.sh`, con sus pasos en el botón.
+  - Al apretarlo pide confirmación y actualiza con el comando oficial (`paperclipai update --latest`) o,
+    si el build trae `PAPERCLIP_UPDATE_SCRIPT`, con ese script, con sus pasos en el botón. El oficial
+    respalda la base antes; en modo autenticado con el servicio encendido se revierte solo (bug #13697),
+    por eso esta Mac usa `update.sh`.
+  - Solo con el Paperclip de esta Mac. Si es el de otra computadora, o falta el comando `paperclipai`
+    (instalado con `npx` no queda), no hay botón y Ajustes explica por qué (y cómo instalarlo).
   - Nunca actualiza sola, porque reiniciar Paperclip corta lo que estén haciendo los agentes.
   - Ensayo, para verlo sin esperar una versión: con la app cerrada,
     `open -a "Paperclip Swift" --args -PaperclipPreviewUpdate 2026.1101.0`. Finge esa versión y
-    «Actualizar» muestra los pasos de `update.sh` sin correrlo. Se sale cerrando la app (Cmd+Q).
+    «Actualizar» muestra los pasos del script sin correrlo. Se sale cerrando la app (Cmd+Q).
 - Al estrenarla pide iniciar sesión una vez, porque no comparte los datos de la app de Pake. Con las dos
   abiertas, los avisos llegan dos veces. La de Pake sigue usando `inject/decisions.js`.
-- `scripts/server-url.zsh` y `scripts/make-icns.zsh` sirven a los dos builds.
+- `scripts/make-icns.zsh` sirve a los dos builds; `scripts/server-url.zsh`, solo a la de Pake.
