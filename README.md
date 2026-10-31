@@ -136,9 +136,9 @@ macos/build.sh
   - Arriba, un selector de pestañas de Liquid Glass (la barra la arma SwiftUI con `sceneBridgingOptions`).
     Cada pestaña tiñe la parte de arriba de la ventana con su color y el vidrio lo refleja. Al cambiar de
     pestaña, el color y el contenido se funden en una sola animación; la ventana no cambia de tamaño.
-  - Cada pestaña empieza centrada, como las páginas de iOS 26: ícono de vidrio sobre su color, de qué se
-    trata y su estado en una cápsula de vidrio («Conectado», «Permitidos», «Al día»). Abre en la última
-    pestaña usada.
+  - Cada pestaña empieza como en Ajustes del Sistema, alineada a la izquierda con las filas de abajo: ícono
+    de vidrio sobre su color, de qué se trata y, a la derecha, su estado en una cápsula de vidrio
+    («Conectado», «Permitidos», «Al día»). Abre en la última pestaña usada.
   - **General:** el tema con miniaturas (Sistema, Claro, Oscuro) y abrir al iniciar sesión (`SMAppService`).
     «Sistema» sigue a la Mac aunque cambie por horario; `web/bridge.js` borra el tema que guarda Paperclip
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
