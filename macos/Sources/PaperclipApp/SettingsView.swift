@@ -1,150 +1,88 @@
 import AppKit
-import CoreImage.CIFilterBuiltins
 import ServiceManagement
 import SwiftUI
 
-/// La ventana Ajustes (Cmd+,), con el aspecto de los ajustes de macOS.
-@MainActor
-final class SettingsWindowController: NSWindowController {
-    init(preferences: Preferences, status: AppStatus, telegram: TelegramChannel, actions: SettingsView.Actions) {
-        let hosting = NSHostingController(
-            rootView: SettingsView(preferences: preferences, status: status, telegram: telegram, actions: actions)
-        )
-        hosting.sizingOptions = [.preferredContentSize]
-        let window = NSWindow(contentViewController: hosting)
-        window.title = "Ajustes"
-        window.styleMask = [.titled, .closable]
-        window.isReleasedWhenClosed = false
-        window.tabbingMode = .disallowed
-        super.init(window: window)
-        window.center()
-    }
+/// Medidas, colores y tiempos de Ajustes, para que todas las pestañas se vean iguales.
+enum SettingsDesign {
+    /// Fija, como Ajustes del Sistema: lo que no cabe se desplaza por debajo de la barra.
+    static let windowSize = CGSize(width: 580, height: 620)
+    static let glowHeight: CGFloat = 340
+    static let iconSize: CGFloat = 64
+    static let appIconSize: CGFloat = 76
+    /// El redondeo de los íconos de macOS: un 22,5 % del lado.
+    static let iconCornerRatio: CGFloat = 0.225
+    static let heroTextWidth: CGFloat = 400
+    static let thumbnailSize = CGSize(width: 88, height: 58)
+    static let paneAnimation: Animation = .smooth(duration: 0.4)
+    static let animation: Animation = .smooth(duration: 0.3)
+    /// Lo que dura un «Enviado» o un «Copiado» antes de volver a su texto.
+    static let feedbackDuration: Duration = .seconds(2)
+    static let telegramBlue = Color(red: 0.16, green: 0.63, blue: 0.92)
+}
 
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) no se usa")
-    }
+/// Una pestaña de Ajustes. Es un solo tipo para que la ventana arme todas igual.
+struct SettingsPaneView: View {
+    let pane: SettingsPane
+    let preferences: Preferences
+    let status: AppStatus
+    let telegram: TelegramChannel
+    let actions: SettingsActions
 
-    func show() {
-        showWindow(nil)
-        NSApp.activate()
+    var body: some View {
+        switch pane {
+        case .general: GeneralPane(preferences: preferences)
+        case .notifications: NotificationsPane(preferences: preferences, status: status, actions: actions)
+        case .telegram: TelegramPane(telegram: telegram)
+        case .paperclip: PaperclipPane(status: status, actions: actions)
+        }
     }
 }
 
-struct SettingsView: View {
-    struct Actions {
-        let checkForUpdate: () -> Void
-        let sendTestNotification: () -> Void
-        let serverURL: URL
-    }
+// MARK: - General
 
+private struct GeneralPane: View {
     @Bindable var preferences: Preferences
-    let status: AppStatus
-    let telegram: TelegramChannel
-    let actions: Actions
 
     @State private var loginItemStatus = SMAppService.mainApp.status
     @State private var loginItemError: String?
 
     var body: some View {
-        Form {
-            Section {
-                Picker("Tema", selection: $preferences.appearance) {
-                    ForEach(Preferences.Appearance.allCases) { Text($0.title).tag($0) }
+        SettingsForm {
+            Section {} header: {
+                PaneHero(title: "General", subtitle: "Cómo se ve la app y si se abre sola al prender la Mac.") {
+                    GlassIcon(symbol: "gearshape.fill", color: SettingsPane.general.color)
                 }
-                .pickerStyle(.segmented)
+            }
+            Section {
+                AppearancePicker(selection: $preferences.appearance)
             } header: {
                 Text("Apariencia")
             } footer: {
-                Text("«Sistema» sigue a la Mac, también cuando cambia sola por horario. Si eliges el tema en el menú de Paperclip, aquí se cambia igual.")
+                Text("«Sistema» sigue a la Mac, también cuando cambia sola por horario. Si eliges el tema en el menú de Paperclip, aquí cambia igual.")
                     .settingsFootnote()
             }
-
             Section {
-                Toggle("Avisar cuando llegue una decisión", isOn: $preferences.decisionNotifications)
-                Toggle("Avisar también si estoy mirando Paperclip", isOn: $preferences.notifyWhileLooking)
-                    .disabled(!preferences.decisionNotifications)
-                Toggle("Número de pendientes en el ícono del Dock", isOn: $preferences.dockBadge)
-                permissionRow
-            } header: {
-                Text("Avisos")
-            } footer: {
-                Text("Decisions incluye las preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto.")
-                    .settingsFootnote()
-            }
-
-            TelegramSection(telegram: telegram)
-            if telegram.hasToken, telegram.isPaired {
-                ExplainSection(telegram: telegram)
-            }
-
-            Section {
-                Toggle("Abrir al iniciar sesión", isOn: launchAtLogin)
+                Toggle(isOn: launchAtLogin) {
+                    Text("Abrir al iniciar sesión")
+                    Text("Así los avisos llegan desde que prendes la Mac.")
+                }
                 if loginItemStatus == .requiresApproval {
-                    HStack {
-                        Text("macOS pide aprobarlo en Ítems de inicio.")
-                            .foregroundStyle(.secondary)
-                        Spacer()
+                    LabeledContent("macOS pide aprobarla en Ítems de inicio.") {
                         Button("Abrir Ajustes del Sistema") { SMAppService.openSystemSettingsLoginItems() }
+                            .buttonStyle(.glass)
                     }
                 }
                 if let loginItemError {
-                    Text(loginItemError).foregroundStyle(.red)
+                    WarningRow(text: loginItemError)
                 }
-            } header: {
-                Text("General")
             } footer: {
-                Text("Los avisos llegan mientras la app esté abierta, aunque cierres la ventana (Cmd+W). Cmd+Q la cierra del todo.")
+                Text("Cerrar la ventana (Cmd+W) no apaga los avisos: la app sigue revisando. Cmd+Q la cierra del todo.")
                     .settingsFootnote()
             }
-
-            Section("Paperclip") {
-                LabeledContent("Versión") {
-                    HStack {
-                        Text(versionText)
-                        Button("Buscar actualización", action: actions.checkForUpdate)
-                            .disabled(status.checkingUpdate)
-                    }
-                }
-                LabeledContent("Dirección") {
-                    Text(actions.serverURL.absoluteString).textSelection(.enabled)
-                }
-            }
         }
-        .formStyle(.grouped)
-        .frame(width: 520)
-        .fixedSize(horizontal: false, vertical: true)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             loginItemStatus = SMAppService.mainApp.status
         }
-    }
-
-    @ViewBuilder private var permissionRow: some View {
-        LabeledContent("Permiso de macOS") {
-            HStack {
-                switch status.notificationPermission {
-                case "granted":
-                    Label("Permitido", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                    Button("Probar", action: actions.sendTestNotification)
-                case "denied":
-                    Label("Bloqueado", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                    Button("Abrir Ajustes del Sistema", action: openNotificationSettings)
-                default:
-                    Text("Sin pedir todavía").foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
-    private var versionText: String {
-        if status.checkingUpdate { return "Revisando…" }
-        guard let current = status.paperclipVersion else {
-            return status.updateCheckFailed ? "No pude revisar" : "Revisando…"
-        }
-        if let latest = status.latestVersion { return "\(current) · hay una nueva: \(latest)" }
-        return "\(current) · al día"
     }
 
     private var launchAtLogin: Binding<Bool> {
@@ -164,6 +102,184 @@ struct SettingsView: View {
             loginItemStatus = SMAppService.mainApp.status
         }
     }
+}
+
+/// El tema con miniaturas, como en Ajustes del Sistema → Apariencia.
+private struct AppearancePicker: View {
+    @Binding var selection: Preferences.Appearance
+
+    var body: some View {
+        HStack(spacing: 28) {
+            ForEach(Preferences.Appearance.allCases) { appearance in
+                let selected = selection == appearance
+                Button {
+                    withAnimation(SettingsDesign.animation) { selection = appearance }
+                } label: {
+                    VStack(spacing: 8) {
+                        AppearanceThumbnail(appearance: appearance)
+                            .frame(width: SettingsDesign.thumbnailSize.width, height: SettingsDesign.thumbnailSize.height)
+                            .clipShape(.rect(cornerRadius: 7))
+                            .overlay { RoundedRectangle(cornerRadius: 7).strokeBorder(.separator) }
+                            .padding(3)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .strokeBorder(Color.accentColor, lineWidth: 3)
+                                    .opacity(selected ? 1 : 0)
+                            }
+                            .scaleEffect(selected ? 1 : 0.96)
+                        Text(appearance.title)
+                            .font(.callout)
+                            .foregroundStyle(selected ? .primary : .secondary)
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(appearance.title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+    }
+}
+
+/// Una ventana chica sobre un fondo de pantalla; «Sistema», mitad clara y mitad oscura.
+private struct AppearanceThumbnail: View {
+    let appearance: Preferences.Appearance
+
+    var body: some View {
+        switch appearance {
+        case .light: WindowSketch(dark: false)
+        case .dark: WindowSketch(dark: true)
+        case .system: WindowSketch(dark: false).overlay { WindowSketch(dark: true).mask { DiagonalHalf() } }
+        }
+    }
+}
+
+private struct WindowSketch: View {
+    private static let lightWallpaper = [Color(red: 0.55, green: 0.74, blue: 0.98), Color(red: 0.86, green: 0.78, blue: 0.97)]
+    private static let darkWallpaper = [Color(red: 0.10, green: 0.12, blue: 0.27), Color(red: 0.29, green: 0.17, blue: 0.40)]
+
+    let dark: Bool
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            ZStack(alignment: .topLeading) {
+                LinearGradient(
+                    colors: dark ? Self.darkWallpaper : Self.lightWallpaper,
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                HStack(alignment: .top, spacing: size.width * 0.04) {
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(dark ? Color(white: 0.26) : Color(white: 0.9))
+                        .frame(width: size.width * 0.2)
+                    VStack(alignment: .leading, spacing: size.height * 0.07) {
+                        Capsule().fill(Color.accentColor).frame(width: size.width * 0.22)
+                        Capsule().fill(dark ? Color(white: 0.34) : Color(white: 0.84))
+                        Capsule().fill(dark ? Color(white: 0.34) : Color(white: 0.84)).frame(width: size.width * 0.3)
+                    }
+                    .frame(height: size.height * 0.3)
+                    .padding(.top, size.height * 0.06)
+                }
+                .padding(size.width * 0.025)
+                .frame(width: size.width * 0.8, height: size.height * 0.68, alignment: .topLeading)
+                .background(dark ? Color(white: 0.15) : .white, in: .rect(cornerRadius: 4))
+                .shadow(color: .black.opacity(0.25), radius: 1.5, y: 0.5)
+                .offset(x: size.width * 0.1, y: size.height * 0.18)
+            }
+        }
+    }
+}
+
+private struct DiagonalHalf: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path { path in
+            path.move(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.closeSubpath()
+        }
+    }
+}
+
+// MARK: - Avisos
+
+private struct NotificationsPane: View {
+    @Bindable var preferences: Preferences
+    let status: AppStatus
+    let actions: SettingsActions
+
+    @State private var tests = 0
+
+    var body: some View {
+        SettingsForm {
+            Section {} header: {
+                PaneHero(
+                    title: "Avisos",
+                    subtitle: "Cuando una decisión espera por ti, te avisa en la Mac aunque estés en otra app."
+                ) {
+                    GlassIcon(
+                        symbol: preferences.decisionNotifications ? "bell.badge.fill" : "bell.slash.fill",
+                        color: SettingsPane.notifications.color,
+                        bounce: tests
+                    )
+                } accessory: {
+                    permissionBadge
+                }
+            }
+            if status.notificationPermission == "denied" {
+                Section {
+                    LabeledContent {
+                        Button("Abrir Ajustes del Sistema", action: openNotificationSettings)
+                            .buttonStyle(.glass)
+                    } label: {
+                        WarningRow(text: "macOS tiene bloqueados los avisos de esta app.")
+                    }
+                }
+            }
+            Section {
+                Toggle(isOn: $preferences.decisionNotifications) {
+                    Text("Avisar cuando llegue una decisión")
+                    Text("Preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto.")
+                }
+                Toggle(isOn: $preferences.notifyWhileLooking) {
+                    Text("Avisar también si estoy mirando Paperclip")
+                    Text("Con la ventana al frente, la barra lateral ya las muestra.")
+                }
+                .disabled(!preferences.decisionNotifications)
+                Toggle(isOn: $preferences.dockBadge) {
+                    Text("Número de pendientes en el Dock")
+                    Text("Todo lo que espera en Decisions, no solo lo de hoy.")
+                }
+            }
+            Section {
+                LabeledContent {
+                    Button("Probar") {
+                        tests += 1
+                        actions.sendTestNotification()
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(status.notificationPermission == "denied")
+                } label: {
+                    Text("Aviso de prueba")
+                    Text("Para ver cómo se ve y si macOS lo deja pasar.")
+                }
+            } footer: {
+                Text("Con No molestar o un modo de concentración, los avisos no aparecen en pantalla: quedan en el Centro de notificaciones.")
+                    .settingsFootnote()
+            }
+        }
+    }
+
+    @ViewBuilder private var permissionBadge: some View {
+        switch status.notificationPermission {
+        case "granted": StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
+        case "denied": StatusBadge(text: "Bloqueados", symbol: "xmark.circle.fill", tint: .orange)
+        default: StatusBadge(text: "Sin pedir", symbol: "questionmark.circle.fill", tint: .secondary)
+        }
+    }
 
     private func openNotificationSettings() {
         let id = Bundle.main.bundleIdentifier ?? ""
@@ -173,229 +289,258 @@ struct SettingsView: View {
     }
 }
 
-/// Telegram: el token del bot, vincular el chat con un enlace y, ya conectado, prender o apagar el envío.
-private struct TelegramSection: View {
-    let telegram: TelegramChannel
+// MARK: - Paperclip
 
-    @State private var token = ""
-    @State private var working = false
-    @State private var message: String?
+private struct PaperclipPane: View {
+    let status: AppStatus
+    let actions: SettingsActions
 
     var body: some View {
-        Section {
-            if !telegram.hasToken {
-                SecureField("Token del bot", text: $token, prompt: Text("123456:ABC…"))
-                    .onSubmit(connect)
-                HStack {
-                    if working { ProgressView().controlSize(.small) }
-                    Spacer()
-                    Button("Conectar", action: connect)
-                        .disabled(token.isEmpty || working)
+        SettingsForm {
+            Section {} header: {
+                PaneHero(title: "Paperclip", subtitle: versionLine) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: SettingsDesign.appIconSize, height: SettingsDesign.appIconSize)
+                        .accessibilityHidden(true)
+                } accessory: {
+                    updateAccessory
                 }
-            } else if !telegram.isPaired {
-                LabeledContent("Bot") { Text(botName) }
-                if let url = telegram.pairingURL {
-                    HStack(alignment: .top, spacing: 16) {
-                        if let qr = Self.qrCode(url) {
-                            Image(nsImage: qr)
-                                .interpolation(.none)
-                                .resizable()
-                                .frame(width: 132, height: 132)
-                                .accessibilityLabel("Código QR del enlace al bot")
-                        }
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Falta vincular tu chat")
-                            Text("Escanea el código con la cámara del teléfono y toca Iniciar en Telegram.")
-                                .settingsFootnote()
-                            Link("O ábrelo en esta Mac", destination: url)
-                            Text("Si no abre, escríbele al bot «/start \(telegram.state.pairingCode ?? "")».")
-                                .settingsFootnote()
-                                .textSelection(.enabled)
-                        }
+            }
+            Section {
+                LabeledContent("Dirección") {
+                    HStack(spacing: 6) {
+                        Text(actions.serverURL.absoluteString)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                        CopyButton(text: actions.serverURL.absoluteString)
                     }
                 }
-                HStack {
-                    Spacer()
-                    Button("Quitar bot", role: .destructive, action: telegram.removeBot)
+                LabeledContent {
+                    Button(action: actions.checkForUpdate) {
+                        if status.checkingUpdate {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Buscar ahora")
+                        }
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(status.checkingUpdate || status.updateProgress != nil)
+                } label: {
+                    Text("Versiones nuevas")
+                    Text(checkLine)
+                        .contentTransition(.opacity)
+                        .animation(SettingsDesign.animation, value: checkLine)
                 }
-            } else {
-                Toggle("Mandar las decisiones a Telegram", isOn: enabled)
-                LabeledContent("Bot") {
-                    Text(telegram.state.chatName.map { "\(botName) · con \($0)" } ?? botName)
+                if let error = status.updateCheckError {
+                    WarningRow(text: error)
                 }
-                HStack {
-                    Spacer()
-                    Button("Mandar prueba", action: sendTest)
-                        .disabled(!telegram.state.enabled || working)
-                    Button("Quitar bot", role: .destructive, action: telegram.removeBot)
-                }
+            } footer: {
+                Text("Paperclip nunca se actualiza solo: reiniciarlo corta lo que estén haciendo los agentes, así que tú eliges cuándo.")
+                    .settingsFootnote()
             }
-            if let problem = message ?? telegram.problem {
-                Label(problem, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
+            Section {} footer: {
+                Text("\(AppConfig.appName) \(Self.appVersion)")
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
             }
-        } header: {
-            Text("Telegram")
-        } footer: {
-            Text(footer).settingsFootnote()
         }
     }
 
-    /// El enlace como QR, para abrir el bot desde el teléfono. CoreImage lo dibuja negro sobre blanco.
-    private static func qrCode(_ url: URL) -> NSImage? {
-        let filter = CIFilter.qrCodeGenerator()
-        filter.message = Data(url.absoluteString.utf8)
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 10, y: 10)) else {
-            return nil
+    private var versionLine: String {
+        guard let current = status.paperclipVersion else {
+            return status.updateCheckError != nil ? "No pude leer la versión instalada." : "Revisando la versión…"
         }
-        let representation = NSCIImageRep(ciImage: output)
-        let image = NSImage(size: representation.size)
-        image.addRepresentation(representation)
-        return image
+        if let latest = status.latestVersion { return "Tienes la \(current). Salió la \(latest)." }
+        return "Versión \(current), la última estable."
     }
 
-    private var botName: String {
-        telegram.state.botUsername.map { "@\($0)" } ?? "Sin nombre"
+    /// Cuándo se revisó, para que «Buscar ahora» muestre su resultado aquí mismo.
+    private var checkLine: String {
+        let every = "cada \(Int(UpdateController.checkInterval / 3600)) horas"
+        guard let checked = status.lastCheckedAt else { return "Se revisa sola \(every)." }
+        return "Revisado a las \(checked.formatted(date: .omitted, time: .shortened)); se revisa sola \(every)."
     }
 
-    private var footer: String {
-        if telegram.hasToken {
-            return "Contesta con los botones de cada decisión. Si respondes a una con texto, queda como comentario en su tarea y le llega al agente. Llegan mientras la Mac y esta app estén encendidas."
-        }
-        return "Crea un bot solo para esto con @BotFather (/newbot) y pega aquí su token. Queda en el llavero de la Mac."
-    }
-
-    private var enabled: Binding<Bool> {
-        Binding { telegram.state.enabled } set: { telegram.setEnabled($0) }
-    }
-
-    private func connect() {
-        guard !token.isEmpty, !working else { return }
-        working = true
-        message = nil
-        Task {
-            message = await telegram.connect(token: token)
-            if message == nil { token = "" }
-            working = false
+    @ViewBuilder private var updateAccessory: some View {
+        if let progress = status.updateProgress {
+            HStack(spacing: 8) {
+                ProgressView().controlSize(.small)
+                Text(progress).font(.callout).foregroundStyle(.secondary)
+            }
+        } else if status.checkingUpdate {
+            StatusBadge(text: "Revisando…", symbol: "arrow.clockwise", tint: .secondary)
+        } else if let latest = status.latestVersion {
+            Button("Actualizar a \(latest)", action: actions.installUpdate)
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+        } else if status.paperclipVersion != nil {
+            StatusBadge(text: "Al día", symbol: "checkmark.circle.fill", tint: .green, bounce: status.lastCheckedAt)
+        } else if status.updateCheckError != nil {
+            StatusBadge(text: "Sin revisar", symbol: "exclamationmark.triangle.fill", tint: .orange)
         }
     }
 
-    private func sendTest() {
-        working = true
-        message = nil
-        Task {
-            message = await telegram.sendTest()
-            working = false
-        }
+    private static var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 }
 
-/// «Explicar decisiones»: el botón «Explícamela», con qué CLI y con qué modelo. Muestra lo que encontró en
-/// la Mac: los CLIs instalados, el que elige «Automático» y los modelos que ofrece cada uno.
-private struct ExplainSection: View {
-    typealias Engine = DecisionExplainer.Engine
+// MARK: - Piezas comunes
 
-    let telegram: TelegramChannel
-
-    @State private var detection: DecisionExplainer.Detection?
-    @State private var models: [DecisionExplainer.Model] = []
-    @State private var loadingModels = false
-    @State private var command = ""
+/// El formulario de una pestaña: sin fondo propio, para que se vea el color de la pestaña, y desplazable
+/// por debajo de la barra.
+struct SettingsForm<Content: View>: View {
+    @ViewBuilder let content: Content
 
     var body: some View {
-        Section {
-            Toggle(isOn: enabled) {
-                Text("Explicar decisiones")
-                Text("Agrega «💡 Explícamela» a cada decisión: te la cuenta en pocas líneas.")
-            }
-            if telegram.explainEnabled {
-                Picker("Con", selection: engine) {
-                    Text(automaticTitle).tag(Engine.automatic)
-                    ForEach(cliOptions) { Text(title(for: $0)).tag($0) }
-                    Text(Engine.custom.title).tag(Engine.custom)
-                }
-                if telegram.engine == .custom {
-                    TextField("Comando", text: $command, prompt: Text("p. ej. gemini -p"))
-                        .onChange(of: command) { telegram.setCustomCommand(command) }
-                } else if let effective {
-                    Picker("Modelo", selection: model(for: effective)) {
-                        Text("Automático").tag("")
-                        ForEach(modelOptions(for: effective)) { Text($0.title).tag($0.id) }
-                    }
-                    .disabled(loadingModels)
-                }
-            }
-        } footer: {
-            Text(footer).settingsFootnote()
-        }
-        .task {
-            command = telegram.customCommand
-            detection = await telegram.detectExplainers()
-        }
-        .task(id: effective) {
-            guard let effective else { return }
-            loadingModels = true
-            models = await telegram.explainerModels(for: effective)
-            loadingModels = false
-        }
-    }
-
-    /// El CLI que se usa de verdad: el elegido o, en «Automático», el detectado.
-    private var effective: Engine? {
-        switch telegram.engine {
-        case .automatic: detection?.automatic
-        case .custom: nil
-        default: telegram.engine
-        }
-    }
-
-    private var automaticTitle: String {
-        guard let detection else { return "Automático (buscando…)" }
-        return detection.automatic.map { "Automático · \($0.title)" } ?? "Automático (no encontré ninguno)"
-    }
-
-    /// Los instalados; el elegido aparece aunque ya no esté, para que se vea qué pasó.
-    private var cliOptions: [Engine] {
-        var options = detection?.installed ?? []
-        if Engine.clis.contains(telegram.engine), !options.contains(telegram.engine) { options.append(telegram.engine) }
-        return options
-    }
-
-    private func title(for engine: Engine) -> String {
-        guard let detection, !detection.installed.contains(engine) else { return engine.title }
-        return "\(engine.title) (no instalado)"
-    }
-
-    /// Los del CLI, más el guardado si el CLI ya no lo ofrece.
-    private func modelOptions(for engine: Engine) -> [DecisionExplainer.Model] {
-        let saved = telegram.model(for: engine)
-        guard !saved.isEmpty, !models.contains(where: { $0.id == saved }) else { return models }
-        return models + [DecisionExplainer.Model(id: saved, title: saved)]
-    }
-
-    private var footer: String {
-        "Te la explica un CLI de esta Mac sin herramientas: solo lee la tarea, lo que anotó el agente y los " +
-            "últimos comentarios, y no decide ni escribe nada. Para preguntar algo, respóndele a la decisión y " +
-            "le llega al agente. «Automático» usa el CLI que más usan tus agentes de Paperclip; en el modelo, " +
-            "el que el CLI tenga por defecto, con esfuerzo bajo. «Otro comando…» sirve para cualquier otro " +
-            "CLI: recibe el texto por la entrada y responde por la salida."
-    }
-
-    private var enabled: Binding<Bool> {
-        Binding { telegram.explainEnabled } set: { telegram.setExplainEnabled($0) }
-    }
-
-    private var engine: Binding<Engine> {
-        Binding { telegram.engine } set: { telegram.setEngine($0) }
-    }
-
-    private func model(for engine: Engine) -> Binding<String> {
-        Binding { telegram.model(for: engine) } set: { telegram.setModel($0, for: engine) }
+        Form { content }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
     }
 }
 
-private extension View {
+/// Arriba de cada pestaña, centrado como en las páginas de iOS 26: ícono grande, de qué se trata y su estado.
+struct PaneHero<Icon: View, Accessory: View>: View {
+    let title: String
+    let subtitle: String
+    @ViewBuilder let icon: Icon
+    @ViewBuilder let accessory: Accessory
+
+    var body: some View {
+        VStack(spacing: 12) {
+            icon
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.title2)
+                    .bold()
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: SettingsDesign.heroTextWidth)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
+            }
+            accessory
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
+        .textCase(nil)
+        .animation(SettingsDesign.animation, value: subtitle)
+    }
+}
+
+extension PaneHero where Accessory == EmptyView {
+    init(title: String, subtitle: String, @ViewBuilder icon: () -> Icon) {
+        self.init(title: title, subtitle: subtitle, icon: icon, accessory: { EmptyView() })
+    }
+}
+
+/// El ícono de una pestaña en Liquid Glass sobre una mancha de su color, que el vidrio refracta: así se ve
+/// de color aunque la ventana no esté activa (macOS le quita el tinte al vidrio de las ventanas inactivas).
+/// `bounce` lo hace saltar cada vez que cambia (p. ej. al mandar una prueba).
+struct GlassIcon<Trigger: Equatable>: View {
+    let symbol: String
+    let color: Color
+    var bounce: Trigger
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: SettingsDesign.iconSize * SettingsDesign.iconCornerRatio)
+        Image(systemName: symbol)
+            .font(.largeTitle)
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
+            .contentTransition(.symbolEffect(.replace))
+            .symbolEffect(.bounce, value: bounce)
+            .frame(width: SettingsDesign.iconSize, height: SettingsDesign.iconSize)
+            .glassEffect(.regular.tint(color.opacity(0.7)), in: shape)
+            .background {
+                shape
+                    .fill(color.gradient)
+                    .padding(SettingsDesign.iconSize * 0.03)
+                    .blur(radius: 2)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+extension GlassIcon where Trigger == Int {
+    init(symbol: String, color: Color) {
+        self.init(symbol: symbol, color: color, bounce: 0)
+    }
+}
+
+/// Un estado corto en una cápsula de vidrio teñida: «Conectado», «Al día».
+struct StatusBadge<Trigger: Equatable>: View {
+    let text: String
+    let symbol: String
+    let tint: Color
+    var bounce: Trigger
+
+    var body: some View {
+        Label {
+            Text(text)
+        } icon: {
+            Image(systemName: symbol).symbolEffect(.bounce, value: bounce)
+        }
+        .font(.callout)
+        .foregroundStyle(tint)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .glassEffect(.regular.tint(tint.opacity(0.16)), in: .capsule)
+        .fixedSize()
+        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+    }
+}
+
+extension StatusBadge where Trigger == Int {
+    init(text: String, symbol: String, tint: Color) {
+        self.init(text: text, symbol: symbol, tint: tint, bounce: 0)
+    }
+}
+
+struct WarningRow: View {
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: "exclamationmark.triangle.fill")
+            .foregroundStyle(.orange)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Copia un texto y lo confirma con una palomita por un momento.
+struct CopyButton: View {
+    let text: String
+
+    @State private var copied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            copied = true
+            Task {
+                try? await Task.sleep(for: SettingsDesign.feedbackDuration)
+                copied = false
+            }
+        } label: {
+            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 16)
+        }
+        .buttonStyle(.borderless)
+        .help(copied ? "Copiado" : "Copiar")
+        .accessibilityLabel(copied ? "Copiado" : "Copiar")
+    }
+}
+
+extension View {
     func settingsFootnote() -> some View {
         font(.footnote).foregroundStyle(.secondary)
     }

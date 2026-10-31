@@ -13,6 +13,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: SettingsWindowController?
     private var appearanceObservation: NSKeyValueObservation?
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // El ensayo de Ajustes corre como una segunda copia: sin ícono en el Dock ni foco.
+        if SettingsSnapshot.directory != nil { NSApp.setActivationPolicy(.accessory) }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard let config = AppConfig.load() else {
             let alert = NSAlert()
@@ -23,6 +28,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         self.config = config
+        if let directory = SettingsSnapshot.directory {
+            // No abre Paperclip ni atiende el bot: solo dibuja Ajustes y se cierra.
+            Task {
+                await SettingsSnapshot.run(config: config, to: directory)
+                NSApp.terminate(nil)
+            }
+            return
+        }
         NSApp.mainMenu = MainMenu.build(appName: AppConfig.appName)
         // Antes de crear la ventana, para que la página cargue ya con el tema elegido.
         NSApp.appearance = preferences.appearance.nsAppearance
@@ -104,8 +117,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 preferences: preferences,
                 status: status,
                 telegram: telegram,
-                actions: SettingsView.Actions(
-                    checkForUpdate: { [weak self] in self?.updates?.check(userInitiated: true) },
+                actions: SettingsActions(
+                    checkForUpdate: { [weak self] in self?.updates?.checkNow() },
+                    installUpdate: { [weak self] in self?.updates?.requestUpdate() },
                     sendTestNotification: { [weak self] in self?.sendTestNotification() },
                     serverURL: config.serverURL
                 )
