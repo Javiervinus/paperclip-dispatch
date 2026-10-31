@@ -14,8 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appearanceObservation: NSKeyValueObservation?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // El ensayo de Ajustes corre como una segunda copia: sin ícono en el Dock ni foco.
-        if SettingsSnapshot.directory != nil { NSApp.setActivationPolicy(.accessory) }
+        // Los ensayos corren como una segunda copia: sin ícono en el Dock ni foco.
+        if Snapshot.requested != nil { NSApp.setActivationPolicy(.accessory) }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -28,10 +28,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         self.config = config
-        if let directory = SettingsSnapshot.directory {
-            // No abre Paperclip ni atiende el bot: solo dibuja Ajustes y se cierra.
+        if let (kind, directory) = Snapshot.requested {
+            // No atiende el bot ni avisa: solo dibuja lo pedido y se cierra.
             Task {
-                await SettingsSnapshot.run(config: config, to: directory)
+                switch kind {
+                case .settings: await SettingsSnapshot.run(config: config, to: directory)
+                case .window: await MainWindowSnapshot.run(config: config, to: directory)
+                }
                 NSApp.terminate(nil)
             }
             return

@@ -175,25 +175,14 @@ private struct PaneGlow: View {
 
 // MARK: - Ensayo
 
-/// Ensayo visual de Ajustes, para revisar el diseño sin abrir nada en pantalla. Lo corre
-/// `macos/settings-snapshot.zsh`: abre una segunda copia de la app con `-PaperclipSettingsSnapshot <carpeta>`,
-/// que pone cada pestaña en su ventana, en claro y en oscuro (Telegram también sin bot y sin vincular), fuera
-/// de la pantalla. Anota los números de ventana en `windows.txt`; el script las captura con
-/// `screencapture -l`, que sí dibuja el vidrio, y deja `captured` para que la copia se cierre. Usa el estado
-/// real (solo lo lee).
+/// Ensayo visual de Ajustes (`macos/snapshot.zsh settings`): cada pestaña en su ventana, en claro y en
+/// oscuro (Telegram también sin bot y sin vincular). Usa el estado real (solo lo lee).
 @MainActor
 enum SettingsSnapshot {
-    private static let directoryKey = "PaperclipSettingsSnapshot"
     /// Lo que tardan las pestañas en terminar de cargar (Telegram busca los CLIs y sus modelos).
     private static let settleTime: Duration = .seconds(5)
-    private static let captureTimeout = 90
-
-    static var directory: URL? {
-        UserDefaults.standard.string(forKey: directoryKey).map { URL(fileURLWithPath: $0, isDirectory: true) }
-    }
 
     static func run(config: AppConfig, to directory: URL) async {
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let api = PaperclipAPI(serverURL: config.serverURL)
         let preferences = Preferences()
         let status = AppStatus()
@@ -221,7 +210,7 @@ enum SettingsSnapshot {
             ("telegram-sin-vincular", channel(pairing), [.telegram]),
         ]
         var controllers: [SettingsWindowController] = []
-        var manifest: [String] = []
+        var windows: [Snapshot.Window] = []
         for (name, appearance) in [("claro", NSAppearance.Name.aqua), ("oscuro", .darkAqua)] {
             for variant in variants {
                 for pane in variant.panes {
@@ -234,26 +223,15 @@ enum SettingsSnapshot {
                     )
                     guard let window = controller.window else { continue }
                     window.appearance = NSAppearance(named: appearance)
-                    // Fuera de la pantalla: no tapa nada ni se lleva el foco.
-                    window.orderFrontRegardless()
-                    window.setFrameOrigin(NSPoint(x: -20_000, y: 0))
+                    Snapshot.hide(window)
                     controllers.append(controller)
                     let prefix = variant.name.isEmpty ? pane.rawValue : variant.name
-                    manifest.append("\(window.windowNumber) \(prefix)-\(name).png")
+                    windows.append(Snapshot.Window(window: window, file: "\(prefix)-\(name).png"))
                 }
             }
         }
         try? await Task.sleep(for: settleTime)
-        try? manifest.joined(separator: "\n").write(
-            to: directory.appending(path: "windows.txt"),
-            atomically: true,
-            encoding: .utf8
-        )
-        let captured = directory.appending(path: "captured")
-        for _ in 0..<captureTimeout where !FileManager.default.fileExists(atPath: captured.path) {
-            try? await Task.sleep(for: .seconds(1))
-        }
-        controllers.forEach { $0.window?.orderOut(nil) }
+        await Snapshot.capture(windows, in: directory)
     }
 
     /// La versión y el permiso de avisos, como los ve la app.
