@@ -32,6 +32,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private static let zoomStep: CGFloat = 0.1
     /// Separación del botón de la versión con el borde derecho.
     private static let accessoryMargin: CGFloat = 16
+    /// Aire sobre el texto al que se desplaza el ensayo de páginas, en píxeles de la página.
+    private static let anchorMargin = 24
 
     private let config: AppConfig
     private static let toolbarIdentifier = "PaperclipMainToolbar"
@@ -64,19 +66,19 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     /// Se eligió el tema en el menú de Paperclip (true = oscuro): la app lo adopta como ajuste.
     var onThemeChosen: ((_ dark: Bool) -> Void)?
 
-    /// `remembersFrame: false` no lee ni guarda dónde quedó la ventana (para el ensayo, que la pone fuera de
-    /// la pantalla).
-    init(config: AppConfig, liquidGlass: Bool, remembersFrame: Bool = true) {
+    /// `rehearsal`: para los ensayos, que la ponen fuera de la pantalla. No lee ni guarda dónde quedó la
+    /// ventana.
+    init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false) {
         self.config = config
         glass = liquidGlass
-        let window = NSWindow(
+        let window = SnapshotableWindow(
             contentRect: NSRect(origin: .zero, size: Self.defaultContentSize),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         super.init(window: window)
-        configure(window, remembersFrame: remembersFrame)
+        configure(window, remembersFrame: !rehearsal)
         webView = makeWebView()
         assembleLayers(in: window)
         applyMode()
@@ -270,6 +272,37 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     func reload() {
         webView.reload()
+    }
+
+    /// Abre una ruta de Paperclip (`/VIN/agent-usage`) cargando la página de nuevo. Para el ensayo de páginas.
+    func load(path: String) {
+        webView.load(URLRequest(url: config.serverURL.appending(path: path)))
+    }
+
+    /// Desplaza la página hasta el primer texto que empiece así, con un poco de aire arriba. Para el ensayo
+    /// de páginas; devuelve si lo encontró.
+    func scrollPage(toText text: String) async -> Bool {
+        let result = try? await webView.callAsyncJavaScript(
+            """
+            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            let target = null;
+            // React parte el texto en varios nodos («Cada semana», « de », la cuenta): se mira el del padre.
+            while (!target && walker.nextNode()) {
+              const parent = walker.currentNode.parentElement;
+              if (parent?.textContent.trim().startsWith(text)) target = parent;
+            }
+            if (!target) return false;
+            target.scrollIntoView({ block: "start" });
+            let scroller = target.parentElement;
+            while (scroller && !(scroller.scrollHeight > scroller.clientHeight
+              && /(auto|scroll)/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+            (scroller ?? document.scrollingElement).scrollBy(0, -margin);
+            return true;
+            """,
+            arguments: ["text": text, "margin": Self.anchorMargin],
+            contentWorld: .page
+        )
+        return result as? Bool ?? false
     }
 
     /// Ajustes → General → Experimental. Cambia la ventana y recarga la página con los scripts del modo.

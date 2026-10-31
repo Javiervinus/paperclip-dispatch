@@ -1,14 +1,24 @@
 import AppKit
 
-/// Ensayos visuales, para revisar el diseño sin abrir nada en pantalla. Los corre `macos/snapshot.zsh`: abre
-/// una segunda copia de la app con `-PaperclipSnapshot <settings|window>` y `-PaperclipSnapshotDirectory
+/// Una ventana que los ensayos pueden dejar casi entera fuera de la pantalla y más alta que ella. Por
+/// defecto macOS la acomoda: deja asomar unos 40 puntos y la achica al alto de la pantalla.
+final class SnapshotableWindow: NSWindow {
+    var keepsFrame = false
+
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        keepsFrame ? frameRect : super.constrainFrameRect(frameRect, to: screen)
+    }
+}
+
+/// Ensayos visuales, para revisar el diseño sin tapar nada en pantalla. Los corre `macos/snapshot.zsh`: abre
+/// una segunda copia de la app con `-PaperclipSnapshot <settings|window|page>` y `-PaperclipSnapshotDirectory
 /// <carpeta>`, que pone lo pedido en ventanas fuera de la pantalla y anota sus números en `windows.txt`. El
 /// script las captura con `screencapture -l`, que sí dibuja el vidrio, y deja `captured` para que la copia
 /// se cierre.
 @MainActor
 enum Snapshot {
     enum Kind: String {
-        case settings, window
+        case settings, window, page
     }
 
     struct Window {
@@ -28,10 +38,38 @@ enum Snapshot {
         return (kind, URL(fileURLWithPath: path, isDirectory: true))
     }
 
-    /// Fuera de la pantalla: no tapa nada ni se lleva el foco.
-    static func hide(_ window: NSWindow) {
+    /// La versión de Paperclip instalada, como la ve la app.
+    static func installedVersion() async -> UpdateController.Check? {
+        let result = await Shell.run(["-c", UpdateController.checkCommand])
+        return result.status == 0 ? UpdateController.decode(result.output) : nil
+    }
+
+    /// Como el botón de UpdateController, con la versión dada.
+    static func versionButton(_ check: UpdateController.Check?) -> NSButton {
+        let current = check?.currentVersion ?? "2026.1023.0"
+        let available = check?.updateAvailable == true
+        let button = NSButton(
+            title: available ? "Actualizar a \(check?.targetVersion ?? "")" : "Al día · \(current)",
+            target: nil,
+            action: nil
+        )
+        button.controlSize = .large
+        button.imagePosition = .imageLeading
+        let symbol = NSImage(systemSymbolName: available ? "arrow.down.circle.fill" : "checkmark.circle.fill",
+                             accessibilityDescription: nil)
+        button.image = available ? symbol : symbol?.withSymbolConfiguration(.init(paletteColors: [.white, .systemGreen]))
+        button.tintProminence = available ? .primary : .none
+        return button
+    }
+
+    /// Fuera de la pantalla salvo un punto del borde, sin llevarse el foco, y del tamaño pedido. macOS solo
+    /// captura ventanas que tocan una pantalla; con un punto basta y no se ve.
+    static func hide(_ window: NSWindow, contentSize: NSSize? = nil) {
+        (window as? SnapshotableWindow)?.keepsFrame = true
+        if let contentSize { window.setContentSize(contentSize) }
+        let screen = NSScreen.screens.first?.frame ?? .zero
+        window.setFrameOrigin(NSPoint(x: screen.minX - window.frame.width + 1, y: screen.minY))
         window.orderFrontRegardless()
-        window.setFrameOrigin(NSPoint(x: -20_000, y: 0))
     }
 
     /// Anota las ventanas, espera a que el script las capture y las cierra.
@@ -65,11 +103,10 @@ enum MainWindowSnapshot {
         var controllers: [(controller: MainWindowController, switches: Bool, glass: Bool)] = []
         var windows: [Snapshot.Window] = []
         for item in cases {
-            let controller = MainWindowController(config: config, liquidGlass: item.startsWithGlass, remembersFrame: false)
+            let controller = MainWindowController(config: config, liquidGlass: item.startsWithGlass, rehearsal: true)
             guard let window = controller.window else { continue }
-            window.setContentSize(contentSize)
-            controller.setUpdateButton(sampleButton(), visible: true)
-            Snapshot.hide(window)
+            controller.setUpdateButton(Snapshot.versionButton(nil), visible: true)
+            Snapshot.hide(window, contentSize: contentSize)
             controllers.append((controller, item.switches, item.startsWithGlass))
             windows.append(Snapshot.Window(window: window, file: "\(item.file).png"))
         }
@@ -80,14 +117,59 @@ enum MainWindowSnapshot {
         try? await Task.sleep(for: loadTime)
         await Snapshot.capture(windows, in: directory)
     }
+}
 
-    /// Como el de UpdateController, con la versión al día.
-    private static func sampleButton() -> NSButton {
-        let button = NSButton(title: "Al día · 2026.1023.0", target: nil, action: nil)
-        button.controlSize = .large
-        button.imagePosition = .imageLeading
-        button.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(.init(paletteColors: [.white, .systemGreen]))
-        return button
+/// Una página de Paperclip vista con la app, para capturas de muestra (`macos/snapshot.zsh page <ruta>`). Usa
+/// los ajustes de la app (modo y apariencia) y el tamaño pedido (`-PaperclipSnapshotSize 1512x982`). Con
+/// anclas (`-PaperclipSnapshotAnchors "|En qué se fue"`, separadas por «|»; vacía es arriba de todo) saca
+/// una captura por cada una, con la página desplazada hasta ese texto.
+@MainActor
+enum PageSnapshot {
+    private static let pathKey = "PaperclipSnapshotPath"
+    private static let sizeKey = "PaperclipSnapshotSize"
+    private static let anchorsKey = "PaperclipSnapshotAnchors"
+    private static let defaultSize = NSSize(width: 1512, height: 982)
+    /// Lo que tarda la página en armarse y traer sus datos (los plugins leen al abrir).
+    private static let loadTime: Duration = .seconds(12)
+    private static let scrollTime: Duration = .seconds(2)
+
+    static func run(config: AppConfig, to directory: URL) async {
+        let defaults = UserDefaults.standard
+        let preferences = Preferences()
+        NSApp.appearance = preferences.appearance.nsAppearance
+        let path = defaults.string(forKey: pathKey) ?? "/"
+        let size = defaults.string(forKey: sizeKey).flatMap(parseSize) ?? defaultSize
+        let anchors = (defaults.string(forKey: anchorsKey) ?? "").components(separatedBy: "|")
+        let version = await Snapshot.installedVersion()
+        var shots: [(controller: MainWindowController, anchor: String)] = []
+        var windows: [Snapshot.Window] = []
+        for (index, anchor) in anchors.enumerated() {
+            let controller = MainWindowController(
+                config: config,
+                liquidGlass: preferences.liquidGlassPage,
+                rehearsal: true
+            )
+            guard let window = controller.window else { continue }
+            Snapshot.hide(window, contentSize: size)
+            controller.setUpdateButton(Snapshot.versionButton(version), visible: true)
+            controller.load(path: path)
+            shots.append((controller, anchor))
+            windows.append(Snapshot.Window(window: window, file: "pagina-\(index + 1).png"))
+        }
+        try? await Task.sleep(for: loadTime)
+        for shot in shots where !shot.anchor.isEmpty {
+            if await !shot.controller.scrollPage(toText: shot.anchor) {
+                NSLog("Paperclip: el ensayo no encontró «%@» en la página", shot.anchor)
+            }
+        }
+        try? await Task.sleep(for: scrollTime)
+        await Snapshot.capture(windows, in: directory)
+    }
+
+    /// «1512x982» → 1512 × 982 puntos.
+    private static func parseSize(_ text: String) -> NSSize? {
+        let parts = text.lowercased().split(separator: "x").compactMap { Double($0) }
+        guard parts.count == 2, parts[0] > 0, parts[1] > 0 else { return nil }
+        return NSSize(width: parts[0], height: parts[1])
     }
 }

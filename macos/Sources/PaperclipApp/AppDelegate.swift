@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 switch kind {
                 case .settings: await SettingsSnapshot.run(config: config, to: directory)
                 case .window: await MainWindowSnapshot.run(config: config, to: directory)
+                case .page: await PageSnapshot.run(config: config, to: directory)
                 }
                 NSApp.terminate(nil)
             }

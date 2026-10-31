@@ -66,7 +66,7 @@ final class SettingsWindowController: NSWindowController {
         ))
         hosting.sceneBridgingOptions = [.toolbars]
         hosting.sizingOptions = []
-        let window = NSWindow(contentViewController: hosting)
+        let window = SnapshotableWindow(contentViewController: hosting)
         window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.title = "Ajustes"
         window.titleVisibility = .hidden
