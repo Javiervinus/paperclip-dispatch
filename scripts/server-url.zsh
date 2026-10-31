@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Imprime la dirección de Paperclip por Tailscale: la entrada de `tailscale serve` que apunta al puerto
-# de Paperclip, leído de su config.json. La usan los dos builds; la dirección no se escribe en el repo.
+# de Paperclip, leído de su config.json. La usa build.sh (la app de Pake); la dirección no se escribe en el repo.
 set -eo pipefail
 
 PAPERCLIP_CONFIG=${PAPERCLIP_CONFIG:-$HOME/.paperclip/instances/default/config.json}
