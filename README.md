@@ -172,6 +172,9 @@ macos/build.sh
     - macOS solo captura ventanas que tocan una pantalla: cada una queda con un punto adentro, en el borde
       izquierdo (`SnapshotableWindow` evita que macOS la acomode). Con la pantalla bloqueada no captura.
     - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos.
+    - `SHADOW=1` deja la sombra de la ventana también en `settings` y `window`. Para que una captura salga
+      como ventana activa (interruptores de color), tiene que ser la ventana real con el foco: macOS no
+      la dibuja activa en una copia en segundo plano.
     - `page <ruta>` captura una página de Paperclip con la app, para mostrarla: con los ajustes de la app
       (modo y apariencia), de `SIZE` puntos (por defecto 1512x982) y con la sombra de la ventana, para
       ponerla sobre un fondo. Con `ANCHORS="|En qué se fue la semana"` saca una por ancla, con la página
