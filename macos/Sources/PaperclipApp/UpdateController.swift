@@ -6,15 +6,15 @@ import AppKit
 @MainActor
 final class UpdateController {
     /// Lo que responde `paperclipai update --check --latest --json`, lo mismo que mira update.sh.
-    private struct Check: Decodable {
+    struct Check: Decodable {
         let currentVersion: String
         let targetVersion: String
         let updateAvailable: Bool
     }
 
     /// Paperclip saca versión cada una o dos semanas: con revisar cada seis horas basta.
-    private static let checkInterval: TimeInterval = 6 * 60 * 60
-    private static let checkCommand = "paperclipai update --check --latest --json"
+    static let checkInterval: TimeInterval = 6 * 60 * 60
+    static let checkCommand = "paperclipai update --check --latest --json"
     private static let releaseNotesBase = "https://github.com/paperclipai/paperclip/releases/tag/v"
     private static let errorTailLines = 12
     /// Ensayo: abrir la app con `--args -PaperclipPreviewUpdate <versión>` finge que salió esa versión, para
@@ -60,6 +60,11 @@ final class UpdateController {
         runCheck(showProgress: userInitiated, announce: userInitiated)
     }
 
+    /// Desde Ajustes: sin alertas, porque el resultado se ve ahí mismo.
+    func checkNow() {
+        runCheck(showProgress: true, announce: false)
+    }
+
     private func runCheck(showProgress: Bool, announce: Bool) {
         guard progress == nil, !checking else { return }
         checking = showProgress
@@ -94,6 +99,9 @@ final class UpdateController {
         status.latestVersion = last?.updateAvailable == true ? last?.targetVersion : nil
         status.checkingUpdate = checking
         status.updateCheckFailed = checkError != nil
+        status.updateCheckError = checkError
+        status.lastCheckedAt = lastCheckedAt
+        status.updateProgress = progress
         button.isEnabled = progress == nil && !checking
         button.tintProminence = .none
         if let progress {
@@ -128,6 +136,12 @@ final class UpdateController {
     }
 
     @objc private func buttonClicked() {
+        requestUpdate()
+    }
+
+    /// Lo mismo que el botón: con una versión nueva pide confirmación y actualiza; si no, vuelve a revisar.
+    func requestUpdate() {
+        guard progress == nil else { return }
         guard let last, last.updateAvailable else {
             runCheck(showProgress: true, announce: false)
             return
@@ -243,7 +257,7 @@ final class UpdateController {
     }
 
     /// El shell de inicio puede imprimir algo antes: se toma solo el objeto JSON.
-    private static func decode(_ output: String) -> Check? {
+    static func decode(_ output: String) -> Check? {
         guard let start = output.firstIndex(of: "{"), let end = output.lastIndex(of: "}"), start < end else {
             return nil
         }

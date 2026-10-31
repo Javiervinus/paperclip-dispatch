@@ -87,6 +87,11 @@ final class AppStatus {
     var latestVersion: String?
     var checkingUpdate = false
     var updateCheckFailed = false
+    /// Por qué falló la última revisión, para mostrarlo en Ajustes.
+    var updateCheckError: String?
+    var lastCheckedAt: Date?
+    /// El paso de update.sh mientras actualiza.
+    var updateProgress: String?
     /// Con los nombres de la API web: "granted", "denied" o "default".
     var notificationPermission = "default"
 }
