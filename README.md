@@ -131,14 +131,33 @@ macos/build.sh
     botones. Si se toca un botón en ese momento, la app vuelve a revisar y avisa que ya no estaba
     pendiente, sin cambiar nada. Si llegan más de 5 juntas, el resto va en un resumen.
   - Lo enviado y el chat vinculado se guardan en `~/Library/Application Support/<bundle id>/telegram.json`.
-- **Ajustes (Cmd+,).** Ventana nativa con:
-  - Apariencia: Sistema (por defecto, sigue a la Mac aunque cambie por horario), Claro u Oscuro.
-    `web/bridge.js` borra el tema que Paperclip guarda (`paperclip.theme`) para que la página siga a la
-    app; si se elige en el menú de Paperclip, la app lo adopta como ajuste.
-  - Avisos: de decisiones, también con la ventana al frente, número del Dock, permiso de macOS y un aviso
-    de prueba.
-  - Telegram: conectar el bot, vincular el chat, prender o apagar el envío, mensaje de prueba y quitar el bot.
-  - Abrir al iniciar sesión (`SMAppService`) y la versión de Paperclip con «Buscar actualización».
+- **Ajustes (Cmd+,)** (`SettingsWindowController.swift`, `SettingsView.swift`, `TelegramSettings.swift`).
+  Ventana de tamaño fijo, como Ajustes del Sistema: lo que no cabe se desplaza por debajo de la barra.
+  - Arriba, un selector de pestañas de Liquid Glass (la barra la arma SwiftUI con `sceneBridgingOptions`).
+    Cada pestaña tiñe la parte de arriba de la ventana con su color y el vidrio lo refleja. Al cambiar de
+    pestaña, el color y el contenido se funden en una sola animación; la ventana no cambia de tamaño.
+  - Cada pestaña empieza centrada, como las páginas de iOS 26: ícono de vidrio sobre su color, de qué se
+    trata y su estado en una cápsula de vidrio («Conectado», «Permitidos», «Al día»). Abre en la última
+    pestaña usada.
+  - **General:** el tema con miniaturas (Sistema, Claro, Oscuro) y abrir al iniciar sesión (`SMAppService`).
+    «Sistema» sigue a la Mac aunque cambie por horario; `web/bridge.js` borra el tema que guarda Paperclip
+    (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
+    adopta como ajuste.
+  - **Avisos:** de decisiones, también con la ventana al frente, número del Dock, permiso de macOS y un
+    aviso de prueba.
+  - **Telegram:** conectar el bot en dos pasos, vincular el chat con el QR (con el avión de Telegram al
+    centro, por eso va con corrección alta), y ya conectado: envío, prueba, «Explicar decisiones» y quitar
+    el bot (pide confirmación). Al vincular, la pestaña pasa sola a «Conectado».
+  - **Paperclip:** versión, «Actualizar a …» si hay una nueva (lo mismo que el botón de arriba), la
+    dirección con botón para copiarla y «Buscar ahora», que muestra el resultado y la hora ahí mismo, sin
+    alertas.
+  - Medidas, colores y tiempos comunes en `SettingsDesign`.
+  - Ensayo visual, para revisar el diseño sin abrir nada en pantalla: `macos/settings-snapshot.zsh
+    [carpeta]`. Abre una segunda copia de la app, sin ícono ni foco, que pone cada pestaña en una ventana
+    fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin vincular). El script las
+    captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal necesita permiso de
+    Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot ni abre Paperclip.
+    En las capturas los interruptores y el vidrio salen más apagados, porque la ventana no está activa.
 - **La versión de Paperclip, arriba a la derecha.** Si es la última dice «Al día · 2026.1023.0», discreto;
   con un clic vuelve a revisar. Si sale una nueva, cambia a «Actualizar a …», en el color de acento. La app
   revisa con `paperclipai update --check --latest --json` cada 6 h y desde el menú «Buscar actualización de
