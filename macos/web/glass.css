@@ -1,0 +1,89 @@
+/* Paperclip Swift: la barra lateral de Paperclip sobre Liquid Glass.
+ *
+ * La app pone un panel translúcido con Liquid Glass (NSGlassEffectView) detrás de la página, justo
+ * donde está la barra lateral (glass.js le avisa dónde queda), y alrededor pinta el mismo fondo de
+ * Paperclip. Aquí se deja sin fondo lo que va encima del panel, sin tocar Paperclip: se usan su clase
+ * semántica .primary-sidebar-surface, el atributo data-sidebar-overlay de SidebarShell y su variable
+ * --sz-safe-top. El contenido conserva su fondo, para que se lea igual que siempre.
+ *
+ * La app lee de aquí el margen del panel y su radio.
+ */
+:root {
+  /* Radio de las esquinas de la ventana en macOS 26 con barra de herramientas unificada (medido). El
+     panel usa el mismo centro: su radio es este menos su margen, como los paneles de macOS. */
+  --paperclip-app-window-radius: 26px;
+  /* Margen del panel con el borde de la ventana. */
+  --paperclip-app-sidebar-inset: 8px;
+  /* Franja de arriba reservada a los botones de la ventana: macOS los centra a 26 px y miden 14. */
+  --paperclip-app-titlebar: 40px;
+  /* Aire debajo del selector de company, ya sin el alto fijo de su fila: el mismo px-3 de la barra. */
+  --paperclip-app-sidebar-gap: 12px;
+}
+
+@media (min-width: 768px) {
+  /* Solo con la interfaz armada, no en la pantalla de inicio de sesión: la página deja de pintar el
+     fondo general y la columna de contenido lo pinta por su cuenta. */
+  html:has(.primary-sidebar-surface),
+  html:has(.primary-sidebar-surface) body,
+  [class*="pt-(--sz-safe-top)"].bg-background:has(.primary-sidebar-surface) {
+    background: transparent !important;
+  }
+
+  [class*="pt-(--sz-safe-top)"]:has(.primary-sidebar-surface) > .flex-1 > .flex-col.min-w-0 {
+    background: var(--background);
+  }
+
+  /* La barra lateral queda sin fondo y con margen, para caer dentro del panel de vidrio. Cuando está
+     asomada sobre el contenido (data-sidebar-overlay) conserva el fondo propio de Paperclip. */
+  div:not([data-sidebar-overlay]):has(> div > .primary-sidebar-surface) {
+    padding: var(--paperclip-app-sidebar-inset);
+  }
+
+  div:not([data-sidebar-overlay]) > div > .primary-sidebar-surface {
+    --sidebar-action-rest-surface: transparent;
+    background: transparent !important;
+  }
+
+  div:not([data-sidebar-overlay]):has(> div > .primary-sidebar-surface) > [class*="bg-border/50"] {
+    background: transparent !important;
+  }
+
+  /* La fila del selector de company baja y deja arriba la fila de los botones de la ventana. */
+  :root:not([data-paperclip-app-fullscreen])
+    div:not([data-sidebar-overlay])
+    > div
+    > .primary-sidebar-surface
+    > div:first-child {
+    height: auto;
+    min-height: var(--sz-60px);
+    padding-top: calc(var(--paperclip-app-titlebar) - var(--paperclip-app-sidebar-inset));
+    padding-bottom: var(--paperclip-app-sidebar-gap);
+  }
+
+  /* La app muestra la versión de Paperclip arriba a la derecha («Al día» o «Actualizar a…»): la barra
+     de la ruta le deja ese espacio. */
+  :root[data-paperclip-app-version] .flex-col.min-w-0 > div:first-child [class*="h-(--sz-60px)"] {
+    padding-right: var(--paperclip-app-version-width) !important;
+  }
+}
+
+/* Ventana angosta (Paperclip pasa a su vista móvil): toda la página baja la franja, con el fondo de
+   la página detrás de los botones, y el encabezado fijo se pega debajo de ella. */
+@media (max-width: 767px) {
+  :root:not([data-paperclip-app-fullscreen]) {
+    --sz-safe-top: var(--paperclip-app-titlebar);
+  }
+
+  :root:not([data-paperclip-app-fullscreen]) body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--paperclip-app-titlebar);
+    background: var(--background);
+    z-index: 30;
+  }
+
+  :root:not([data-paperclip-app-fullscreen]) .sticky.top-0:has(> [class*="h-(--sz-60px)"]) {
+    top: var(--paperclip-app-titlebar);
+  }
+}
