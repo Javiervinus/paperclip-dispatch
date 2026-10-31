@@ -33,6 +33,7 @@ final class Preferences {
         static let decisionNotifications = "decisionNotifications"
         static let notifyWhileLooking = "notifyWhileLooking"
         static let dockBadge = "dockBadge"
+        static let liquidGlassPage = "liquidGlassPage"
     }
 
     var appearance: Appearance {
@@ -54,7 +55,14 @@ final class Preferences {
         didSet { save(dockBadge, Key.dockBadge) }
     }
 
-    /// La app aplica los cambios aquí (tema, número del Dock).
+    /// Experimental: la barra lateral de Paperclip sobre Liquid Glass (glass.css y glass.js). Sin esto, la
+    /// página se ve tal cual, debajo de una barra de ventana normal. Apagado por defecto: depende del HTML
+    /// de Paperclip y una versión nueva lo puede romper.
+    var liquidGlassPage: Bool {
+        didSet { save(liquidGlassPage, Key.liquidGlassPage) }
+    }
+
+    /// La app aplica los cambios aquí (tema, número del Dock, vidrio).
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -65,11 +73,13 @@ final class Preferences {
             Key.decisionNotifications: true,
             Key.notifyWhileLooking: false,
             Key.dockBadge: true,
+            Key.liquidGlassPage: false,
         ])
         appearance = defaults.string(forKey: Key.appearance).flatMap(Appearance.init) ?? .system
         decisionNotifications = defaults.bool(forKey: Key.decisionNotifications)
         notifyWhileLooking = defaults.bool(forKey: Key.notifyWhileLooking)
         dockBadge = defaults.bool(forKey: Key.dockBadge)
+        liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
     }
 
     private func save(_ value: Any, _ key: String) {

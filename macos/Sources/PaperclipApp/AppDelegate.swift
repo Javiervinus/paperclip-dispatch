@@ -40,7 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Antes de crear la ventana, para que la página cargue ya con el tema elegido.
         NSApp.appearance = preferences.appearance.nsAppearance
 
-        let windowController = MainWindowController(config: config)
+        let windowController = MainWindowController(config: config, liquidGlass: preferences.liquidGlassPage)
         self.windowController = windowController
         updates = UpdateController(config: config, host: windowController, notifications: notifications, status: status)
         let api = PaperclipAPI(serverURL: config.serverURL)
@@ -108,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func applyPreferences() {
         NSApp.appearance = preferences.appearance.nsAppearance
         decisions?.applyBadge()
+        windowController?.setLiquidGlass(preferences.liquidGlassPage)
     }
 
     @objc func showSettings(_ sender: Any?) {

@@ -2,14 +2,18 @@ import Foundation
 import WebKit
 
 /// Los archivos de la página que build.sh copia en Contents/Resources, en el orden en que se inyectan:
-/// primero el CSS, después el puente con la app y el script del vidrio.
+/// primero el CSS, después el puente con la app y el script del vidrio. El puente no cambia cómo se ve la
+/// página (tema y avisos); el vidrio sí, por eso va solo si se activa (Ajustes → General → Experimental).
 @MainActor
 enum WebResources {
-    private static let scripts = ["bridge.js", "glass.js"]
-    private static let styles = ["glass.css"]
+    private static let bridge = "bridge.js"
+    private static let glassScript = "glass.js"
+    private static let glassStyle = "glass.css"
 
     /// Los scripts de cada carga de la página.
-    static func userScripts() -> [WKUserScript] {
+    static func userScripts(glass: Bool) -> [WKUserScript] {
+        let styles = glass ? [glassStyle] : []
+        let scripts = glass ? [bridge, glassScript] : [bridge]
         let sources = styles.compactMap(read).map(styleInjection) + scripts.compactMap(read)
         return sources.map {
             WKUserScript(source: $0, injectionTime: .atDocumentStart, forMainFrameOnly: true)

@@ -82,6 +82,17 @@ private struct GeneralPane: View {
                 Text("Cerrar la ventana (Cmd+W) no apaga los avisos: la app sigue revisando. Cmd+Q la cierra del todo.")
                     .settingsFootnote()
             }
+            Section {
+                Toggle(isOn: $preferences.liquidGlassPage) {
+                    Text("Liquid Glass en Paperclip")
+                    Text("La barra lateral de Paperclip sobre vidrio, como en las apps de macOS 26.")
+                }
+            } header: {
+                Text("Experimental")
+            } footer: {
+                Text("Retoca la página de Paperclip por dentro: una versión nueva de Paperclip lo puede descuadrar. Apagado, Paperclip se ve tal cual.")
+                    .settingsFootnote()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             loginItemStatus = SMAppService.mainApp.status
