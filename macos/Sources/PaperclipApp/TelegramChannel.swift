@@ -93,6 +93,8 @@ final class TelegramChannel {
     @ObservationIgnored private var sending: Set<String> = []
     @ObservationIgnored private var working: Set<String> = []
     @ObservationIgnored private var explaining: Set<String> = []
+    /// En el ensayo de Ajustes no se guarda nada.
+    @ObservationIgnored private var ephemeral = false
 
     init(resolver: DecisionResolver, explainer: DecisionExplainer, serverURL: URL) {
         self.resolver = resolver
@@ -102,6 +104,16 @@ final class TelegramChannel {
         let token = Keychain.read(Self.tokenAccount)
         hasToken = token != nil
         bot = token.map { TelegramBotAPI(token: $0) }
+    }
+
+    /// Para el ensayo de Ajustes: un canal con ese estado que no guarda nada ni habla con Telegram.
+    init(previewing state: State, hasToken: Bool, resolver: DecisionResolver, explainer: DecisionExplainer, serverURL: URL) {
+        self.resolver = resolver
+        self.explainer = explainer
+        self.serverURL = serverURL
+        self.state = state
+        self.hasToken = hasToken
+        ephemeral = true
     }
 
     var isPaired: Bool { state.chatId != nil }
@@ -730,6 +742,7 @@ final class TelegramChannel {
     }
 
     private func save() {
+        guard !ephemeral else { return }
         let url = Self.stateURL
         do {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -739,7 +752,7 @@ final class TelegramChannel {
         }
     }
 
-    private static func makePairingCode() -> String {
+    static func makePairingCode() -> String {
         let alphabet = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
         return String((0..<8).map { _ in alphabet[Int.random(in: 0..<alphabet.count)] })
     }
