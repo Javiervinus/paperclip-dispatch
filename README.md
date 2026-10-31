@@ -69,9 +69,15 @@ macos/build.sh
   segundos.
 - Variables: `APP_NAME`, `APP_ID`, `PAPERCLIP_UPDATE_SCRIPT` (por defecto el `update.sh` de
   `Personal/paperclip/scripts`) y `SIGN_IDENTITY`.
-- **La ventana tiene tres capas.** Abajo, el mismo color de fondo de Paperclip; en medio, un panel
-  translúcido con Liquid Glass (`NSGlassEffectView`) justo detrás de la barra lateral; arriba, la página
-  transparente.
+- **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
+  debajo de una barra de ventana de macOS con el título de la página y el botón de la versión: no depende
+  de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
+  (tema y avisos).
+- **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
+  Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
+  momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo, el mismo
+  color de fondo de Paperclip; en medio, un panel translúcido con Liquid Glass (`NSGlassEffectView`) justo
+  detrás de la barra lateral; arriba, la página transparente.
   - `web/glass.css` le quita el fondo a la barra lateral y fija las medidas: margen del panel, radio
     concéntrico con la ventana y la franja de los botones.
   - `web/glass.js` le avisa a la app dónde está la barra lateral, el color de fondo de Paperclip y desde
@@ -82,6 +88,8 @@ macos/build.sh
   - El arrastre de la ventana solo actúa sobre la página: los botones de la ventana reciben sus clics.
   - En pantalla completa esa barra se esconde y aparece con la barra de menús, como en Safari, y el
     panel toma el color de la ventana en vez del fondo de pantalla.
+  - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
+    `macos/snapshot.zsh window [carpeta]` (ver el ensayo de Ajustes, abajo).
 - **Decisions: avisos de macOS y número del Dock.** Los revisa la app misma cada minuto
   (`DecisionsMonitor.swift`), con la sesión de la página y la misma API que la barra lateral. No los revisa
   la página, porque macOS frena las páginas que no se ven: así sigue avisando con la ventana cerrada.
@@ -136,10 +144,12 @@ macos/build.sh
   - Arriba, un selector de pestañas de Liquid Glass (la barra la arma SwiftUI con `sceneBridgingOptions`).
     Cada pestaña tiñe la parte de arriba de la ventana con su color y el vidrio lo refleja. Al cambiar de
     pestaña, el color y el contenido se funden en una sola animación; la ventana no cambia de tamaño.
-  - Cada pestaña empieza como en Ajustes del Sistema, alineada a la izquierda con las filas de abajo: ícono
-    de vidrio sobre su color, de qué se trata y, a la derecha, su estado en una cápsula de vidrio
-    («Conectado», «Permitidos», «Al día»). Abre en la última pestaña usada.
-  - **General:** el tema con miniaturas (Sistema, Claro, Oscuro) y abrir al iniciar sesión (`SMAppService`).
+  - Las pestañas empiezan directo con su contenido: un encabezado con ícono repetiría el nombre que ya dice
+    el selector. Solo Paperclip lleva uno, con el ícono de la app, la versión y su estado, como un «Acerca
+    de». Los estados van en su fila, en una cápsula de vidrio («Permitidos», «Al día»). Abre en la última
+    pestaña usada.
+  - **General:** el tema con miniaturas (Sistema, Claro, Oscuro), abrir al iniciar sesión (`SMAppService`)
+    y, en Experimental, Liquid Glass en la página.
     «Sistema» sigue a la Mac aunque cambie por horario; `web/bridge.js` borra el tema que guarda Paperclip
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
     adopta como ajuste.
@@ -147,21 +157,23 @@ macos/build.sh
     aviso de prueba.
   - **Telegram:** conectar el bot en dos pasos, vincular el chat con el QR (con el avión de Telegram al
     centro, por eso va con corrección alta), y ya conectado: envío, prueba, «Explicar decisiones» y quitar
-    el bot (pide confirmación). Al vincular, la pestaña pasa sola a «Conectado».
+    el bot (pide confirmación). Al vincular, la pestaña pasa sola a lo de conectado.
   - **Paperclip:** versión, «Actualizar a …» si hay una nueva (lo mismo que el botón de arriba), la
     dirección con botón para copiarla y «Buscar ahora», que muestra el resultado y la hora ahí mismo, sin
     alertas.
   - Medidas, colores y tiempos comunes en `SettingsDesign`.
-  - Ensayo visual, para revisar el diseño sin abrir nada en pantalla: `macos/settings-snapshot.zsh
-    [carpeta]`. Abre una segunda copia de la app, sin ícono ni foco, que pone cada pestaña en una ventana
-    fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin vincular). El script las
-    captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal necesita permiso de
-    Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot ni abre Paperclip.
-    En las capturas los interruptores y el vidrio salen más apagados, porque la ventana no está activa.
-- **La versión de Paperclip, arriba a la derecha.** Si es la última dice «Al día · 2026.1023.0», discreto;
+  - Ensayo visual, para revisar el diseño sin abrir nada en pantalla: `macos/snapshot.zsh settings
+    [carpeta]` (`Snapshot.swift`). Abre una segunda copia de la app, sin ícono ni foco, que pone cada
+    pestaña en una ventana fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin
+    vincular). El script las captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal
+    necesita permiso de Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot
+    ni avisa. Con `window` en vez de `settings`, captura la ventana de Paperclip en sus dos modos. En las
+    capturas los interruptores y el vidrio salen más apagados, porque la ventana no está activa.
+- **La versión de Paperclip, arriba a la derecha** (en la barra de la ventana; con Liquid Glass, sobre la
+  barra de la ruta de Paperclip). Si es la última dice «Al día · 2026.1023.0», discreto;
   con un clic vuelve a revisar. Si sale una nueva, cambia a «Actualizar a …», en el color de acento. La app
   revisa con `paperclipai update --check --latest --json` cada 6 h y desde el menú «Buscar actualización de
-  Paperclip…». En la vista angosta de Paperclip (menos de 768 px) no se muestra.
+  Paperclip…». Con Liquid Glass, en la vista angosta de Paperclip (menos de 768 px) no se muestra.
   - Al apretarlo pide confirmación y corre `update.sh`, con sus pasos en el botón.
   - Nunca actualiza sola, porque reiniciar Paperclip corta lo que estén haciendo los agentes.
   - Ensayo, para verlo sin esperar una versión: con la app cerrada,
