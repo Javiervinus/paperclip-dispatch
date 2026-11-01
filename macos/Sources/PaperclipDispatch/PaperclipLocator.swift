@@ -187,7 +187,7 @@ enum PaperclipLocator {
     /// inicio, con el PATH de node y npx.
     static func openInTerminal(named name: String, title: String, command: String) {
         let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appending(path: Bundle.main.bundleIdentifier ?? "PaperclipDispatch", directoryHint: .isDirectory)
+            .appending(path: Bundle.main.bundleIdentifier ?? AppConfig.appName, directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let script = folder.appending(path: "\(name).command")
         let text = """

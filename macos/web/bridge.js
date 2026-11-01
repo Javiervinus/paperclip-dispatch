@@ -1,4 +1,4 @@
-// Paperclip Swift: puente entre la página y la app.
+// Paperclip Dispatch: puente entre la página y la app.
 //
 // - Tema: lo decide la app (Ajustes → Apariencia) y la página lo sigue por prefers-color-scheme, que es lo
 //   que hace Paperclip cuando nadie eligió tema. Si se elige en el menú de Paperclip, la app lo adopta
