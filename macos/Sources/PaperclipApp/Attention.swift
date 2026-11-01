@@ -15,15 +15,20 @@ struct Attention: Decodable, Sendable {
     static let pageLimit = 100
 
     let totalCount: Int?
+    /// El número de la burbuja de Decisions en la barra lateral de Paperclip: lo que llegó hoy o vence hoy
+    /// (con el día en UTC), aunque haya más pendiente. Es el que va en el Dock, para que los dos digan lo
+    /// mismo. Las versiones de Paperclip sin este campo usan `totalCount`.
+    let deskBadgeCount: Int?
     let items: [AttentionItem]
     /// Hay más en otra página: lo que no vino no está resuelto, solo no entró.
     let nextCursor: String?
 
-    private enum CodingKeys: String, CodingKey { case totalCount, items, nextCursor }
+    private enum CodingKeys: String, CodingKey { case totalCount, deskBadgeCount, items, nextCursor }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         totalCount = try? container.decodeIfPresent(Int.self, forKey: .totalCount)
+        deskBadgeCount = try? container.decodeIfPresent(Int.self, forKey: .deskBadgeCount)
         nextCursor = try? container.decodeIfPresent(String.self, forKey: .nextCursor)
         // Un elemento de un tipo nuevo que no se entienda no tapa a los demás.
         items = (try? container.decodeIfPresent([Lossy<AttentionItem>].self, forKey: .items))?.compactMap(\.value) ?? []

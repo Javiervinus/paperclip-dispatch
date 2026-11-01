@@ -1,7 +1,7 @@
 import AppKit
 
-/// Revisa Decisions de Paperclip cada minuto, pone el número de pendientes en el Dock y avisa con un aviso
-/// de macOS cuando llega una decisión nueva. Lo hace la app y no la página, porque macOS frena las páginas
+/// Revisa Decisions de Paperclip cada minuto, pone en el Dock el mismo número que la burbuja de Decisions de
+/// la barra lateral (`Attention.deskBadgeCount`) y avisa con un aviso de macOS cuando llega una decisión nueva. Lo hace la app y no la página, porque macOS frena las páginas
 /// que no se ven: así sigue avisando con la ventana cerrada (Cmd+W).
 ///
 /// Usa la misma API que la barra lateral de Paperclip (`GET /api/companies/{id}/attention`), con la sesión
@@ -91,7 +91,7 @@ final class DecisionsMonitor {
                     "api/companies/\(company.id)/attention",
                     query: [URLQueryItem(name: "limit", value: String(Attention.pageLimit))]
                 )
-                total += attention.totalCount ?? attention.items.count
+                total += attention.deskBadgeCount ?? attention.totalCount ?? attention.items.count
                 let previous = seen[company.id]
                 let known = Set(previous ?? [])
                 announce(attention.items.filter { !known.contains($0.id) }, in: company, firstTime: previous == nil)
