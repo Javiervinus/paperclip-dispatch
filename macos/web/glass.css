@@ -1,10 +1,12 @@
-/* Paperclip Dispatch: la barra lateral de Paperclip sobre Liquid Glass (experimental).
+/* Paperclip Dispatch: la barra lateral y el panel de propiedades de Paperclip sobre Liquid Glass
+ * (experimental).
  *
  * La app pone un panel translúcido con Liquid Glass (NSGlassEffectView) detrás de la página, justo
- * donde está la barra lateral (layout.js le avisa dónde queda), y alrededor pinta el mismo fondo de
- * Paperclip. Aquí se deja sin fondo lo que va encima del panel, sin tocar Paperclip: se usan su clase
- * semántica .primary-sidebar-surface y el atributo data-sidebar-overlay de SidebarShell. El contenido
- * conserva su fondo, para que se lea igual que siempre. Va después de layout.css.
+ * donde está cada uno (layout.js le avisa dónde quedan), y alrededor pinta el mismo fondo de Paperclip.
+ * Aquí se deja sin fondo lo que va encima de los paneles, sin tocar Paperclip: se usan su clase semántica
+ * .primary-sidebar-surface, el atributo data-sidebar-overlay de SidebarShell y los data-presentation y
+ * data-open de SidePanelFrame. El contenido conserva su fondo, para que se lea igual que siempre. Va
+ * después de layout.css.
  *
  * La app lee de aquí el margen del panel y su radio.
  */
@@ -42,5 +44,40 @@
 
   div:not([data-sidebar-overlay]):has(> div > .primary-sidebar-surface) > [class*="bg-border/50"] {
     background: transparent !important;
+  }
+
+  /* El panel de propiedades de una tarea (el SidePanelFrame al costado) también, sin el borde que lo
+     separa del contenido. El margen va adentro de su ancho, que Paperclip fija. */
+  aside:has(section[data-presentation="docked"]) {
+    --side-panel-bg: transparent;
+    background: transparent !important;
+    border-left-color: transparent !important;
+  }
+
+  aside > div:has(> section[data-presentation="docked"]) {
+    padding: var(--paperclip-app-sidebar-inset);
+  }
+
+  /* Ese panel va dentro de la columna de contenido, en una fila flex junto al <main> (a veces dentro de un
+     envoltorio con display: contents), y la columna y la fila lo taparían con su fondo. Con él, el fondo
+     lo pintan lo que está junto al panel y lo que está arriba de la fila. Lo que ya trae su propio fondo
+     (una clase bg-) lo conserva. */
+  [class*="pt-(--sz-safe-top)"]:has(.primary-sidebar-surface)
+    > .flex-1
+    > .flex-col.min-w-0:has(aside section[data-presentation="docked"]),
+  div:has(> aside section[data-presentation="docked"]) {
+    background-color: transparent;
+  }
+
+  .flex-col.min-w-0:has(aside section[data-presentation="docked"]) > :not(:has(aside), [class*="bg-"]),
+  div:has(> aside section[data-presentation="docked"]) > :not(aside, .contents, [class*="bg-"]),
+  div:has(> aside section[data-presentation="docked"]) > .contents > :not([class*="bg-"]) {
+    background-color: var(--background);
+  }
+
+  /* En la página de una tarea, la fila (streamlined-task-detail-surface) tiene su propio color. */
+  .streamlined-task-detail-surface:has(> aside section[data-presentation="docked"])
+    > :not(aside, .contents, [class*="bg-"]) {
+    background-color: var(--streamlined-task-detail-bg);
   }
 }

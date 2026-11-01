@@ -4,8 +4,9 @@
 //   versión.
 // - Si el puntero está sobre una parte vacía de esas barras: desde ahí se mueve la ventana, que no tiene
 //   barra de título. La app decide en el clic mismo, así que se avisa al mover el puntero.
-// - Para Liquid Glass: dónde está la barra lateral, para poner el panel de vidrio justo detrás (glass.css
-//   le quita el fondo), y el color de fondo de Paperclip, que la app pinta alrededor del panel.
+// - Para Liquid Glass: dónde están la barra lateral y el panel de propiedades de una tarea, para poner un
+//   panel de vidrio justo detrás de cada uno (glass.css les quita el fondo), y el color de fondo de
+//   Paperclip, que la app pinta alrededor.
 (() => {
   if (window.top !== window || window.__paperclipAppLayout) return;
   window.__paperclipAppLayout = true;
@@ -61,39 +62,47 @@
   // sobre el contenido, ese panel flota con fondo propio y el vidrio se queda en lo reservado.
   const sidebarArea = () =>
     document.querySelector(".primary-sidebar-surface")?.parentElement?.parentElement?.parentElement ?? null;
+  // El panel de propiedades de una tarea (SidePanelFrame de Paperclip, abierto y al costado): su <aside>.
+  const inspectorArea = () =>
+    document.querySelector('section[data-presentation="docked"][data-open="true"]')?.closest("aside") ?? null;
 
   let titlebar = 0;
   let lastLayout = "";
-  let observed = null;
+  let observed = [];
   let pending = 0;
+
+  // Se vigila el tamaño de los paneles, que cambian sin que cambie la ventana (al plegar la barra o
+  // arrastrar el borde del panel de propiedades).
+  const observe = (areas) => {
+    const next = areas.filter(Boolean);
+    observed.filter((area) => !next.includes(area)).forEach((area) => resizeObserver.unobserve(area));
+    next.filter((area) => !observed.includes(area)).forEach((area) => resizeObserver.observe(area));
+    observed = next;
+  };
+
+  const rectOf = (area) => {
+    const rect = area?.getBoundingClientRect();
+    return rect && rect.width > 0 && rect.height > 0
+      ? { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+      : null;
+  };
 
   const report = () => {
     pending = 0;
     titlebar = cssPixels("--paperclip-app-titlebar");
-    const area = desktop.matches ? sidebarArea() : null;
-    if (area !== observed) {
-      if (observed) resizeObserver.unobserve(observed);
-      if (area) resizeObserver.observe(area);
-      observed = area;
-    }
-    const rect = area?.getBoundingClientRect();
+    const sidebar = desktop.matches ? sidebarArea() : null;
+    const inspector = desktop.matches ? inspectorArea() : null;
+    observe([sidebar, inspector]);
     const inset = cssPixels("--paperclip-app-sidebar-inset");
     const message = {
       type: "layout",
       desktop: desktop.matches,
       background: cssColorBytes("--background"),
       topBar: cssPixels("--sz-60px"),
-      sidebar:
-        rect && rect.width > 0 && rect.height > 0
-          ? {
-              x: rect.left,
-              y: rect.top,
-              width: rect.width,
-              height: rect.height,
-              inset,
-              radius: Math.max(0, cssPixels("--paperclip-app-window-radius") - inset),
-            }
-          : null,
+      inset,
+      radius: Math.max(0, cssPixels("--paperclip-app-window-radius") - inset),
+      sidebar: rectOf(sidebar),
+      inspector: rectOf(inspector),
     };
     const key = JSON.stringify(message);
     if (key === lastLayout) return;

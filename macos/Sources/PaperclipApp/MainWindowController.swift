@@ -15,15 +15,14 @@ private final class FlippedView: NSView {
 /// solo en el Dashboard. El gesto de atrás y adelante es el de la app (`PaperclipWebView`): la página no
 /// se mueve y entra una flecha desde el borde.
 ///
-/// Con **Liquid Glass** (experimental, Ajustes → General), además, la barra lateral va sobre vidrio, en capas:
-/// 1. Un fondo del mismo color que el de Paperclip: alrededor del panel no se nota otro gris.
-/// 2. El panel de la barra lateral: material translúcido de macOS con Liquid Glass (NSGlassEffectView)
-///    encima, ubicado donde layout.js dice que está la barra lateral de Paperclip. El vidrio va recortado
-///    al panel: su sombra hacia afuera, invisible en oscuro, en claro agrisaba el margen.
+/// Con **Liquid Glass** (experimental, Ajustes → General), además, la barra lateral y el panel de propiedades
+/// de una tarea van sobre vidrio, en capas:
+/// 1. Un fondo del mismo color que el de Paperclip: alrededor de los paneles no se nota otro gris.
+/// 2. Los paneles de vidrio (`GlassPanel`), donde layout.js dice que están los de Paperclip.
 /// 3. La página, transparente donde glass.css le quita el fondo.
 @MainActor
 final class MainWindowController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate,
-    WKScriptMessageHandler
+    WKScriptMessageHandler, NSMenuItemValidation
 {
     private static let frameAutosaveName = "PaperclipMainWindow"
     private static let messageHandlerName = "paperclipApp"
@@ -52,11 +51,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private var glass: Bool
 
     private let base = NSView()
-    private let sidebarBackdrop = NSVisualEffectView()
-    private let sidebarGlass = NSGlassEffectView()
-    /// Recorta el vidrio a su borde.
-    private let sidebarClip = NSView()
-    private var sidebarRadius: CGFloat = -1
+    /// Con vidrio, detrás de la barra lateral de Paperclip y del panel de propiedades de una tarea.
+    private let sidebarPanel = GlassPanel(edge: .leading)
+    private let inspectorPanel = GlassPanel(edge: .trailing)
     private let downloads = DownloadHandler()
     private var webView: PaperclipWebView!
     /// La flecha del gesto de atrás y adelante, sobre la página.
@@ -178,25 +175,13 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         base.frame = container.bounds
         base.autoresizingMask = [.width, .height]
 
-        sidebarBackdrop.material = .sidebar
-        sidebarBackdrop.blendingMode = .behindWindow
-        sidebarBackdrop.state = .followsWindowActiveState
-        sidebarBackdrop.isHidden = true
-
-        sidebarGlass.style = .regular
-        sidebarClip.wantsLayer = true
-        sidebarClip.layer?.masksToBounds = true
-        sidebarClip.layer?.cornerCurve = .continuous
-        sidebarClip.isHidden = true
-        sidebarClip.addSubview(sidebarGlass)
-
         webView.frame = container.bounds
         webView.autoresizingMask = [.width, .height]
 
         container.addSubview(base)
-        container.addSubview(sidebarBackdrop)
-        container.addSubview(sidebarClip)
         container.addSubview(webView)
+        sidebarPanel.install(in: container, below: webView)
+        inspectorPanel.install(in: container, below: webView)
 
         let indicator = PassthroughHostingView(rootView: SwipeIndicatorView(model: swipeIndicator))
         indicator.frame = container.bounds
@@ -216,7 +201,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         webView.pageScrollsBack = false
         webView.pageScrollsForward = false
         base.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
-        setSidebarPanel(nil, radius: 0)
+        sidebarPanel.place(nil, radius: 0)
+        inspectorPanel.place(nil, radius: 0)
         topBarHeight = 0
         pageIsDesktop = true
         pointerOverDragArea = false
@@ -439,6 +425,39 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         webView.pageZoom = min(max(value, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
     }
 
+    // MARK: - Archivo e Ir
+
+    /// La dirección de la página, como texto y como enlace.
+    @objc func copyPageLink(_ sender: Any?) {
+        guard let url = pageURL else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.declareTypes([.URL, .string], owner: nil)
+        pasteboard.setString(url.absoluteString, forType: .URL)
+        pasteboard.setString(url.absoluteString, forType: .string)
+    }
+
+    @objc func openPageInBrowser(_ sender: Any?) {
+        guard let url = pageURL else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    @objc func navigateBack(_ sender: Any?) { webView.goBack() }
+    @objc func navigateForward(_ sender: Any?) { webView.goForward() }
+
+    /// El inicio de Paperclip, que lleva al Dashboard de la company.
+    @objc func goHome(_ sender: Any?) {
+        webView.load(URLRequest(url: config.serverURL))
+    }
+
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem.action {
+        case #selector(navigateBack(_:)): offlineView == nil && webView.canGoBack
+        case #selector(navigateForward(_:)): offlineView == nil && webView.canGoForward
+        case #selector(copyPageLink(_:)), #selector(openPageInBrowser(_:)): pageURL != nil
+        default: true
+        }
+    }
+
     // MARK: - Estado que la página necesita saber
 
     /// Pantalla completa (sin botones de ventana) y espacio para el botón de la versión.
@@ -501,57 +520,28 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
             pageIsDesktop = desktop
             refreshUpdateButton()
         }
-        // El panel de vidrio, solo con Liquid Glass.
-        guard glass, let sidebar = body["sidebar"] as? [String: Any],
-              let x = (sidebar["x"] as? NSNumber)?.doubleValue,
-              let y = (sidebar["y"] as? NSNumber)?.doubleValue,
-              let width = (sidebar["width"] as? NSNumber)?.doubleValue,
-              let height = (sidebar["height"] as? NSNumber)?.doubleValue
-        else {
-            setSidebarPanel(nil, radius: 0)
+        // Los paneles de vidrio, solo con Liquid Glass.
+        guard glass else {
+            sidebarPanel.place(nil, radius: 0)
+            inspectorPanel.place(nil, radius: 0)
             return
         }
-        let inset = ((sidebar["inset"] as? NSNumber)?.doubleValue ?? 0) * zoom
-        let frame = CGRect(x: x * zoom, y: y * zoom, width: width * zoom, height: height * zoom)
+        let inset = ((body["inset"] as? NSNumber)?.doubleValue ?? 0) * zoom
+        let radius = ((body["radius"] as? NSNumber)?.doubleValue ?? 0) * zoom
+        sidebarPanel.place(Self.panelFrame(body["sidebar"], zoom: zoom, inset: inset), radius: radius)
+        inspectorPanel.place(Self.panelFrame(body["inspector"], zoom: zoom, inset: inset), radius: radius)
+    }
+
+    /// Un rectángulo de layout.js, en puntos de la ventana y con el margen del panel; `nil` si no hay.
+    private static func panelFrame(_ value: Any?, zoom: CGFloat, inset: CGFloat) -> CGRect? {
+        guard let rect = value as? [String: Any],
+              let x = (rect["x"] as? NSNumber)?.doubleValue,
+              let y = (rect["y"] as? NSNumber)?.doubleValue,
+              let width = (rect["width"] as? NSNumber)?.doubleValue,
+              let height = (rect["height"] as? NSNumber)?.doubleValue
+        else { return nil }
+        return CGRect(x: x * zoom, y: y * zoom, width: width * zoom, height: height * zoom)
             .insetBy(dx: inset, dy: inset)
-        setSidebarPanel(frame, radius: ((sidebar["radius"] as? NSNumber)?.doubleValue ?? 0) * zoom)
-    }
-
-    /// Ubica el panel de la barra lateral (material translúcido + vidrio), o lo esconde con `nil`.
-    private func setSidebarPanel(_ frame: CGRect?, radius: CGFloat) {
-        guard let frame, frame.width > 0, frame.height > 0 else {
-            sidebarBackdrop.isHidden = true
-            sidebarClip.isHidden = true
-            return
-        }
-        if radius != sidebarRadius {
-            sidebarRadius = radius
-            sidebarGlass.cornerRadius = radius
-            sidebarClip.layer?.cornerRadius = radius
-            sidebarBackdrop.maskImage = Self.roundedMask(radius: radius)
-        }
-        for view in [sidebarBackdrop, sidebarClip] {
-            view.frame = frame
-            // Entre un aviso de layout.js y el siguiente, el panel sigue el alto de la ventana. Recién
-            // ahora: con tamaño cero y alto flexible, macOS agranda la ventana 10 puntos cada vez que se abre.
-            view.autoresizingMask = [.height]
-            view.isHidden = false
-        }
-        sidebarGlass.frame = sidebarClip.bounds
-        sidebarGlass.autoresizingMask = [.width, .height]
-    }
-
-    /// Máscara de esquinas redondeadas para el material translúcido, que se estira sin deformar las esquinas.
-    private static func roundedMask(radius: CGFloat) -> NSImage {
-        let edge = radius * 2 + 1
-        let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
-            NSColor.black.setFill()
-            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
-            return true
-        }
-        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-        image.resizingMode = .stretch
-        return image
     }
 
     // MARK: - Navegación
@@ -756,8 +746,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         return false
     }
 
-    /// En pantalla completa la barra de herramientas vacía se quedaría fija arriba, tapando la página: así se
-    /// esconde y aparece junto con la barra de menús, como en Safari.
+    /// Lo que se ve arriba en pantalla completa aparece con la barra de menús, al llevar el puntero arriba, en
+    /// vez de quedar fijo tapando la página.
     func window(
         _ window: NSWindow,
         willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions = []
@@ -765,16 +755,22 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         proposedOptions.union([.fullScreen, .autoHideMenuBar, .autoHideToolbar])
     }
 
-    /// Detrás de una ventana en pantalla completa solo queda el fondo de pantalla, que teñiría el panel (y
-    /// aparece y desaparece al cambiar de escritorio): ahí el material toma el fondo de la propia ventana.
+    /// En pantalla completa la barra de herramientas vacía sobra (no hay esquinas que redondear) y, al llevar
+    /// el puntero arriba, bajaba una franja más alta que la de otras apps: se esconde y queda la barra de
+    /// título normal. Detrás de la ventana solo queda el fondo de pantalla, que teñiría el panel (y aparece y
+    /// desaparece al cambiar de escritorio): ahí el material toma el fondo de la propia ventana.
     func windowWillEnterFullScreen(_ notification: Notification) {
-        sidebarBackdrop.blendingMode = .withinWindow
+        window?.toolbar?.isVisible = false
+        sidebarPanel.setBlendsWithinWindow(true)
+        inspectorPanel.setBlendsWithinWindow(true)
     }
 
     func windowDidEnterFullScreen(_ notification: Notification) { syncPageState() }
 
     func windowWillExitFullScreen(_ notification: Notification) {
-        sidebarBackdrop.blendingMode = .behindWindow
+        window?.toolbar?.isVisible = true
+        sidebarPanel.setBlendsWithinWindow(false)
+        inspectorPanel.setBlendsWithinWindow(false)
     }
 
     func windowDidExitFullScreen(_ notification: Notification) { syncPageState() }
