@@ -149,8 +149,8 @@ macos/build.sh
   actualizaciones. La barra es transparente y la ventana toma el color de fondo de la página
   (`underPageBackgroundColor` de WebKit, que se observa), así que la barra y Paperclip son una sola
   superficie, sin el tinte del fondo de pantalla. El título de la página no se muestra, pero lo usan el
-  menú Ventana, Mission Control y VoiceOver. No depende de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
-  (tema y avisos).
+  menú Ventana, Mission Control y VoiceOver. No depende de cómo esté hecho el HTML de Paperclip. Solo se
+  inyecta `web/bridge.js`, que no cambia cómo se ve (tema y avisos).
 - **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
   Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
   momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo, el mismo
@@ -276,8 +276,9 @@ macos/build.sh
       /VIN/agent-usage`.
 - **Un solo botón de actualizaciones, arriba a la derecha** (`UpdatesButton.swift`, `UpdatesPanel.swift`),
   para las dos cosas que se actualizan: esta app (Dispatch) y Paperclip (el servidor). Va en la barra de la
-  ventana; con Liquid Glass, sobre la barra de la ruta de Paperclip, y en la vista angosta (menos de
-  768 px) no se muestra.
+  ventana. Con Liquid Glass flota sobre la barra de la ruta de Paperclip y solo sale en el Dashboard, la
+  única página sin nada arriba a la derecha: en las otras ahí van botones de Paperclip o el panel de
+  propiedades de una tarea, que llega hasta arriba. En la vista angosta (menos de 768 px) no se muestra.
   - Al día dice «Paperclip 2026.1023.0 · Dispatch 0.1.0», discreto, y al pasar el mouse explica cuál es
     cuál. Con algo nuevo se pinta del color de acento y dice de quién es: «Actualizar Dispatch» (con el
     ícono de la app), «Actualizar Paperclip» (con el clip) o «2 actualizaciones». Después de actualizar la
