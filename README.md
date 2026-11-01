@@ -81,11 +81,12 @@ macos/build.sh
   `ClearDark`, `TintedLight` y `TintedDark`.
 - **Color de acento** (`macos/Assets.xcassets/AccentColor`): la tinta de Paperclip, la de su `--primary`.
   Es negro (`#171717`) en modo claro y casi blanco (`#E5E5E5`) en modo oscuro, así que los botones
-  principales, interruptores y puntos se ven como en la web, en blanco y negro. Va en el mismo `Assets.car`
+  principales y los puntos se ven como en la web, en blanco y negro. Va en el mismo `Assets.car`
   (`actool --accent-color`) y en `NSAccentColorName`. macOS lo usa cuando el acento del sistema es
   «Multicolor»; si la persona eligió otro color, manda el suyo. El color solo aparece donde dice algo: verde
-  para lo permitido o al día, naranja para lo que falta y rojo para lo que borra. Los enlaces siguen en el
-  azul de macOS.
+  para lo encendido, permitido o al día, naranja para lo que falta y rojo para lo que borra. Por eso los
+  interruptores se encienden en verde (`GreenSwitchToggleStyle`): con la tinta, en modo oscuro la pista
+  quedaba casi blanca bajo la perilla blanca y parecían bloqueados. Los enlaces siguen en el azul de macOS.
 - **Abrir al iniciar sesión** guarda la ruta de la app. Si se mueve o se renombra, al abrirla vuelve a
   registrar el ítem con la ruta nueva (`LoginItem.swift`): macOS no lo hace solo y el ítem quedaría
   apuntando a la vieja.
@@ -144,8 +145,11 @@ macos/build.sh
   apagado, «Encender Paperclip». Los errores de conexión van traducidos, porque el proceso de red de WebKit
   no usa el idioma de la app.
 - **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
-  debajo de una barra de ventana de macOS con el título de la página y el botón de actualizaciones: no
-  depende de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
+  debajo de una barra de macOS compacta (`.unifiedCompact`) con solo los semáforos y el botón de
+  actualizaciones. La barra es transparente y la ventana toma el color de fondo de la página
+  (`underPageBackgroundColor` de WebKit, que se observa), así que la barra y Paperclip son una sola
+  superficie, sin el tinte del fondo de pantalla. El título de la página no se muestra, pero lo usan el
+  menú Ventana, Mission Control y VoiceOver. No depende de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
   (tema y avisos).
 - **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
   Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
