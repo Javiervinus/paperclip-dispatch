@@ -297,18 +297,13 @@ private struct NotificationsPane: View {
         SettingsForm {
             Section {
                 LabeledContent {
-                    if status.notificationPermission == "denied" {
-                        Button("Abrir Ajustes del Sistema", action: openNotificationSettings)
-                            .buttonStyle(.glass)
-                    } else {
-                        permissionBadge
-                    }
+                    permissionControl
                 } label: {
                     Text("Permiso de macOS")
                     Text(permissionDetail)
                 }
             }
-            .animation(SettingsDesign.animation, value: status.notificationPermission)
+            .animation(SettingsDesign.animation, value: status.notificationAccess)
             Section {
                 Toggle(isOn: $preferences.decisionNotifications) {
                     Text("Avisar cuando llegue una decisión")
@@ -347,18 +342,39 @@ private struct NotificationsPane: View {
         }
     }
 
-    @ViewBuilder private var permissionBadge: some View {
-        switch status.notificationPermission {
-        case "granted": StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
-        default: StatusBadge(text: "Sin pedir", symbol: "questionmark.circle.fill", tint: .secondary)
+    /// Pedirlo si nunca se pidió; si se negó o está a medias, se arregla en Ajustes del Sistema.
+    @ViewBuilder private var permissionControl: some View {
+        switch status.notificationAccess {
+        case let access? where access.isComplete:
+            StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
+        case let access? where access.permission == .granted:
+            Button("Ajustar", action: NotificationAccess.openSystemSettings)
+                .buttonStyle(.glass)
+        case let access? where access.permission == .denied:
+            Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
+                .buttonStyle(.glass)
+        case .some:
+            Button("Permitir avisos", action: actions.requestNotifications)
+                .buttonStyle(.glassProminent)
+        case nil:
+            EmptyView()
         }
     }
 
     private var permissionDetail: String {
-        switch status.notificationPermission {
-        case "granted": "Te avisa cuando una decisión espera por ti, aunque estés en otra app."
-        case "denied": "macOS tiene bloqueados los avisos de esta app."
-        default: "La app lo pide al abrirse; sin él no puede avisarte."
+        guard let access = status.notificationAccess else { return "" }
+        switch access.permission {
+        case .notDetermined:
+            return "Todavía no se pidió; sin él la app no puede avisarte."
+        case .denied:
+            return "macOS tiene bloqueados los avisos de esta app."
+        case .granted:
+            switch (access.banners, access.badge) {
+            case (true, true): return "Te avisa cuando una decisión espera por ti, aunque estés en otra app."
+            case (false, true): return "Sin banner: los avisos solo se ven en el Centro de notificaciones."
+            case (true, false): return "Sin el número en el Dock: macOS no deja mostrar los pendientes."
+            case (false, false): return "Sin banner ni número en el Dock: los avisos solo se ven en el Centro de notificaciones."
+            }
         }
     }
 
@@ -368,13 +384,6 @@ private struct NotificationsPane: View {
         Task {
             try? await Task.sleep(for: SettingsDesign.feedbackDuration)
             testSent = false
-        }
-    }
-
-    private func openNotificationSettings() {
-        let id = Bundle.main.bundleIdentifier ?? ""
-        if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(id)") {
-            NSWorkspace.shared.open(url)
         }
     }
 }

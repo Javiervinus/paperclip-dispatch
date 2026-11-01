@@ -41,6 +41,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private static let offlineRetryInterval: Duration = .seconds(3)
     /// WebKit corta la carga cuando la respuesta se vuelve descarga (WebKitErrorFrameLoadInterruptedByPolicyChange).
     private static let interruptedByPolicyCode = 102
+    /// Lo que se le ofrece a una hoja para que diga cuánto mide.
+    static let unboundedSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
+    /// Separación de lo que flota abajo (el recordatorio de avisos) con el borde de la ventana.
+    private static let bottomOverlayMargin: CGFloat = 26
 
     private let config: AppConfig
     private static let toolbarIdentifier = "PaperclipMainToolbar"
@@ -65,6 +69,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private var versionItem: NSToolbarItem?
     private var updateButtonWanted = false
     private var titleObservation: NSKeyValueObservation?
+    private var urlObservation: NSKeyValueObservation?
+    /// Lo que flota abajo y al centro, sobre la página (el recordatorio de avisos).
+    private var bottomOverlay: NSView?
     /// Alto de las barras de arriba de Paperclip (--sz-60px), en puntos; lo informa glass.js.
     private var topBarHeight: CGFloat = 0
     /// En la vista angosta de Paperclip (móvil) la barra de arriba es otra y no hay lugar para el botón.
@@ -78,6 +85,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     /// Se eligió el tema en el menú de Paperclip (true = oscuro): la app lo adopta como ajuste.
     var onThemeChosen: ((_ dark: Bool) -> Void)?
+    /// La página cambió de dirección (también sin recargar, como al iniciar sesión).
+    var onPageChange: (() -> Void)?
     /// «Cambiar dirección…» cuando Paperclip no responde.
     var onChangeServer: (() -> Void)? {
         get { offline.onChangeServer }
@@ -104,6 +113,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         watchDragClicks()
         titleObservation = webView.observe(\.title) { [weak self] _, _ in
             MainActor.assumeIsolated { self?.updateTitle() }
+        }
+        urlObservation = webView.observe(\.url) { [weak self] _, _ in
+            MainActor.assumeIsolated { self?.onPageChange?() }
         }
         webView.load(URLRequest(url: initialURL ?? config.serverURL))
     }
@@ -398,6 +410,49 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         return await alert.beginSheetModal(for: window)
     }
 
+    /// Si se puede mostrar algo encima sin interrumpir: se está mirando la ventana, sin hojas abiertas y con
+    /// Paperclip cargado.
+    var canPresentOverlay: Bool {
+        isInFront && window?.attachedSheet == nil && offlineView == nil
+    }
+
+    /// Una vista de SwiftUI como hoja de la ventana (las sugerencias). Se cierra con `dismissSheet`.
+    func presentSheet(_ content: some View) -> NSWindow? {
+        guard let window else { return nil }
+        // Del tamaño de lo de adentro, medido una vez: con `.preferredContentSize` la hoja y AppKit se
+        // reacomodan sin fin y la app se cae.
+        let hosting = NSHostingController(rootView: content)
+        hosting.sizingOptions = []
+        let sheet = NSWindow(contentViewController: hosting)
+        sheet.setContentSize(hosting.sizeThatFits(in: Self.unboundedSize))
+        window.beginSheet(sheet)
+        return sheet
+    }
+
+    func dismissSheet(_ sheet: NSWindow) {
+        window?.endSheet(sheet)
+    }
+
+    /// Pone una vista abajo y al centro, sobre la página. Ocupa solo lo que mide, así que el resto de la
+    /// página sigue recibiendo los clics. Con la vista sin conexión se esconde. `padding`: el aire que la
+    /// vista deja alrededor para su sombra, que no cuenta para la separación con el borde.
+    func setBottomOverlay(_ content: some View, padding: CGFloat = 0) {
+        bottomOverlay?.removeFromSuperview()
+        guard let container = window?.contentView else { return }
+        let hosting = NSHostingView(rootView: content)
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(hosting, positioned: .above, relativeTo: offlineView ?? webView)
+        NSLayoutConstraint.activate([
+            hosting.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            hosting.bottomAnchor.constraint(
+                equalTo: container.bottomAnchor,
+                constant: -Self.bottomOverlayMargin + padding
+            ),
+        ])
+        hosting.isHidden = offlineView != nil
+        bottomOverlay = hosting
+    }
+
     // MARK: - Visualización
 
     @objc func zoomIn(_ sender: Any?) { setPageZoom(webView.pageZoom + Self.zoomStep) }
@@ -589,6 +644,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             hosting.autoresizingMask = [.width, .height]
             container.addSubview(hosting, positioned: .above, relativeTo: webView)
             offlineView = hosting
+            bottomOverlay?.isHidden = true
             // Sin página cargada, WKWebView se queda con los atajos (⌘, ⌘R…) y no se los pasa al menú.
             window?.makeFirstResponder(nil)
             webView.isHidden = true
@@ -636,6 +692,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         guard let offlineView else { return }
         offlineView.removeFromSuperview()
         self.offlineView = nil
+        bottomOverlay?.isHidden = false
         failedURL = nil
         webView.isHidden = false
         window?.makeFirstResponder(webView)

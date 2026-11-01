@@ -1,14 +1,21 @@
 import AppKit
 import SwiftUI
 
-/// La bienvenida: encuentra el Paperclip de esta Mac o ayuda a encenderlo, instalarlo o escribir la
-/// dirección de otro. Se abre la primera vez y desde Ajustes → Paperclip → Cambiar….
+/// La bienvenida. La primera vez son tres pasos: qué es la app, conectar con Paperclip (lo encuentra en esta
+/// Mac o ayuda a encenderlo, instalarlo o escribir la dirección de otro) y los avisos, que se piden después
+/// de mostrar para qué sirven. Desde Ajustes → Paperclip → Cambiar… es solo el de conectar.
 @MainActor
 @Observable
 final class WelcomeModel {
     enum Mode: Equatable {
         case firstRun
         case change(current: URL)
+    }
+
+    enum Phase: Int, Comparable {
+        case intro, connect, notifications
+
+        static func < (lhs: Phase, rhs: Phase) -> Bool { lhs.rawValue < rhs.rawValue }
     }
 
     enum Step: Equatable {
@@ -31,6 +38,9 @@ final class WelcomeModel {
     private static let watchInterval: Duration = .seconds(2)
 
     let mode: Mode
+    private(set) var phase: Phase
+    /// Si el último cambio de paso fue hacia adelante, para que la animación vaya hacia ese lado.
+    private(set) var movingForward = true
     var step: Step
     var address = ""
     var addressError: String?
@@ -39,15 +49,31 @@ final class WelcomeModel {
     var startError: String?
     var node: NodeStatus = .checking
     var installerOpened = false
+    /// El Paperclip elegido la primera vez: se conecta al terminar, después de los avisos.
+    private(set) var chosenURL: URL?
+    private(set) var notificationAccess: NotificationAccess?
+    private(set) var requestingNotifications = false
+    /// Viene encendido: sin la app abierta no llegan avisos.
+    var launchAtLogin = true
 
     @ObservationIgnored var onConnect: ((URL) -> Void)?
     @ObservationIgnored var onCancel: (() -> Void)?
     @ObservationIgnored private var watch: Task<Void, Never>?
+    /// En el ensayo los avisos quedan como se pidieron, sin leer los de verdad.
+    @ObservationIgnored private let fixedNotifications: Bool
 
-    /// `step` deja la bienvenida en ese paso sin buscar nada (para el ensayo).
-    init(mode: Mode, step: Step = .searching) {
+    /// `step`, `phase` y `notificationAccess` dejan la bienvenida ahí sin buscar nada (para el ensayo).
+    init(mode: Mode, step: Step = .searching, phase: Phase? = nil, notificationAccess: NotificationAccess? = nil) {
         self.mode = mode
         self.step = step
+        self.phase = phase ?? (mode == .firstRun ? .intro : .connect)
+        self.notificationAccess = notificationAccess
+        fixedNotifications = notificationAccess != nil
+    }
+
+    func go(to phase: Phase) {
+        movingForward = phase > self.phase
+        self.phase = phase
     }
 
     func start() {
@@ -124,9 +150,34 @@ final class WelcomeModel {
         }
     }
 
+    /// La primera vez sigue a los avisos; al cambiar de Paperclip, conecta ya.
     func connect(_ url: URL) {
         stopWatching()
-        onConnect?(url)
+        guard mode == .firstRun else {
+            onConnect?(url)
+            return
+        }
+        chosenURL = url
+        go(to: .notifications)
+    }
+
+    /// «Abrir Paperclip», al final de la primera vez.
+    func finish() {
+        guard let chosenURL else { return }
+        if launchAtLogin, LoginItem.status != .enabled { try? LoginItem.setEnabled(true) }
+        onConnect?(chosenURL)
+    }
+
+    func refreshNotifications() async {
+        guard !fixedNotifications else { return }
+        notificationAccess = await NotificationAccess.current()
+    }
+
+    /// macOS muestra su aviso de permiso; si ya se negó, no vuelve a preguntar (queda Ajustes del Sistema).
+    func requestNotifications() async {
+        requestingNotifications = true
+        notificationAccess = await NotificationAccess.request()
+        requestingNotifications = false
     }
 
     func cancel() {
@@ -158,9 +209,19 @@ final class WelcomeModel {
 
 /// Medidas de la bienvenida.
 enum WelcomeDesign {
-    static let windowSize = CGSize(width: 600, height: 540)
-    /// Lo que se veía del ícono del sistema a 96 puntos, sin su margen.
-    static let iconSize: CGFloat = 78
+    static let windowSize = CGSize(width: 640, height: 580)
+    /// El ícono grande del primer paso y el chico de los otros.
+    static let iconSize: CGFloat = 104
+    static let smallIconSize: CGFloat = 64
+    static let iconTop: CGFloat = 62
+    static let smallIconTop: CGFloat = 58
+    /// Aire a los lados del contenido y, para los botones de abajo, desde el borde.
+    static let contentInset: CGFloat = 56
+    static let footerInset: CGFloat = 28
+    static let cardWidth: CGFloat = 500
+    static let featuresWidth: CGFloat = 440
+    /// Lo que se desliza el contenido al pasar de un paso a otro.
+    static let phaseShift: CGFloat = 24
     static let animation: Animation = .smooth(duration: 0.4)
     static let glow = Color.indigo
 }
@@ -168,24 +229,54 @@ enum WelcomeDesign {
 struct WelcomeView: View {
     @Bindable var model: WelcomeModel
     @FocusState private var addressFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: .top) {
             PaneGlow(color: WelcomeDesign.glow)
             VStack(spacing: 0) {
-                header
-                VStack(spacing: 12) { content }
+                phaseContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, 28)
-                    .id(stepKey)
-                    .transition(.blurReplace)
+                    .id(model.phase)
+                    .transition(phaseTransition)
                 footer
             }
-            .padding(.horizontal, 44)
-            .padding(.top, 52)
-            .padding(.bottom, 24)
         }
         .frame(width: WelcomeDesign.windowSize.width, height: WelcomeDesign.windowSize.height)
+        .animation(WelcomeDesign.animation, value: model.phase)
+    }
+
+    @ViewBuilder private var phaseContent: some View {
+        switch model.phase {
+        case .intro: WelcomeIntroStep(appName: AppConfig.appName)
+        case .connect: connectStep
+        case .notifications: WelcomeNotificationsStep(model: model)
+        }
+    }
+
+    /// Se desliza un poco hacia el lado al que se avanza; con «Reducir movimiento», solo se funde.
+    private var phaseTransition: AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let shift = model.movingForward ? WelcomeDesign.phaseShift : -WelcomeDesign.phaseShift
+        return .asymmetric(
+            insertion: .offset(x: shift).combined(with: .opacity),
+            removal: .offset(x: -shift).combined(with: .opacity)
+        )
+    }
+
+    private var connectStep: some View {
+        VStack(spacing: 0) {
+            header
+            VStack(spacing: 12) {
+                content
+                links
+            }
+            .frame(maxWidth: WelcomeDesign.cardWidth)
+            .padding(.top, 24)
+            .id(stepKey)
+            .transition(.blurReplace)
+        }
+        .padding(.horizontal, WelcomeDesign.contentInset)
         .animation(WelcomeDesign.animation, value: stepKey)
     }
 
@@ -202,30 +293,53 @@ struct WelcomeView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 10) {
-            AppIconImage(size: WelcomeDesign.iconSize)
+        VStack(spacing: 0) {
+            AppIconImage(size: WelcomeDesign.smallIconSize)
+                .padding(.top, WelcomeDesign.smallIconTop)
             Text(title)
-                .font(.largeTitle)
+                .font(.title)
                 .bold()
+                .padding(.top, 14)
             Text(subtitle)
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
         }
     }
 
     private var title: String {
         switch model.mode {
-        case .firstRun: "Te damos la bienvenida"
+        case .firstRun: "Conecta tu Paperclip"
         case .change: "Cambiar de Paperclip"
         }
     }
 
     private var subtitle: String {
         switch model.mode {
-        case .firstRun: "Tu Paperclip en una ventana de Mac, con avisos cuando una decisión espera por ti."
-        case let .change(current): "Ahora usas \(current.host() ?? current.absoluteString). Elige a cuál conectarte."
+        case .firstRun:
+            if case .found = model.step { return "Dispatch abre el Paperclip que ya usas. Encontré este en tu Mac:" }
+            return "Dispatch abre el Paperclip que ya usas."
+        case let .change(current): return "Ahora usas \(current.host() ?? current.absoluteString). Elige a cuál conectarte."
+        }
+    }
+
+    /// Debajo del recuadro: lo que no es el paso principal.
+    @ViewBuilder private var links: some View {
+        switch model.step {
+        case .found, .stopped:
+            Button("Usar otra dirección…", action: model.showAddress).buttonStyle(.link)
+        case .notFound:
+            HStack(spacing: 18) {
+                Button("Buscar de nuevo", action: model.searchAgain).buttonStyle(.link)
+                if let url = PaperclipLocator.websiteURL {
+                    Link("¿Qué es Paperclip?", destination: url)
+                }
+            }
+            .font(.callout)
+        case .searching, .address, .install:
+            EmptyView()
         }
     }
 
@@ -240,7 +354,7 @@ struct WelcomeView: View {
                 ProgressView().controlSize(.small)
             }
             .foregroundStyle(.secondary)
-            .padding(.top, 24)
+            .padding(.top, 12)
         case let .found(local, health):
             WelcomeCard {
                 StatusLine(color: .green, title: "Paperclip está encendido en esta Mac") {
@@ -287,9 +401,6 @@ struct WelcomeView: View {
                     ) {
                         Button("Escribir dirección…", action: model.showAddress).buttonStyle(.glass)
                     }
-                }
-                if let url = PaperclipLocator.websiteURL {
-                    Link("¿Qué es Paperclip?", destination: url).font(.callout)
                 }
             }
         case .address:
@@ -386,11 +497,13 @@ struct WelcomeView: View {
 
     // MARK: Botones
 
+    /// A la izquierda lo de volver (o, en el primer paso, que no es oficial), al centro en qué paso va y a
+    /// la derecha lo que sigue. A 28 puntos del borde, como en las apps de Apple.
     private var footer: some View {
         HStack(spacing: 10) {
-            secondaryButton
-            Spacer()
-            if case .change = model.mode {
+            leadingItem
+            Spacer(minLength: 0)
+            if case .change = model.mode, model.step == .address || isInstalling {
                 Button("Cancelar", action: model.cancel)
                     .keyboardShortcut(.cancelAction)
                     .buttonStyle(.glass)
@@ -401,25 +514,62 @@ struct WelcomeView: View {
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
         }
+        .overlay {
+            if model.mode == .firstRun {
+                StepDots(current: model.phase.rawValue, count: 3)
+            }
+        }
+        .padding(.horizontal, WelcomeDesign.footerInset)
+        .padding(.bottom, WelcomeDesign.footerInset)
     }
 
-    @ViewBuilder private var secondaryButton: some View {
-        switch model.step {
-        case .found, .stopped:
-            Button("Usar otra dirección…", action: model.showAddress).buttonStyle(.glass).controlSize(.large)
-        case .notFound:
-            Button("Buscar de nuevo", action: model.searchAgain).buttonStyle(.glass).controlSize(.large)
-        case .address, .install:
-            Button("Atrás", action: model.searchAgain).buttonStyle(.glass).controlSize(.large)
-        case .searching:
-            EmptyView()
+    private var isInstalling: Bool {
+        if case .install = model.step { return true }
+        return false
+    }
+
+    @ViewBuilder private var leadingItem: some View {
+        switch model.phase {
+        case .intro:
+            Text("Hecho para Paperclip · no es una app oficial")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        case .notifications:
+            Button("Atrás") { model.go(to: .connect) }.buttonStyle(.glass).controlSize(.large)
+        case .connect:
+            switch model.step {
+            case .address, .install:
+                Button("Atrás", action: model.searchAgain).buttonStyle(.glass).controlSize(.large)
+            case .searching, .found, .stopped, .notFound:
+                if model.mode == .firstRun {
+                    Button("Atrás") { model.go(to: .intro) }.buttonStyle(.glass).controlSize(.large)
+                } else {
+                    Button("Cancelar", action: model.cancel)
+                        .keyboardShortcut(.cancelAction)
+                        .buttonStyle(.glass)
+                        .controlSize(.large)
+                }
+            }
         }
     }
 
     @ViewBuilder private var primaryButton: some View {
+        switch model.phase {
+        case .intro:
+            Button("Empezar") { model.go(to: .connect) }
+        case .notifications:
+            Button("Abrir Paperclip", action: model.finish)
+        case .connect:
+            connectButton
+        }
+    }
+
+    /// La primera vez el paso de conectar sigue a los avisos («Continuar»); al cambiar, conecta ya.
+    @ViewBuilder private var connectButton: some View {
+        let firstRun = model.mode == .firstRun
         switch model.step {
         case let .found(local, _):
-            Button("Abrir Paperclip") { model.connect(local.url) }
+            Button(firstRun ? "Continuar" : "Abrir Paperclip") { model.connect(local.url) }
         case let .stopped(local):
             Button("Encender Paperclip") { model.startPaperclip(local) }
                 .disabled(model.starting)
@@ -428,7 +578,7 @@ struct WelcomeView: View {
                 if model.checkingAddress {
                     ProgressView().controlSize(.small)
                 } else {
-                    Text("Conectar")
+                    Text(firstRun ? "Continuar" : "Conectar")
                 }
             }
             .disabled(model.address.isEmpty || model.checkingAddress)
@@ -442,10 +592,29 @@ struct WelcomeView: View {
     }
 }
 
+/// En qué paso va la primera vez: un punto por paso, el actual más largo y del color de acento.
+private struct StepDots: View {
+    let current: Int
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<count, id: \.self) { index in
+                Capsule()
+                    .fill(index == current ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary))
+                    .frame(width: index == current ? 20 : 7, height: 7)
+            }
+        }
+        .animation(WelcomeDesign.animation, value: current)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Paso \(current + 1) de \(count)")
+    }
+}
+
 // MARK: - Piezas
 
 /// Un recuadro como las secciones de Ajustes.
-private struct WelcomeCard<Content: View>: View {
+struct WelcomeCard<Content: View>: View {
     var spacing: CGFloat = 8
     @ViewBuilder let content: Content
 

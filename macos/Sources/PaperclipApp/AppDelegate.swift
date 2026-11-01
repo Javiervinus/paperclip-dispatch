@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updatesButton: UpdatesButton?
     private var decisions: DecisionsMonitor?
     private var telegram: TelegramChannel?
+    private var tips: TipCenter?
+    private var nudge: NotificationNudge?
     private var settingsWindow: SettingsWindowController?
     private var welcome: WelcomeWindowController?
     private var appearanceObservation: NSKeyValueObservation?
@@ -95,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         decisions.onAttention = { [weak telegram] companyId, items, complete in
             telegram?.update(companyId: companyId, items: items, complete: complete)
         }
+        connectGuidance(window: windowController, decisions: decisions, telegram: telegram)
 
         preferences.onChange = { [weak self] in self?.applyPreferences() }
         windowController.onThemeChosen = { [weak self] dark in
@@ -116,6 +119,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onPermissionChange = { [weak self] permission in
             self?.status.notificationPermission = permission
         }
+        notifications.onAccessChange = { [weak self] access in
+            self?.status.notificationAccess = access
+            self?.nudge?.update(access)
+        }
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -127,6 +134,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updates.start()
         telegram.start()
         decisions.start()
+    }
+
+    /// Las sugerencias (como conectar Telegram) y el recordatorio de avisos: esperan a que se esté usando
+    /// Paperclip con la sesión iniciada y nunca salen a la vez.
+    private func connectGuidance(window: MainWindowController, decisions: DecisionsMonitor, telegram: TelegramChannel) {
+        let tips = TipCenter(host: window) { [weak telegram] tip in
+            switch tip {
+            case .telegram: telegram.map { !$0.hasToken } ?? false
+            }
+        }
+        let nudge = NotificationNudge(preferences: preferences, notifications: notifications) { [weak window] in
+            window?.canPresentOverlay ?? false
+        }
+        self.tips = tips
+        self.nudge = nudge
+        window.setBottomOverlay(NotificationNudgeView(model: nudge), padding: NotificationNudgeView.shadowRoom)
+        tips.onAction = { [weak self] tip in
+            switch tip {
+            case .telegram: self?.openSettings(at: .telegram)
+            }
+        }
+        tips.onClose = { [weak nudge] in nudge?.sheetClosed() }
+        decisions.onSignedIn = { [weak tips, weak nudge] in
+            tips?.signedIn()
+            nudge?.signedIn()
+        }
+        // Al iniciar sesión la página cambia de dirección: se revisa ya, sin esperar la vuelta del minuto.
+        window.onPageChange = { [weak decisions] in
+            if decisions?.signedOut == true { decisions?.refresh() }
+        }
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
@@ -202,9 +239,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.appearance = preferences.appearance.nsAppearance
         decisions?.applyBadge()
         windowController?.setLiquidGlass(preferences.liquidGlassPage)
+        nudge?.preferencesChanged()
     }
 
     @objc func showSettings(_ sender: Any?) {
+        openSettings(at: nil)
+    }
+
+    /// `pane`: abre Ajustes en esa pestaña (p. ej., Telegram desde su sugerencia); sin ella, en la última.
+    private func openSettings(at pane: SettingsPane?) {
         guard let config, let telegram else { return }
         if settingsWindow == nil {
             settingsWindow = SettingsWindowController(
@@ -215,6 +258,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     checkForUpdate: { [weak self] in self?.updates?.checkNow() },
                     installUpdate: { [weak self] in self?.updates?.requestUpdate() },
                     sendTestNotification: { [weak self] in self?.sendTestNotification() },
+                    requestNotifications: { [weak self] in
+                        Task { _ = await self?.notifications.request() }
+                    },
                     changeServer: { [weak self] in self?.changeServer() },
                     serverURL: config.serverURL,
                     isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL),
@@ -222,7 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             )
         }
-        settingsWindow?.show()
+        settingsWindow?.show(pane: pane)
     }
 
     private func sendTestNotification() {

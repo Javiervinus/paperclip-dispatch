@@ -21,6 +21,11 @@ final class DecisionsMonitor {
     /// Lo pendiente de una company en cada revisión que salió bien. `complete` es falso si no entró todo
     /// en una página: lo que falta no está resuelto.
     var onAttention: ((_ companyId: String, _ items: [AttentionItem], _ complete: Bool) -> Void)?
+    /// Cada revisión que salió bien: hay sesión iniciada en Paperclip. Lo usan las sugerencias y el
+    /// recordatorio de avisos, que esperan a que se esté usando Paperclip de verdad.
+    var onSignedIn: (() -> Void)?
+    /// La última revisión no tenía sesión: la página está en la pantalla de inicio.
+    private(set) var signedOut = false
 
     private let api: PaperclipAPI
     private let preferences: Preferences
@@ -98,9 +103,12 @@ final class DecisionsMonitor {
             }
             UserDefaults.standard.set(seen, forKey: Self.seenKey)
             pendingCount = total
+            signedOut = false
+            onSignedIn?()
         } catch PaperclipAPI.APIError.signedOut {
             // Sin sesión (pantalla de inicio) no hay número; se vuelve a intentar en la próxima vuelta.
             pendingCount = 0
+            signedOut = true
         } catch {
             // Sin red o con Paperclip reiniciándose: queda lo último que se supo.
         }

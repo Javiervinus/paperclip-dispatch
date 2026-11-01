@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// Una ventana que los ensayos pueden dejar casi entera fuera de la pantalla y más alta que ella. Por
 /// defecto macOS la acomoda: deja asomar unos 40 puntos y la achica al alto de la pantalla.
@@ -122,7 +123,8 @@ enum Snapshot {
 }
 
 /// Ensayo de la bienvenida (`macos/snapshot.zsh welcome`): cada paso, en claro y en oscuro, con datos de
-/// muestra (no busca ni enciende nada), y la ventana de Paperclip cuando no responde.
+/// muestra (no busca, no enciende ni pide nada), la sugerencia de Telegram y la ventana de Paperclip cuando
+/// no responde.
 @MainActor
 enum WelcomeSnapshot {
     private static let offlineContentSize = NSSize(width: 960, height: 620)
@@ -138,34 +140,46 @@ enum WelcomeSnapshot {
             hasService: true
         )
         let health = PaperclipHealth(status: "ok", deploymentMode: "local_trusted", version: version)
+        func connect(_ step: WelcomeModel.Step) -> WelcomeModel {
+            WelcomeModel(mode: .firstRun, step: step, phase: .connect)
+        }
+        func notifications(_ access: NotificationAccess) -> WelcomeModel {
+            WelcomeModel(mode: .firstRun, step: .found(local, health), phase: .notifications, notificationAccess: access)
+        }
         let cases: [(file: String, make: () -> WelcomeModel)] = [
-            ("encontrado", { WelcomeModel(mode: .firstRun, step: .found(local, health)) }),
-            ("apagado", { WelcomeModel(mode: .firstRun, step: .stopped(local)) }),
-            ("no-encontrado", { WelcomeModel(mode: .firstRun, step: .notFound) }),
+            ("inicio", { WelcomeModel(mode: .firstRun, step: .found(local, health)) }),
+            ("encontrado", { connect(.found(local, health)) }),
+            ("apagado", { connect(.stopped(local)) }),
+            ("no-encontrado", { connect(.notFound) }),
             ("instalar", {
-                let model = WelcomeModel(mode: .firstRun, step: .install)
+                let model = connect(.install)
                 model.node = .ready("v24.11.1")
                 return model
             }),
             ("instalar-sin-node", {
-                let model = WelcomeModel(mode: .firstRun, step: .install)
+                let model = connect(.install)
                 model.node = .missing
                 return model
             }),
             ("direccion", {
-                let model = WelcomeModel(mode: .firstRun, step: .address)
+                let model = connect(.address)
                 model.address = "192.168.1.20:3100"
                 return model
             }),
             ("direccion-error", {
-                let model = WelcomeModel(mode: .firstRun, step: .address)
+                let model = connect(.address)
                 model.address = "192.168.1.20:3100"
                 model.addressError = PaperclipLocator.ProbeError.unreachable.message
                 return model
             }),
+            ("avisos", { notifications(NotificationAccess(permission: .notDetermined, banners: false, badge: false)) }),
+            ("avisos-permitidos", { notifications(NotificationAccess(permission: .granted, banners: true, badge: true)) }),
+            ("avisos-a-medias", { notifications(NotificationAccess(permission: .granted, banners: false, badge: true)) }),
+            ("avisos-apagados", { notifications(NotificationAccess(permission: .denied, banners: false, badge: false)) }),
             ("cambiar", { WelcomeModel(mode: .change(current: local.url), step: .found(local, health)) }),
         ]
         var controllers: [NSWindowController] = []
+        var tipWindows: [NSWindow] = []
         var windows: [Snapshot.Window] = []
         for (name, appearance) in [("claro", NSAppearance.Name.aqua), ("oscuro", .darkAqua)] {
             for item in cases {
@@ -175,6 +189,13 @@ enum WelcomeSnapshot {
                 Snapshot.hide(window)
                 controllers.append(controller)
                 windows.append(Snapshot.Window(window: window, file: "\(item.file)-\(name).png"))
+            }
+            for tip in Tip.allCases {
+                let sheet = tipWindow(tip)
+                sheet.appearance = NSAppearance(named: appearance)
+                Snapshot.hide(sheet)
+                tipWindows.append(sheet)
+                windows.append(Snapshot.Window(window: sheet, file: "sugerencia-\(tip.rawValue)-\(name).png"))
             }
             let offline = MainWindowController(
                 config: AppConfig(serverURL: Snapshot.placeholderServerURL),
@@ -190,12 +211,26 @@ enum WelcomeSnapshot {
         }
         try? await Task.sleep(for: settleTime)
         await Snapshot.capture(windows, in: directory)
+        withExtendedLifetime(tipWindows) {}
+    }
+
+    /// La hoja de una sugerencia en una ventana suelta, sin barra, como se ve sobre la de Paperclip.
+    private static func tipWindow(_ tip: Tip) -> NSWindow {
+        let hosting = NSHostingController(rootView: TipSheetView(tip: tip, onAction: {}, onDismiss: {}))
+        hosting.sizingOptions = []
+        let window = SnapshotableWindow(contentViewController: hosting)
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.setContentSize(hosting.sizeThatFits(in: MainWindowController.unboundedSize))
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isReleasedWhenClosed = false
+        return window
     }
 }
 
 /// Ensayo de la ventana de Paperclip (`macos/snapshot.zsh window`): el modo normal y el de Liquid Glass, al
 /// abrir y al cambiar de uno a otro con la página ya cargada, que es lo que hace el ajuste. Lleva un botón
-/// de versión de muestra.
+/// de versión de muestra y, en dos, el recordatorio de avisos.
 @MainActor
 enum MainWindowSnapshot {
     private static let contentSize = NSSize(width: 1280, height: 800)
@@ -217,16 +252,20 @@ enum MainWindowSnapshot {
     )
 
     static func run(config: AppConfig, to directory: URL) async {
-        let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates)] = [
-            ("normal", false, false, .upToDate),
-            ("vidrio", true, false, .upToDate),
-            ("normal-a-vidrio", false, true, .upToDate),
-            ("vidrio-a-normal", true, true, .upToDate),
-            ("dispatch-normal", false, false, .dispatch),
-            ("dispatch-vidrio", true, false, .dispatch),
-            ("dos-vidrio", true, false, .both),
-            ("novedades-vidrio", true, false, .whatsNew),
+        let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates, nudge: NotificationNudge.Problem?)] = [
+            ("normal", false, false, .upToDate, nil),
+            ("vidrio", true, false, .upToDate, nil),
+            ("normal-a-vidrio", false, true, .upToDate, nil),
+            ("vidrio-a-normal", true, true, .upToDate, nil),
+            ("dispatch-normal", false, false, .dispatch, nil),
+            ("dispatch-vidrio", true, false, .dispatch, nil),
+            ("dos-vidrio", true, false, .both, nil),
+            ("novedades-vidrio", true, false, .whatsNew, nil),
+            ("avisos-apagados-normal", false, false, .upToDate, .off),
+            ("avisos-a-medias-vidrio", true, false, .upToDate, .noBanners),
         ]
+        let preferences = Preferences()
+        let notifications = NotificationBridge()
         let paperclip = await Snapshot.installedVersion()?.currentVersion
         var controllers: [(controller: MainWindowController, switches: Bool, glass: Bool)] = []
         var buttons: [UpdatesButton] = []
@@ -247,6 +286,10 @@ enum MainWindowSnapshot {
             case .whatsNew: app = AppUpdater(previewing: .idle, whatsNew: sampleRelease)
             }
             buttons.append(UpdatesButton(app: app, status: status, host: controller, checkPaperclip: {}, updatePaperclip: {}))
+            if let problem = item.nudge {
+                let nudge = NotificationNudge(previewing: problem, preferences: preferences, notifications: notifications)
+                controller.setBottomOverlay(NotificationNudgeView(model: nudge), padding: NotificationNudgeView.shadowRoom)
+            }
             Snapshot.hide(window, contentSize: contentSize)
             controllers.append((controller, item.switches, item.startsWithGlass))
             windows.append(Snapshot.Window(window: window, file: "\(item.file).png"))

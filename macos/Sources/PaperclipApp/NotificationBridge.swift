@@ -1,24 +1,34 @@
 import Foundation
 import UserNotifications
 
-/// Avisos de macOS con UNUserNotificationCenter: el permiso se pide como corresponde la primera vez,
-/// y el clic abre lo que avisó.
+/// Avisos de macOS con UNUserNotificationCenter: el clic abre lo que avisó. El permiso no se pide al abrir:
+/// lo pide la bienvenida, después de mostrar para qué sirve, o la persona desde Ajustes o el recordatorio.
 @MainActor
 final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     /// Permiso con los nombres de la API web: "granted", "denied" o "default".
     private(set) var permission = "default"
+    private(set) var access: NotificationAccess?
     var onClick: ((_ href: String?) -> Void)?
     var onPermissionChange: ((_ permission: String) -> Void)?
+    /// También cuando cambian los banners o el número del Dock en Ajustes del Sistema.
+    var onAccessChange: ((NotificationAccess) -> Void)?
 
     private let center = UNUserNotificationCenter.current()
 
     func start() {
         center.delegate = self
-        Task { await updatePermission(requestIfNeeded: true) }
+        refresh()
     }
 
     func refresh() {
-        Task { await updatePermission(requestIfNeeded: false) }
+        Task { update(await NotificationAccess.current()) }
+    }
+
+    /// Pide el permiso (si nunca se pidió) y avisa cómo quedó.
+    func request() async -> NotificationAccess {
+        let access = await NotificationAccess.request()
+        update(access)
+        return access
     }
 
     /// `tag` reemplaza el aviso anterior con la misma etiqueta.
@@ -32,18 +42,14 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
     }
 
-    private func updatePermission(requestIfNeeded: Bool) async {
-        if requestIfNeeded, await center.notificationSettings().authorizationStatus == .notDetermined {
-            _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+    private func update(_ access: NotificationAccess) {
+        if access != self.access {
+            self.access = access
+            onAccessChange?(access)
         }
-        let value = switch await center.notificationSettings().authorizationStatus {
-        case .authorized, .provisional, .ephemeral: "granted"
-        case .denied: "denied"
-        default: "default"
-        }
-        guard value != permission else { return }
-        permission = value
-        onPermissionChange?(value)
+        guard access.webPermission != permission else { return }
+        permission = access.webPermission
+        onPermissionChange?(permission)
     }
 
     nonisolated func userNotificationCenter(

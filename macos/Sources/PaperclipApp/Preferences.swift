@@ -106,4 +106,6 @@ final class AppStatus {
     var updatesUnavailable: String?
     /// Con los nombres de la API web: "granted", "denied" o "default".
     var notificationPermission = "default"
+    /// El permiso y si macOS deja los banners y el número del Dock. `nil` hasta que se sabe.
+    var notificationAccess: NotificationAccess?
 }
