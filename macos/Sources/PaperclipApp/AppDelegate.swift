@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         NSApp.mainMenu = MainMenu.build(appName: AppConfig.appName)
+        LoginItem.followMove()
         // Antes de crear la ventana, para que la página cargue ya con el tema elegido.
         NSApp.appearance = preferences.appearance.nsAppearance
         if let config = AppConfig.load() {

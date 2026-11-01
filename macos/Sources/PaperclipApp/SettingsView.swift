@@ -46,7 +46,7 @@ struct SettingsPaneView: View {
 private struct GeneralPane: View {
     @Bindable var preferences: Preferences
 
-    @State private var loginItemStatus = SMAppService.mainApp.status
+    @State private var loginItemStatus = LoginItem.status
     @State private var loginItemError: String?
 
     var body: some View {
@@ -90,7 +90,7 @@ private struct GeneralPane: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            loginItemStatus = SMAppService.mainApp.status
+            loginItemStatus = LoginItem.status
         }
     }
 
@@ -99,16 +99,12 @@ private struct GeneralPane: View {
             loginItemStatus == .enabled || loginItemStatus == .requiresApproval
         } set: { enabled in
             do {
-                if enabled {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
-                }
+                try LoginItem.setEnabled(enabled)
                 loginItemError = nil
             } catch {
                 loginItemError = error.localizedDescription
             }
-            loginItemStatus = SMAppService.mainApp.status
+            loginItemStatus = LoginItem.status
         }
     }
 }
