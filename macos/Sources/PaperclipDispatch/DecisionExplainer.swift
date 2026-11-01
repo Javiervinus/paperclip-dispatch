@@ -92,6 +92,8 @@ struct DecisionExplainer {
 
     /// Lo que tarda una explicación normal es unos 10 s; más que esto es que algo se trabó.
     private static let timeout: TimeInterval = 120
+    /// Para leer el PATH y listar modelos, que no deberían tardar.
+    private static let shellTimeout: TimeInterval = 30
     private static let descriptionLimit = 1500
     private static let summaryLimit = 3000
     private static let commentLimit = 700
@@ -206,7 +208,7 @@ struct DecisionExplainer {
         }
         var uses: [String: Int] = [:]
         let companies: [PaperclipCompany] = (try? await api.get("api/companies")) ?? []
-        for company in companies where company.status == "active" {
+        for company in PaperclipCompany.watched(companies) {
             let agents: [Lossy<Agent>] = (try? await api.get("api/companies/\(company.id)/agents")) ?? []
             for type in agents.compactMap(\.value?.adapterType) { uses[type, default: 0] += 1 }
         }
@@ -257,13 +259,13 @@ struct DecisionExplainer {
 
     private func runListing(_ command: String) async -> String {
         let path = await userPath()
-        return await Shell.run(["-c", "export PATH=\"$1\"; \(command)", "list", path], timeout: 30).output
+        return await Shell.run(["-c", "export PATH=\"$1\"; \(command)", "list", path], timeout: Self.shellTimeout).output
     }
 
     private func userPath() async -> String {
         if let path = Self.userPath { return path }
         // Interactivo, para que lea `.zshrc`. Lo que imprima de más queda fuera: solo cuenta la línea marcada.
-        let result = await Shell.run(["-i", "-c", "print -r -- \"PAPERCLIP_PATH=$PATH\""], timeout: 30)
+        let result = await Shell.run(["-i", "-c", "print -r -- \"PAPERCLIP_PATH=$PATH\""], timeout: Self.shellTimeout)
         let marker = "PAPERCLIP_PATH="
         let line = result.output.split(separator: "\n").last { $0.hasPrefix(marker) }
         let path = line.map { String($0.dropFirst(marker.count)) } ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
@@ -272,8 +274,8 @@ struct DecisionExplainer {
     }
 
     /// Corre el comando en una carpeta vacía (para que no lea las instrucciones de ningún proyecto), con el
-    /// PATH de la terminal. `$1` es la carpeta, `$2` el archivo con el texto, `$3` donde deja la respuesta y
-    /// `$5` el modelo. Van como argumentos y no dentro del comando, para que ningún texto se ejecute.
+    /// PATH de la terminal. `$1` es la carpeta, `$2` el archivo con el texto, `$3` donde deja la respuesta,
+    /// `$4` el PATH y `$5` el modelo. Van como argumentos y no dentro del comando, para que ningún texto se ejecute.
     private func run(_ prompt: String, command: String, model: String?) async throws -> String {
         let folder = FileManager.default.temporaryDirectory
             .appending(path: "paperclip-explain-\(UUID().uuidString)", directoryHint: .isDirectory)
