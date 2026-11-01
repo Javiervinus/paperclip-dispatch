@@ -177,6 +177,9 @@ macos/build.sh
     ventana. El panel de propiedades está dentro de la columna de contenido: ahí el fondo pasa a lo que
     está junto a él.
   - `web/layout.js` le avisa a la app dónde están los paneles y el color de fondo de Paperclip.
+  - Maximizado, Paperclip pone el panel de propiedades encima del contenido: ahí conserva su fondo.
+  - Los menús, ventanas emergentes y listas desplegables de Paperclip quedan translúcidos y esmerilados
+    (`backdrop-filter`). El vidrio de la app va detrás de toda la página y no puede ponerse encima.
   - En pantalla completa los paneles toman el color de la ventana en vez del fondo de pantalla.
   - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
     `macos/snapshot.zsh window [carpeta]` (ver el ensayo de Ajustes, abajo).
