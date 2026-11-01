@@ -42,7 +42,7 @@ enum WebResources {
         """
         (() => {
           const style = document.createElement("style");
-          style.dataset.paperclipApp = "";
+          style.dataset.paperclipDispatch = "";
           style.textContent = \(jsonLiteral(css));
           const parent = document.head ?? document.documentElement;
           if (parent) parent.appendChild(style);

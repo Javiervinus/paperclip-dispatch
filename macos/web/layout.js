@@ -8,9 +8,9 @@
 //   panel de vidrio justo detrás de cada uno (glass.css les quita el fondo), y el color de fondo de
 //   Paperclip, que la app pinta alrededor.
 (() => {
-  if (window.top !== window || window.__paperclipAppLayout) return;
-  window.__paperclipAppLayout = true;
-  const handler = window.webkit?.messageHandlers?.paperclipApp;
+  if (window.top !== window || window.__paperclipDispatchLayout) return;
+  window.__paperclipDispatchLayout = true;
+  const handler = window.webkit?.messageHandlers?.paperclipDispatch;
   if (!handler) return;
 
   const post = (message) => handler.postMessage(message);
@@ -98,18 +98,18 @@
 
   const report = () => {
     pending = 0;
-    titlebar = cssPixels("--paperclip-app-titlebar");
+    titlebar = cssPixels("--paperclip-dispatch-titlebar");
     const sidebar = desktop.matches ? sidebarArea() : null;
     const inspector = desktop.matches ? inspectorArea() : null;
     observe([sidebar, inspector]);
-    const inset = cssPixels("--paperclip-app-sidebar-inset");
+    const inset = cssPixels("--paperclip-dispatch-sidebar-inset");
     const message = {
       type: "layout",
       desktop: desktop.matches,
       background: cssColorBytes("--background"),
       topBar: cssPixels("--sz-60px"),
       inset,
-      radius: Math.max(0, cssPixels("--paperclip-app-window-radius") - inset),
+      radius: Math.max(0, cssPixels("--paperclip-dispatch-window-radius") - inset),
       sidebar: rectOf(sidebar),
       inspector: rectOf(inspector),
     };

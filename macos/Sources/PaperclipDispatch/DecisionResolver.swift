@@ -105,7 +105,7 @@ struct DecisionResolver {
             // La misma clave si se toca dos veces: Paperclip la aplica una sola vez.
             try await api.post(
                 "api/decisions/\(decisionId)/decide",
-                ["optionId": optionId, "idempotencyKey": "paperclip-app:\(decisionId):\(optionId)"]
+                ["optionId": optionId, "idempotencyKey": "paperclip-dispatch:\(decisionId):\(optionId)"]
             )
         }
     }

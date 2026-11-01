@@ -8,7 +8,7 @@
 //   de la página y no el gesto de atrás y adelante de la app (PaperclipWebView), como con el de WebKit.
 (() => {
   if (window.top !== window || window.__paperclipNative) return;
-  const handler = window.webkit?.messageHandlers?.paperclipApp;
+  const handler = window.webkit?.messageHandlers?.paperclipDispatch;
   if (!handler) return;
 
   const post = (message) => handler.postMessage(message);

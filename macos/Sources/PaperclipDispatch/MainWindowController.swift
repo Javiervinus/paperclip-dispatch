@@ -25,7 +25,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     WKScriptMessageHandler, NSMenuItemValidation
 {
     private static let frameAutosaveName = "PaperclipMainWindow"
-    private static let messageHandlerName = "paperclipApp"
+    private static let messageHandlerName = "paperclipDispatch"
     private static let defaultContentSize = NSSize(width: 1440, height: 900)
     private static let minimumContentSize = NSSize(width: 520, height: 420)
     private static let zoomRange: ClosedRange<CGFloat> = 0.5...2
@@ -213,7 +213,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     }
 
     /// El botón de la versión flota sobre la página, a la derecha de la barra de la ruta de Paperclip, que le
-    /// deja el espacio (layout.css, data-paperclip-app-version).
+    /// deja el espacio (layout.css, data-paperclip-dispatch-version).
     private func placeUpdateButton() {
         updateButtonCenterY = nil
         guard let updateButton, let container = window?.contentView else { return }
@@ -468,9 +468,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         evaluate("""
             (() => {
               const root = document.documentElement;
-              root.toggleAttribute("data-paperclip-app-fullscreen", \(fullscreen));
-              root.toggleAttribute("data-paperclip-app-version", \(updateWidth != nil));
-              root.style.setProperty("--paperclip-app-version-width", "\(Int(((updateWidth ?? 0) / zoom).rounded()))px");
+              root.toggleAttribute("data-paperclip-dispatch-fullscreen", \(fullscreen));
+              root.toggleAttribute("data-paperclip-dispatch-version", \(updateWidth != nil));
+              root.style.setProperty("--paperclip-dispatch-version-width", "\(Int(((updateWidth ?? 0) / zoom).rounded()))px");
             })();
             """)
     }

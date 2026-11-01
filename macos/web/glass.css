@@ -13,9 +13,9 @@
 :root {
   /* Radio de las esquinas de la ventana en macOS 26 con barra de herramientas unificada (medido). El
      panel usa el mismo centro: su radio es este menos su margen, como los paneles de macOS. */
-  --paperclip-app-window-radius: 26px;
+  --paperclip-dispatch-window-radius: 26px;
   /* Margen del panel con el borde de la ventana. */
-  --paperclip-app-sidebar-inset: 8px;
+  --paperclip-dispatch-sidebar-inset: 8px;
 }
 
 @media (min-width: 768px) {
@@ -34,7 +34,7 @@
   /* La barra lateral queda sin fondo y con margen, para caer dentro del panel de vidrio. Cuando está
      asomada sobre el contenido (data-sidebar-overlay) conserva el fondo propio de Paperclip. */
   div:not([data-sidebar-overlay]):has(> div > .primary-sidebar-surface) {
-    padding: var(--paperclip-app-sidebar-inset);
+    padding: var(--paperclip-dispatch-sidebar-inset);
   }
 
   div:not([data-sidebar-overlay]) > div > .primary-sidebar-surface {
@@ -57,7 +57,7 @@
   }
 
   aside:not(.fixed) > div:has(> section[data-presentation="docked"][data-maximized="false"]) {
-    padding: var(--paperclip-app-sidebar-inset);
+    padding: var(--paperclip-dispatch-sidebar-inset);
   }
 
   /* Ese panel va dentro de la columna de contenido, en una fila flex junto al <main> (a veces dentro de un
