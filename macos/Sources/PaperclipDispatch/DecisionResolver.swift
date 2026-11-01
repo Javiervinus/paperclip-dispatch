@@ -13,6 +13,56 @@ enum DecisionAction: Codable, Hashable, Sendable {
     case requestRevision(approvalId: String)
     /// Decisión con opciones.
     case decide(decisionId: String, optionId: String)
+    /// Tarea trabada: despertar al agente que la tiene («Nudge»), en esa tarea.
+    case wakeAgent(WakeTarget, agentName: String?)
+}
+
+/// Cómo terminó un despertar pedido con el botón.
+enum WakeOutcome: Equatable, Sendable {
+    /// Paperclip lo aceptó: hay una corrida del agente en la tarea.
+    case accepted
+    /// Paperclip lo saltó porque la tarea ya tiene una corrida en marcha (no hace falta despertarlo).
+    case alreadyRunning(message: String?)
+    /// Paperclip lo saltó por otro motivo. `message` es lo que dijo (en inglés), si dijo algo.
+    case skipped(message: String?)
+    /// La tarea ya no está a nombre de ese agente o ya se cerró: no se despertó a nadie.
+    case notStuck
+    /// No se pudo pedir (red, permisos, Paperclip lo rechazó).
+    case failed(String)
+
+    /// Si el botón sigue teniendo sentido: Paperclip no despertó al agente y la tarea sigue con él.
+    var allowsRetry: Bool {
+        switch self {
+        case .skipped, .failed: true
+        case .accepted, .alreadyRunning, .notStuck: false
+        }
+    }
+}
+
+/// Lo que se dice en el botón y después de apretarlo, igual en la Mac y en Telegram.
+enum WakeText {
+    static func button(_ agentName: String?) -> String {
+        agentName.map { "Despertar a \($0)" } ?? "Despertar al agente"
+    }
+
+    /// Título y texto del aviso después de apretar el botón.
+    static func result(_ outcome: WakeOutcome, target: WakeTarget, agentName: String?) -> (title: String, body: String) {
+        let agent = agentName ?? "El agente"
+        let task = target.issueIdentifier ?? "la tarea"
+        func said(_ message: String?) -> String { message.map { " Paperclip dijo: «\($0)»" } ?? "" }
+        return switch outcome {
+        case .accepted:
+            ("Paperclip aceptó el despertar", "\(agent) va a trabajar en \(task).")
+        case let .alreadyRunning(message):
+            ("Paperclip saltó el despertar", "\(task) ya tiene una corrida en marcha." + said(message))
+        case let .skipped(message):
+            ("Paperclip saltó el despertar", "\(agent) sigue sin trabajar en \(task)." + said(message))
+        case .notStuck:
+            ("No hizo falta despertar", "\(task) ya no está a nombre de \(agentName ?? "ese agente") o ya se cerró.")
+        case let .failed(error):
+            ("No se pudo despertar a \(agentName ?? "el agente")", error)
+        }
+    }
 }
 
 /// Un botón: lo que dice y lo que hace.
@@ -44,6 +94,11 @@ struct DecisionResolver {
 
     func prompt(for item: AttentionItem) async -> DecisionPrompt {
         var prompt = DecisionPrompt(question: item.detail?.promptExcerpt)
+        // Paperclip no la deja resolver desde fuera, pero propone despertar al agente que la tiene.
+        if let target = item.wakeTarget {
+            prompt.choices = [Self.wakeChoice(target, agentName: await agentName(target.agentId))]
+            return prompt
+        }
         guard item.inlineResolvable, let subjectId = item.subject?.id else { return prompt }
         do {
             switch item.sourceKind {
@@ -107,7 +162,65 @@ struct DecisionResolver {
                 "api/decisions/\(decisionId)/decide",
                 ["optionId": optionId, "idempotencyKey": "paperclip-dispatch:\(decisionId):\(optionId)"]
             )
+        case let .wakeAgent(target, agentName):
+            // La Mac y Telegram llaman a `wake`, que dice cómo terminó; aquí solo cuenta si se aceptó.
+            let outcome = await wake(target)
+            guard outcome == .accepted else {
+                throw WakeError(message: WakeText.result(outcome, target: target, agentName: agentName).body)
+            }
         }
+    }
+
+    static func wakeChoice(_ target: WakeTarget, agentName: String?) -> DecisionChoice {
+        DecisionChoice(label: WakeText.button(agentName), action: .wakeAgent(target, agentName: agentName), asks: nil)
+    }
+
+    /// Despierta al agente en la tarea, como la acción «Nudge» que propone Paperclip: con la API oficial y a
+    /// nombre del usuario, igual que los botones de la web que vuelven a despertar a un agente. Solo cuando lo
+    /// pide la persona (un botón); nunca solo ni para reintentar. Antes mira que la tarea siga a nombre del
+    /// agente: un aviso viejo no despierta a nadie en una tarea que ya se resolvió.
+    func wake(_ target: WakeTarget) async -> WakeOutcome {
+        do {
+            let issue: IssueSummary = try await api.get("api/issues/\(target.issueId)")
+            guard issue.assigneeAgentId == target.agentId, !["done", "cancelled"].contains(issue.status ?? "")
+            else { return .notStuck }
+            let response: WakeResponse = try await api.post(
+                "api/agents/\(target.agentId)/wakeup",
+                [
+                    "source": "on_demand",
+                    "triggerDetail": "manual",
+                    "reason": "blocked_task_nudge",
+                    "payload": ["issueId": target.issueId],
+                ],
+                returning: WakeResponse.self
+            )
+            // Con una corrida, Paperclip devuelve la corrida (con `id`); si no, `status: skipped` y el motivo.
+            if response.status != "skipped", response.id != nil { return .accepted }
+            return response.reason == "issue_execution_deferred"
+                ? .alreadyRunning(message: response.message)
+                : .skipped(message: response.message)
+        } catch PaperclipAPI.APIError.signedOut {
+            return .failed(
+                "Paperclip no lo permitió: la app no tiene la sesión iniciada o tu usuario no puede despertar a este agente."
+            )
+        } catch PaperclipAPI.APIError.http(404, _) {
+            return .notStuck
+        } catch let PaperclipAPI.APIError.http(status, message) {
+            return .failed("Paperclip respondió \(status)\(message.map { ": \($0)" } ?? ".")")
+        } catch {
+            return .failed(error.localizedDescription)
+        }
+    }
+
+    /// El nombre del agente, para el botón. `nil` si no se pudo leer.
+    func agentName(_ agentId: String) async -> String? {
+        let agent: AgentSummary? = try? await api.get("api/agents/\(agentId)")
+        return agent?.name.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    struct WakeError: LocalizedError {
+        let message: String
+        var errorDescription: String? { message }
     }
 
     /// Si sigue en Decisions. `nil` si no se pudo saber (sin red, o la lista no vino entera).
@@ -237,5 +350,33 @@ struct DecisionResolver {
     private struct DecisionOption: Decodable {
         let id: String
         let label: String
+    }
+
+    /// La corrida (con `id`) o, si no despertó, `status: skipped` con el motivo. Se lee a la defensiva: la
+    /// corrida trae muchos más campos, y uno con otra forma no tiene que hacer pasar un despertar por error.
+    private struct WakeResponse: Decodable {
+        let id: String?
+        let status: String?
+        let reason: String?
+        let message: String?
+
+        private enum CodingKeys: String, CodingKey { case id, status, reason, message }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try? container.decodeIfPresent(String.self, forKey: .id)
+            status = try? container.decodeIfPresent(String.self, forKey: .status)
+            reason = try? container.decodeIfPresent(String.self, forKey: .reason)
+            message = try? container.decodeIfPresent(String.self, forKey: .message)
+        }
+    }
+
+    private struct AgentSummary: Decodable {
+        let name: String?
+    }
+
+    private struct IssueSummary: Decodable {
+        let status: String?
+        let assigneeAgentId: String?
     }
 }

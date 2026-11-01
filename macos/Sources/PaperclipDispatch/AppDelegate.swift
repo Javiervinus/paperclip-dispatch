@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case .page: await PageSnapshot.run(config: config, to: directory)
                 case .welcome: await WelcomeSnapshot.run(to: directory)
                 case .about: await AboutSnapshot.run(to: directory)
+                case .notifications: await NotificationsSnapshot.run(to: directory)
                 }
                 NSApp.terminate(nil)
             }
@@ -116,6 +117,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         notifications.onClick = { [weak windowController] href in
             windowController?.openNotification(href: href)
+        }
+        notifications.onWake = { [weak decisions] id, wake, href in
+            decisions?.wake(wake, notificationId: id, href: href)
         }
         notifications.onPermissionChange = { [weak self] permission in
             self?.status.notificationPermission = permission
