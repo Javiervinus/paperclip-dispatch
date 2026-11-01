@@ -188,8 +188,10 @@ macos/build.sh
     de». Los estados van en su fila, en una cápsula de vidrio («Permitidos», «Al día»). Abre en la última
     pestaña usada.
   - **General:** el tema con miniaturas (Sistema, Claro, Oscuro), abrir al iniciar sesión (`SMAppService`),
-    **Versiones de esta app** (la versión, «Buscar ahora» o «Reiniciar», las novedades en GitHub y
-    «Descargar versiones nuevas solas») y, en Experimental, Liquid Glass en la página.
+    **Actualizaciones** de la app (la versión de Dispatch, «Buscar ahora» o «Reiniciar», las novedades en
+    GitHub y «Descargar versiones nuevas solas») y, en Experimental, Liquid Glass en la página. En la
+    interfaz la app se llama «Dispatch» a secas: «Paperclip» es siempre el servidor. La ventana mide lo
+    justo para que General quepa entera.
     «Sistema» sigue a la Mac aunque cambie por horario; `web/bridge.js` borra el tema que guarda Paperclip
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
     adopta como ajuste.
@@ -248,8 +250,9 @@ macos/build.sh
     botón es «Descargar y reiniciar».
   - Las novedades salen en el panel, en el idioma de la app: el appcast las trae en inglés y en español
     (`<description xml:lang>`) y Sparkle elige. Se muestran 5 como mucho; el resto, en GitHub.
-  - Un build sin `UPDATE_FEED_URL` no busca versiones (Ajustes dice «Esta copia no busca versiones
-    nuevas»). Así se arma hoy, hasta publicar el repo.
+  - Un build sin `UPDATE_FEED_URL` no busca versiones: Ajustes dice «armada en esta Mac: no busca
+    versiones nuevas» y no muestra «Buscar ahora» ni el interruptor. Así se arma hoy, hasta publicar el
+    repo.
   - Sparkle verifica cada descarga con una firma EdDSA. La llave pública va en `release.env`
     (`UPDATE_PUBLIC_KEY`); la privada, solo en el llavero de esta Mac (`generate_keys --account
     paperclip-dispatch`, en `macos/.build/artifacts/sparkle/Sparkle/bin`). Sin ella no se pueden publicar
