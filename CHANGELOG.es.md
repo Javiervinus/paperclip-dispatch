@@ -18,6 +18,10 @@ manda aquí.
   preguntas, las tareas sugeridas, las casillas, las revisiones por ítem y las decisiones con campos llegan
   en un solo mensaje que se va actualizando. A Paperclip no le llega nada hasta el botón final, así que el
   agente despierta una sola vez.
+- **Te enteras de las tareas que un agente te asigna.** Un aviso en la Mac y un mensaje en Telegram dicen
+  qué tarea es, quién te la asignó, su proyecto y cómo empieza; responde al mensaje para comentar en la
+  tarea. Cuando se cierra o se reasigna, el mensaje lo dice. Las que te asignas tú no avisan, y se apaga en
+  Ajustes → Avisos.
 
 ### Arreglado
 

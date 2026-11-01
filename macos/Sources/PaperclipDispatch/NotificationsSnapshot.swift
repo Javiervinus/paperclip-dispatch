@@ -80,7 +80,7 @@ enum NotificationsSnapshot {
         let skipped = WakeOutcome.skipped(message: skippedMessage)
         let alreadyRunning = WakeOutcome.alreadyRunning(message: deferredMessage)
         let failed = WakeOutcome.failed(failure)
-        let cases: [(file: String, view: AnyView)] = [
+        var cases: [(file: String, view: AnyView)] = [
             ("mac-agent", AnyView(MacScene(notices: [mac(agentItem, wake: button)]))),
             ("mac-person", AnyView(MacScene(notices: [mac(personItem, wake: nil)]))),
             ("mac-accepted", AnyView(MacScene(notices: [macResult(accepted)]))),
@@ -99,6 +99,7 @@ enum NotificationsSnapshot {
                 message(chiefItem, agentName: chief.name),
             ]))),
         ]
+        cases += assignedTaskCases(channel: channel)
         var windows: [Snapshot.Window] = []
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
@@ -172,14 +173,14 @@ enum NotificationsSnapshot {
 // MARK: - Aviso de la Mac
 
 /// Un aviso de macOS con el mouse encima (así se ve su botón), sobre un fondo de escritorio.
-private struct MacNoticePreview {
+struct MacNoticePreview {
     let title: String
     let body: String
     /// El botón del aviso, si lo tiene.
     let action: String?
 }
 
-private struct MacScene: View {
+struct MacScene: View {
     let notices: [MacNoticePreview]
     @Environment(\.colorScheme) private var colorScheme
 
@@ -242,14 +243,14 @@ private struct MacNoticeView: View {
 // MARK: - Mensaje de Telegram
 
 /// Un mensaje del bot: su HTML (el mismo que se manda) y sus botones, por fila.
-private struct TelegramMessagePreview {
+struct TelegramMessagePreview {
     let html: String
     let buttons: [[String]]
     /// Una respuesta del bot al mensaje de arriba.
     var isReply = false
 }
 
-private struct TelegramScene: View {
+struct TelegramScene: View {
     let messages: [TelegramMessagePreview]
     @Environment(\.colorScheme) private var colorScheme
 

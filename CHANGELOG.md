@@ -16,6 +16,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
 - **Answer Paperclip’s multi-step cards from Telegram.** Forms with several questions, suggested tasks,
   checklists, item-by-item reviews and decisions with fields come as one message that updates as you go.
   Nothing reaches Paperclip until the final button, so the agent wakes up only once.
+- **You hear about the tasks an agent assigns you.** A Mac notification and a Telegram message say which
+  task, who assigned it, its project and how it starts; reply to the message to comment on the task. When
+  it’s closed or reassigned, the message says so. The ones you assign yourself don’t notify, and Settings →
+  Notifications can turn it off.
 
 ### Fixed
 

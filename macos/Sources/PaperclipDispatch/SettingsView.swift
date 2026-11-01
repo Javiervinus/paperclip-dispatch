@@ -314,11 +314,15 @@ private struct NotificationsPane: View {
                     Text("Notify me when a decision arrives")
                     Text("Questions and approvals from agents, their failures, and budget alerts.")
                 }
+                Toggle(isOn: $preferences.taskNotifications) {
+                    Text("Notify me when an agent assigns me a task")
+                    Text("On this Mac and in Telegram. Not the ones you assign yourself.")
+                }
                 Toggle(isOn: $preferences.notifyWhileLooking) {
                     Text("Notify me even while I’m looking at Paperclip")
                     Text("With the window in front, the sidebar already shows them.")
                 }
-                .disabled(!preferences.decisionNotifications)
+                .disabled(!preferences.decisionNotifications && !preferences.taskNotifications)
                 Toggle(isOn: $preferences.dockBadge) {
                     Text("Pending count in the Dock")
                     Text("Everything waiting in Decisions, not just today’s.")
