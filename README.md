@@ -13,6 +13,7 @@ notifications, a Dock badge and answers from Telegram.**
 [Build from source](#build-from-source) ·
 [Español](README.es.md)
 
+[![Build](https://github.com/Javiervinus/paperclip-dispatch/actions/workflows/build.yml/badge.svg)](https://github.com/Javiervinus/paperclip-dispatch/actions/workflows/build.yml)
 [![Latest release](https://img.shields.io/github/v/release/Javiervinus/paperclip-dispatch?label=release)](https://github.com/Javiervinus/paperclip-dispatch/releases/latest)
 ![macOS 26 Tahoe](https://img.shields.io/badge/macOS-26%20Tahoe-black)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -252,8 +253,10 @@ folder with `python3 -m http.server 8765 --bind 127.0.0.1`. An already built cop
 ## Contributing
 
 Issues and pull requests are welcome. For bugs, include the app version and your Paperclip version (both are
-in Settings). Keep changes focused, build with `macos/build.sh`, and check the windows you
-touched with `macos/snapshot.zsh`. User-facing changes get a line in both changelogs under `## Unreleased`.
+in Settings). Keep changes focused, build with `macos/build.sh`, and check the windows you touched with
+`macos/snapshot.zsh`. Every pull request is built automatically on GitHub Actions
+([`build.yml`](.github/workflows/build.yml)), so you'll see there whether it compiles. User-facing changes get
+a line in both changelogs under `## Unreleased`.
 
 ## Acknowledgements
 

@@ -13,6 +13,7 @@ avisos de decisiones, número en el Dock y respuestas desde Telegram.**
 [Compilar desde el código](#compilar-desde-el-código) ·
 [English](README.md)
 
+[![Compilación](https://github.com/Javiervinus/paperclip-dispatch/actions/workflows/build.yml/badge.svg)](https://github.com/Javiervinus/paperclip-dispatch/actions/workflows/build.yml)
 [![Última versión](https://img.shields.io/github/v/release/Javiervinus/paperclip-dispatch?label=versión)](https://github.com/Javiervinus/paperclip-dispatch/releases/latest)
 ![macOS 26 Tahoe](https://img.shields.io/badge/macOS-26%20Tahoe-black)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
@@ -256,8 +257,9 @@ con `defaults write <identificador> DispatchFeedURL <url>`.
 
 Los issues y pull requests son bienvenidos. En un error, incluye la versión de la app y la de Paperclip
 (las dos están en Ajustes). Mantén los cambios enfocados, compila con `macos/build.sh` y revisa con
-`macos/snapshot.zsh` las ventanas que tocaste. Lo que cambie para quien usa la app lleva una línea en los dos
-CHANGELOG, bajo `## Unreleased`.
+`macos/snapshot.zsh` las ventanas que tocaste. Cada pull request se compila automáticamente en GitHub Actions
+([`build.yml`](.github/workflows/build.yml)), así que ahí ves si compila. Lo que cambie para quien usa la app
+lleva una línea en los dos CHANGELOG, bajo `## Unreleased`.
 
 ## Agradecimientos
 
