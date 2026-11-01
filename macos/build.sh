@@ -11,6 +11,8 @@
 #   OUTPUT_DIR=<vacía: instala en INSTALL_DIR; con valor, deja el .app ahí y no instala (release.sh)>
 #   UNIVERSAL=1 compila para Apple Silicon e Intel (más lento; lo usa release.sh)
 #   NOTARIZE=1 firma con la hora del servidor de Apple, que pide la notarización (lo usa release.sh)
+#   RELEASE=1 arma la versión para repartir (lo usa release.sh): no lee macos/build.local.env y deja fuera
+#       PAPERCLIP_SERVER_URL y PAPERCLIP_UPDATE_SCRIPT aunque vengan en el entorno, porque son de esta Mac
 #   PAPERCLIP_SERVER_URL=<vacía: la bienvenida la pide; con valor, la app la adopta la primera vez>
 #   PAPERCLIP_UPDATE_SCRIPT=<vacía: actualiza con `paperclipai update`; con valor, con ese script>
 #   SIGN_IDENTITY=<la primera «Developer ID Application» del llavero; «-» firma sin identidad>
@@ -21,7 +23,13 @@ set -eo pipefail
 
 ROOT=${0:A:h}
 REPO=${ROOT:h}
-[[ -f $ROOT/build.local.env ]] && source "$ROOT/build.local.env"
+# Lo que se reparte no lleva nada de la Mac que lo arma: ni sus ajustes locales ni la dirección de su
+# Paperclip o la ruta a su script.
+if [[ $RELEASE == 1 ]]; then
+  unset PAPERCLIP_SERVER_URL PAPERCLIP_UPDATE_SCRIPT
+elif [[ -f $ROOT/build.local.env ]]; then
+  source "$ROOT/build.local.env"
+fi
 source "$ROOT/release.env"
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
 APP_ID=${APP_ID:-com.javiervinueza.paperclip-dispatch}
