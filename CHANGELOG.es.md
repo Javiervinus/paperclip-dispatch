@@ -10,6 +10,15 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Nuevo
+
+- **Más decisiones se contestan desde Telegram.** Las solicitudes de acceso, las revisiones que te esperan,
+  las aprobaciones de board, las corridas fallidas, los errores de agentes y los topes de presupuesto traen
+  sus propios botones, y «Despertar» solo aparece si el agente no va en camino: si tiene una corrida en
+  cola o en curso, el mensaje y el aviso de la Mac lo dicen en su lugar.
+
 ## 0.1.0 — 2026-11-01
 
 La primera versión. Todo lo de abajo es nuevo, así que esta entrada describe la app en vez de listar
