@@ -263,7 +263,9 @@ final class AssignedTasksMonitor {
     private func sendToTelegram(_ notice: AssignedTaskNotice, companyId: String, userId: String?, preview: URL?) async {
         guard let telegram, let chatId = telegram.noticeChatId else { return }
         let html = AssignedTaskFormat.telegram(notice)
-        guard let messageId = await telegram.postNotice(html, href: notice.href, preview: preview) else { return }
+        guard let messageId = await telegram.postNotice(
+            html, href: notice.href, preview: preview, previewBefore: AssignedTaskFormat.replyHint
+        ) else { return }
         messages[notice.issueId] = SentTask(
             companyId: companyId, chatId: chatId, messageId: messageId, html: html,
             identifier: notice.identifier, href: notice.href, userId: userId

@@ -182,9 +182,12 @@ enum AssignedTaskFormat {
         if let excerpt = notice.excerpt {
             lines.append("<blockquote expandable>\(TelegramFormat.markdown(excerpt))</blockquote>")
         }
-        lines.append(String(localized: "<i>Reply to this message to comment on the task.</i>"))
+        lines.append(replyHint)
         return lines.joined(separator: "\n")
     }
+
+    /// La última línea del mensaje de Telegram: «Ver en vivo» va justo antes, junto a la descripción.
+    static var replyHint: String { String(localized: "<i>Reply to this message to comment on the task.</i>") }
 
     /// Lo que se suma al mensaje de Telegram cuando la tarea deja de estar a nombre del usuario.
     static func ending(_ ending: AssignedTaskEnding) -> String {

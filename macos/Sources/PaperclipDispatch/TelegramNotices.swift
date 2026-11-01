@@ -10,11 +10,12 @@ extension TelegramChannel {
 
     /// Un aviso con «Abrir en Paperclip» (o `linkLabel`) y, en el texto, «Ver en vivo», si el teléfono puede
     /// abrirlos. Devuelve su mensaje, o `nil` si no salió.
-    func postNotice(_ html: String, href: String?, preview: URL? = nil, linkLabel: String? = nil) async -> Int? {
+    func postNotice(_ html: String, href: String?, preview: URL? = nil, previewBefore: String? = nil, linkLabel: String? = nil)
+        async -> Int? {
         guard let bot, let chatId = noticeChatId else { return nil }
         func params(_ links: Links) -> [String: Any] {
             var params: [String: Any] = [
-                "chat_id": chatId, "text": noticeText(html, preview: links.preview ? preview : nil), "parse_mode": "HTML",
+                "chat_id": chatId, "text": noticeText(html, preview: links.preview ? preview : nil, before: previewBefore), "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
             ]
             params["reply_markup"] = noticeKeyboard(href, label: linkLabel, links: links)
@@ -62,9 +63,13 @@ extension TelegramChannel {
         ])
     }
 
-    /// El texto de un aviso con «Ver en vivo» debajo, si el teléfono puede abrirlo.
-    func noticeText(_ html: String, preview: URL?) -> String {
-        phonePreviewURL(preview).map { html + "\n" + TelegramFormat.previewLink($0) } ?? html
+    /// El texto de un aviso con «Ver en vivo», si el teléfono puede abrirlo: al final o, si el aviso termina con
+    /// la línea `tail` (p. ej. cómo comentar), justo antes de ella, junto a la descripción.
+    func noticeText(_ html: String, preview: URL?, before tail: String? = nil) -> String {
+        guard let url = phonePreviewURL(preview) else { return html }
+        let link = TelegramFormat.previewLink(url)
+        if let tail, html.hasSuffix("\n" + tail) { return html.dropLast(tail.count) + link + "\n" + tail }
+        return html + "\n" + link
     }
 
     /// «Abrir en Paperclip» (o `label`), o `nil` si el teléfono no puede abrirlo (una dirección local).
