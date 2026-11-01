@@ -148,6 +148,8 @@ a { color: inherit; }
   --stage-w: 400;
   --stage-h: 72;
   --pt: calc(100cqw / var(--stage-w));
+  /* Fuera del escenario, a la derecha: de donde llegan los avisos y por donde se van */
+  --notice-off: calc(100% + 16 * var(--pt));
   container-type: inline-size;
   position: relative;
   display: block;
@@ -192,11 +194,12 @@ a { color: inherit; }
   box-shadow: inset 0 0 0 calc(0.5 * var(--pt)) var(--notice-rim); /* taste-skill-ignore: el borde del vidrio del aviso de macOS que imita */
   opacity: 0;
   visibility: hidden;
-  transform: translateX(calc(100% + 16 * var(--pt)));
+  transform: translateX(var(--notice-off));
 }
 /* Sin movimiento queda solo el primero: el de la tarea trabada, con «Wake up CEO» */
 .notice.is-in { opacity: 1; visibility: visible; transform: none; }
-/* El ícono de la app, el mismo en todos: el de 64 px (que ya carga la barra) en el teléfono, el de 180 en el resto */
+/* El ícono de la app, el mismo en todos: el de 64 px (que ya carga la barra) mientras mida hasta unos 64 píxeles
+   del dispositivo (un teléfono hasta 2×), el de 180 en el resto */
 .notice::before {
   content: "";
   flex: none;
@@ -204,7 +207,7 @@ a { color: inherit; }
   aspect-ratio: 1;
   background: url("images/icon-180.png") center / contain no-repeat;
 }
-@media (max-width: 639px) and (max-resolution: 2dppx) {
+@media (max-width: 439px) and (max-resolution: 2dppx) {
   .notice::before { background-image: url("images/icon-64.png"); }
 }
 .notice-text { flex: 1; min-width: 0; display: grid; gap: calc(2 * var(--pt)); }
@@ -534,12 +537,20 @@ a { color: inherit; }
 @media (prefers-reduced-motion: no-preference) {
   @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
   @keyframes shutter { from { clip-path: inset(0 100% 0 0 round 0.09em); } to { clip-path: inset(0 0 0 0 round 0.09em); } }
+  /* Las curvas van escritas: dentro de @keyframes, animation-timing-function no resuelve var() (son las de
+     --ease-out y --ease-in-out) */
   @keyframes notice {
-    0% { opacity: 0; visibility: hidden; transform: translateX(var(--notice-off)); animation-timing-function: var(--ease-out); }
-    2.8%, 17.2% { opacity: 1; transform: none; }
-    17.2% { animation-timing-function: var(--ease-in-out); }
-    18.6% { opacity: 0; visibility: visible; transform: translateX(var(--notice-off)); }
-    18.7%, 100% { opacity: 0; visibility: hidden; transform: translateX(var(--notice-off)); }
+    0% { opacity: 0; transform: translateX(var(--notice-off)); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+    2.8% { opacity: 1; transform: none; }
+    17.2% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+    18.6%, 100% { opacity: 0; transform: translateX(var(--notice-off)); }
+  }
+  /* visibility va aparte, para que transform y opacity sigan en el compositor. Con step-start cambia apenas
+     empieza cada tramo: se ve desde que arranca su turno hasta que termina de salir (y no antes de su turno) */
+  @keyframes notice-shown {
+    0% { visibility: hidden; }
+    18.6% { visibility: visible; }
+    100% { visibility: hidden; }
   }
 
   .sentence { animation: rise 700ms var(--ease-out) both; }
@@ -550,9 +561,10 @@ a { color: inherit; }
      macOS, se queda y sale por el mismo lado antes de que llegue el siguiente. Los porcentajes de @keyframes
      notice son de una vuelta de 5 turnos de 5 s (entra en 0,7 s, sale a los 4,3 s en 0,35 s): si cambia el
      número de avisos o el turno, cambian con ellos. El primero llega cuando se abre el escenario. */
-  .strip { --notice-slot: 5s; --notice-count: 5; --notice-off: calc(100% + 16 * var(--pt)); }
+  .strip { --notice-slot: 5s; --notice-count: 5; }
   .notice {
-    animation: notice calc(var(--notice-slot) * var(--notice-count)) linear infinite both;
+    animation: notice calc(var(--notice-slot) * var(--notice-count)) linear infinite both,
+      notice-shown calc(var(--notice-slot) * var(--notice-count)) step-start infinite both;
     animation-delay: calc(900ms + var(--turn, 0) * var(--notice-slot));
   }
   .notice:nth-child(2) { --turn: 1; }
