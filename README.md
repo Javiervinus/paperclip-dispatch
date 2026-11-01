@@ -164,6 +164,13 @@ macos/build.sh
     pero hace que macOS 26 redondee más las esquinas (26 pt, como WhatsApp) y baje los botones de la
     ventana dentro del panel, sin moverlos a mano.
   - El arrastre de la ventana solo actúa sobre la página: los botones de la ventana reciben sus clics.
+  - **Atrás y adelante con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicatorView.swift`): el gesto de
+    WebKit desliza una captura de la página anterior debajo de la actual, y con la página transparente se
+    veían las dos encimadas mientras el panel de vidrio se quedaba quieto. Con vidrio lo hace la app con
+    `NSEvent.trackSwipeEvent`: la página no se mueve, entra una flecha de vidrio desde el borde y, si el
+    gesto se completa, navega. Como el de WebKit, si lo que hay bajo el puntero todavía se desplaza a lo
+    ancho (un tablero, una tabla), el gesto es de la página: lo informa `web/glass.js`. Sin vidrio queda el
+    de WebKit, como en Safari.
   - En pantalla completa esa barra se esconde y aparece con la barra de menús, como en Safari, y el
     panel toma el color de la ventana en vez del fondo de pantalla.
   - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
