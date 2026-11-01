@@ -64,8 +64,11 @@ mkdir -p "$APP/Contents/Resources/es.lproj"
 touch "$APP/Contents/Resources/es.lproj/Localizable.strings"
 # El ícono es un documento de Icon Composer (AppIcon.icon): claro, oscuro, transparente y tintado, como
 # los íconos de macOS 26. actool lo compila en Assets.car, más un AppIcon.icns para lo que no lee el .car.
-xcrun actool "$ROOT/AppIcon.icon" --compile "$APP/Contents/Resources" --platform macosx \
-  --minimum-deployment-target 26.0 --app-icon AppIcon --output-partial-info-plist "$WORK/icon.plist" \
+# En el mismo Assets.car va el color de acento de la app (Assets.xcassets/AccentColor): la tinta de Paperclip.
+# macOS lo usa cuando el acento del sistema es «Multicolor»; si se eligió otro color, manda ese.
+xcrun actool "$ROOT/AppIcon.icon" "$ROOT/Assets.xcassets" --compile "$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 26.0 --app-icon AppIcon --accent-color AccentColor \
+  --output-partial-info-plist "$WORK/icon.plist" \
   --errors --warnings >/dev/null
 # Las variantes clara y oscura en PNG, para dibujos de ejemplo dentro de la app (el ícono de la app en sí se le
 # pide a macOS, que lo dibuja según el estilo de íconos elegido). Las exporta el ictool de Icon Composer.
@@ -84,6 +87,7 @@ plist CFBundleDisplayName string "$APP_NAME"
 plist CFBundleExecutable string "$EXECUTABLE"
 plist CFBundleIconFile string AppIcon
 plist CFBundleIconName string AppIcon
+plist NSAccentColorName string AccentColor
 plist CFBundlePackageType string APPL
 plist CFBundleShortVersionString string "$APP_VERSION"
 plist CFBundleVersion string "$APP_VERSION"
