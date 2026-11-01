@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  La imagen para compartir (og:image, 1200 × 630): se compone aquí con las capturas de docs/images y se guarda
+  como site/social/card.jpg, que site/build.sh publica tal cual. Esta página no se publica.
+  Para rehacerla, desde la raíz del repo (Chrome sin ventana, con su propia carpeta de perfil):
+    profile=$(mktemp -d)
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --hide-scrollbars \
+      --user-data-dir="$profile" --force-device-scale-factor=1 --window-size=1200,630 \
+      --virtual-time-budget=5000 --screenshot="$profile/card.png" "file://$PWD/site/social/card.html"
+    sips -s format jpeg -s formatOptions 82 "$profile/card.png" --out site/social/card.jpg && rm -rf "$profile"
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paperclip Dispatch, social card</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500&amp;display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; }
+  body {
+    position: relative;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #f2f2f2;
+    color: #171717;
+    font: 500 76px/0.95 "Hanken Grotesk", sans-serif;
+    letter-spacing: -0.045em;
+  }
+  .window {
+    position: absolute;
+    left: 560px;
+    top: 72px;
+    width: 900px;
+    border-radius: 18px;
+  }
+  .icon { position: absolute; left: 64px; top: 64px; width: 112px; height: 112px; }
+  h1 { position: absolute; left: 64px; top: 210px; margin: 0; font: inherit; }
+  /* El aviso con el mismo recorte que el hero (site/styles.css, .strip): la captura mide 880 × 224, la
+     tarjeta va de x 56 a 824 y de y 88 a 200, y el recorte deja 16 px alrededor (800 × 144), aquí a 0,88 */
+  .notification {
+    position: absolute;
+    left: 64px;
+    top: 424px;
+    width: 704px;
+    height: 127px;
+    overflow: hidden;
+    border-radius: 18px;
+  }
+  .notification img { display: block; width: 774px; margin: -63px 0 0 -35px; }
+</style>
+</head>
+<body>
+  <img class="window" src="../../docs/images/window-light.png" alt="">
+  <img class="icon" src="../../docs/images/icon.png" alt="">
+  <h1>Paperclip<br>Dispatch</h1>
+  <div class="notification"><img src="../../docs/images/notification.png" alt=""></div>
+</body>
+</html>
