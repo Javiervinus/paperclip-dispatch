@@ -6,7 +6,7 @@
 # bienvenida. Si la app está abierta, se cierra solo para reemplazarla y se vuelve a abrir.
 #
 # Variables (con su valor por defecto). Las de tu Mac pueden ir en macos/build.local.env, que no se sube:
-#   APP_NAME="Paperclip Dispatch"  APP_ID=com.javiervinueza.paperclip.swift  INSTALL_DIR=/Applications
+#   APP_NAME="Paperclip Dispatch"  APP_ID=com.javiervinueza.paperclip-dispatch  INSTALL_DIR=/Applications
 #   APP_VERSION=<la de macos/VERSION>
 #   OUTPUT_DIR=<vacía: instala en INSTALL_DIR; con valor, deja el .app ahí y no instala (release.sh)>
 #   UNIVERSAL=1 compila para Apple Silicon e Intel (más lento; lo usa release.sh)
@@ -24,10 +24,10 @@ REPO=${ROOT:h}
 [[ -f $ROOT/build.local.env ]] && source "$ROOT/build.local.env"
 source "$ROOT/release.env"
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
-APP_ID=${APP_ID:-com.javiervinueza.paperclip.swift}
+APP_ID=${APP_ID:-com.javiervinueza.paperclip-dispatch}
 APP_VERSION=${APP_VERSION:-$(<"$ROOT/VERSION")}
 INSTALL_DIR=${INSTALL_DIR:-/Applications}
-EXECUTABLE=PaperclipApp
+EXECUTABLE=PaperclipDispatch
 APP_PATH=$INSTALL_DIR/$APP_NAME.app
 LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
