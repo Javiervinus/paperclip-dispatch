@@ -300,10 +300,15 @@ private struct NotificationsPane: View {
                     permissionControl
                 } label: {
                     Text("Permiso de macOS")
-                    Text(permissionDetail)
+                    if status.requestingNotifications, status.notificationAccess?.permission == .notDetermined {
+                        PermissionPromptHint()
+                    } else {
+                        Text(permissionDetail)
+                    }
                 }
             }
             .animation(SettingsDesign.animation, value: status.notificationAccess)
+            .animation(SettingsDesign.animation, value: status.requestingNotifications)
             Section {
                 Toggle(isOn: $preferences.decisionNotifications) {
                     Text("Avisar cuando llegue una decisión")

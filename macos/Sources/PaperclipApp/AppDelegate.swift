@@ -259,7 +259,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     installUpdate: { [weak self] in self?.updates?.requestUpdate() },
                     sendTestNotification: { [weak self] in self?.sendTestNotification() },
                     requestNotifications: { [weak self] in
-                        Task { _ = await self?.notifications.request() }
+                        guard let self else { return }
+                        status.requestingNotifications = true
+                        Task {
+                            _ = await self.notifications.request()
+                            self.status.requestingNotifications = false
+                        }
                     },
                     changeServer: { [weak self] in self?.changeServer() },
                     serverURL: config.serverURL,

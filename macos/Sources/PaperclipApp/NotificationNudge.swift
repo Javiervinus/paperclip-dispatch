@@ -30,6 +30,8 @@ final class NotificationNudge {
     private(set) var isVisible = false
     /// Se arregló con la píldora a la vista: lo confirma un momento y se va.
     private(set) var confirmed = false
+    /// El aviso de permiso de macOS está a la vista, esperando la respuesta.
+    private(set) var waitingForAnswer = false
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let preferences: Preferences
@@ -97,7 +99,11 @@ final class NotificationNudge {
     /// «Activar» pide el permiso si nunca se pidió; si no, abre Ajustes del Sistema en la página de la app.
     func act() {
         if problem == .off, access?.permission == .notDetermined {
-            Task { _ = await notifications.request() }
+            waitingForAnswer = true
+            Task {
+                _ = await notifications.request()
+                waitingForAnswer = false
+            }
         } else {
             NotificationAccess.openSystemSettings()
         }

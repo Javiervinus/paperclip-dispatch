@@ -19,6 +19,7 @@ struct NotificationNudgeView: View {
         .padding(Self.shadowRoom)
         .animation(.spring(duration: 0.5, bounce: 0.25), value: model.isVisible)
         .animation(.smooth(duration: 0.3), value: model.confirmed)
+        .animation(.smooth(duration: 0.3), value: model.waitingForAnswer)
     }
 
     private func capsule(_ problem: NotificationNudge.Problem) -> some View {
@@ -49,7 +50,13 @@ struct NotificationNudgeView: View {
     }
 
     private func message(_ problem: NotificationNudge.Problem) -> Text {
-        let (lead, rest) = model.confirmed ? ("Avisos activados.", "Te avisamos cuando un agente te necesite.") : texts(problem)
+        let (lead, rest) = if model.confirmed {
+            ("Avisos activados.", "Te avisamos cuando un agente te necesite.")
+        } else if model.waitingForAnswer {
+            ("Responde arriba a la derecha:", "en el aviso de macOS, Opciones → Permitir.")
+        } else {
+            texts(problem)
+        }
         return Text("\(Text(lead).bold()) \(rest)")
     }
 

@@ -108,4 +108,6 @@ final class AppStatus {
     var notificationPermission = "default"
     /// El permiso y si macOS deja los banners y el número del Dock. `nil` hasta que se sabe.
     var notificationAccess: NotificationAccess?
+    /// El aviso de permiso de macOS, pedido desde Ajustes, espera la respuesta.
+    var requestingNotifications = false
 }

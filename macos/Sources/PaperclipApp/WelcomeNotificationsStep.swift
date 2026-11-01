@@ -44,16 +44,35 @@ struct WelcomeNotificationsStep: View {
 
     private var permissionRow: some View {
         HStack(spacing: 14) {
-            RowText(title: "Avisos de macOS", detail: permissionDetail)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Avisos de macOS").font(.headline)
+                if waitingForAnswer {
+                    PermissionPromptHint()
+                        .font(.callout)
+                        .transition(.opacity)
+                } else {
+                    Text(permissionDetail)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentTransition(.opacity)
+                }
+            }
             Spacer(minLength: 0)
             permissionControl
         }
+        .animation(WelcomeDesign.animation, value: waitingForAnswer)
+    }
+
+    /// El aviso de permiso de macOS está a la vista, esperando la respuesta.
+    private var waitingForAnswer: Bool {
+        model.requestingNotifications && model.notificationAccess?.permission == .notDetermined
     }
 
     @ViewBuilder private var permissionControl: some View {
         switch model.notificationAccess {
         case let access? where access.isComplete:
-            StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
+            AllowedBadge()
         case let access? where access.permission == .granted:
             Button("Ajustar", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
@@ -64,9 +83,10 @@ struct WelcomeNotificationsStep: View {
             Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         default:
+            // Sigue activo mientras espera: si se cierra el aviso de macOS con la ×, se puede volver a pedir.
             Button("Permitir avisos") { Task { await model.requestNotifications() } }
                 .buttonStyle(.glassProminent)
-                .disabled(model.notificationAccess == nil || model.requestingNotifications)
+                .disabled(model.notificationAccess == nil)
         }
     }
 
@@ -87,6 +107,22 @@ struct WelcomeNotificationsStep: View {
             case (false, false): return "Permitidos, pero sin banner ni número en el Dock."
             }
         }
+    }
+}
+
+/// «Permitidos», con el check que rebota al aparecer: se nota que la app ya lo detectó, sin mirar dos veces.
+private struct AllowedBadge: View {
+    /// Lo que espera para rebotar, para que se vea después de aparecer.
+    private static let bounceDelay: Duration = .milliseconds(250)
+
+    @State private var bounce = 0
+
+    var body: some View {
+        StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green, bounce: bounce)
+            .task {
+                try? await Task.sleep(for: Self.bounceDelay)
+                bounce += 1
+            }
     }
 }
 
@@ -169,6 +205,7 @@ private struct NotificationPreview: View {
                     .offset(x: 8, y: -6)
             }
             .frame(width: Self.dockTile, height: Self.dockTile)
-            .glassEffect(.regular, in: .rect(cornerRadius: 26))
+            // El vidrio va detrás: con el ícono y el número adentro, el vidrio los vuelve translúcidos.
+            .background { Color.clear.glassEffect(.regular, in: .rect(cornerRadius: 26)) }
     }
 }
