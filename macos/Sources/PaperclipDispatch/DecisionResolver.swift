@@ -317,8 +317,14 @@ struct DecisionResolver {
         fallback: DecisionPrompt
     ) async throws -> DecisionPrompt {
         let all: [Lossy<Interaction>] = try await api.get("api/issues/\(issueId)/interactions")
-        guard let interaction = all.lazy.compactMap(\.value).first(where: { $0.id == interactionId }),
-              interaction.status == nil || interaction.status == "pending",
+        guard let interaction = all.lazy.compactMap(\.value).first(where: { $0.id == interactionId }) else {
+            // Si no está entre las que se pudieron leer, puede que haya cambiado su forma.
+            if all.contains(where: { $0.value == nil }) {
+                Unexpected.note("api/issues/\(issueId)/interactions", "\(interactionId) missing or unreadable")
+            }
+            return fallback
+        }
+        guard interaction.status == nil || interaction.status == "pending",
               let payload = interaction.payload
         else { return fallback }
         var prompt = fallback
