@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case .page: await PageSnapshot.run(config: config, to: directory)
                 case .welcome: await WelcomeSnapshot.run(to: directory)
                 case .about: await AboutSnapshot.run(to: directory)
+                case .notifications: await NotificationsSnapshot.run(to: directory)
                 }
                 NSApp.terminate(nil)
             }

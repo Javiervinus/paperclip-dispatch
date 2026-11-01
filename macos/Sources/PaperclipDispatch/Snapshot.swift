@@ -12,7 +12,7 @@ final class SnapshotableWindow: NSWindow {
 }
 
 /// Ensayos visuales, para revisar el diseño sin tapar nada en pantalla. Los corre `macos/snapshot.zsh`: abre
-/// una segunda copia de la app con `-PaperclipSnapshot <settings|window|page|welcome|about>` y
+/// una segunda copia de la app con `-PaperclipSnapshot <settings|window|page|welcome|about|notifications>` y
 /// `-PaperclipSnapshotDirectory <carpeta>`, que pone lo pedido en ventanas fuera de la pantalla y anota sus
 /// números en `windows.txt`. El script las captura con `screencapture -l`, que sí dibuja el vidrio, y deja
 /// `captured` para que la copia se cierre.
@@ -24,7 +24,7 @@ final class SnapshotableWindow: NSWindow {
 @MainActor
 enum Snapshot {
     enum Kind: String {
-        case settings, window, page, welcome, about
+        case settings, window, page, welcome, about, notifications
     }
 
     struct Window {
