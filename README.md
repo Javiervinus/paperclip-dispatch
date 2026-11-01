@@ -249,6 +249,10 @@ macos/build.sh
     - `SHADOW=1` deja la sombra de la ventana también en `settings`, `window` y `welcome`.
     - `APP_PATH=<ruta a un .app>` ensaya otra copia, como una de prueba fuera de Aplicaciones (`open -a`
       no encuentra apps por nombre en `/tmp`).
+  - Una copia de prueba (otro `APP_ID`) que tenga que mostrar avisos va en una carpeta de apps
+    (`INSTALL_DIR=~/Applications` sirve). macOS rechaza los avisos de una que corre desde `/tmp`: no pide
+    el permiso y en el registro de `usernoted` sale «Failed to find or validate client». Si eso pasa, la
+    app lo dice y ofrece Ajustes del Sistema.
     - Fuera de la pantalla las ventanas salen inactivas (botones e interruptores grises). `ACTIVE=1` las
       muestra de a una en el centro de la pantalla, al frente (el script la pone al frente con System
       Events), para capturas de muestra. Tapa la pantalla unos segundos por ventana: solo cuando nadie usa
