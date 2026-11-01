@@ -5,6 +5,11 @@ import Foundation
 struct TelegramBotAPI {
     let token: String
 
+    /// La Bot API. Una copia de prueba puede apuntar a una que la imite (`TELEGRAM_API_URL` en build.sh, que la
+    /// deja en el Info.plist); lo que se reparte no la trae.
+    private static let baseURL = (Bundle.main.object(forInfoDictionaryKey: "TelegramAPIURL") as? String)
+        .flatMap { $0.isEmpty ? nil : $0 } ?? "https://api.telegram.org"
+
     struct Failure: LocalizedError {
         let code: Int?
         let reason: String
@@ -29,7 +34,7 @@ struct TelegramBotAPI {
         _ params: [String: Any] = [:],
         timeout: TimeInterval = defaultTimeout
     ) async throws -> T {
-        guard let url = URL(string: "https://api.telegram.org/bot\(token)/\(method)") else {
+        guard let url = URL(string: "\(Self.baseURL)/bot\(token)/\(method)") else {
             throw Failure(code: nil, reason: String(localized: "The token has invalid characters."))
         }
         var request = URLRequest(url: url, timeoutInterval: timeout)

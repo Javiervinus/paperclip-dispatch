@@ -16,6 +16,8 @@
 #   PAPERCLIP_SERVER_URL=<vacía: la bienvenida la pide; con valor, la app la adopta la primera vez>
 #   PAPERCLIP_UPDATE_SCRIPT=<vacía: actualiza con `paperclipai update`; con valor, con ese script>
 #   SIGN_IDENTITY=<la primera «Developer ID Application» del llavero; «-» firma sin identidad>
+#   TELEGRAM_API_URL=<vacía: la Bot API de Telegram; con valor, otra que la imite, solo para probar el bot sin
+#       Telegram (p. ej. un servidor local). RELEASE=1 la deja fuera>
 # Las de las actualizaciones de la app (appcast, llave pública) y las de «Acerca de» (autor, repositorio)
 # están en macos/release.env.
 # Sin `set -u`: el gancho de cuentas de ~/.zshenv corre en cada `cd` y lee variables que pueden no existir.
@@ -26,7 +28,7 @@ REPO=${ROOT:h}
 # Lo que se reparte no lleva nada de la Mac que lo arma: ni sus ajustes locales ni la dirección de su
 # Paperclip o la ruta a su script.
 if [[ $RELEASE == 1 ]]; then
-  unset PAPERCLIP_SERVER_URL PAPERCLIP_UPDATE_SCRIPT
+  unset PAPERCLIP_SERVER_URL PAPERCLIP_UPDATE_SCRIPT TELEGRAM_API_URL
 elif [[ -f $ROOT/build.local.env ]]; then
   source "$ROOT/build.local.env"
 fi
@@ -124,6 +126,7 @@ for key in NSMicrophoneUsageDescription NSCameraUsageDescription NSLocalNetworkU
 done
 [[ -n $PAPERCLIP_SERVER_URL ]] && plist PaperclipServerURL string "$PAPERCLIP_SERVER_URL"
 [[ -n $PAPERCLIP_UPDATE_SCRIPT ]] && plist PaperclipUpdateScript string "$PAPERCLIP_UPDATE_SCRIPT"
+[[ -n $TELEGRAM_API_URL ]] && plist TelegramAPIURL string "$TELEGRAM_API_URL"
 # Actualizaciones de la app (Sparkle). Sin appcast, la app no busca versiones.
 if [[ -n $UPDATE_FEED_URL ]]; then
   plist SUFeedURL string "$UPDATE_FEED_URL"
