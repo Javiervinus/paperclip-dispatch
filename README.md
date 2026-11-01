@@ -150,7 +150,16 @@ macos/build.sh
   (`underPageBackgroundColor` de WebKit, que se observa), así que la barra y Paperclip son una sola
   superficie, sin el tinte del fondo de pantalla. El título de la página no se muestra, pero lo usan el
   menú Ventana, Mission Control y VoiceOver. No depende de cómo esté hecho el HTML de Paperclip. Solo se
-  inyecta `web/bridge.js`, que no cambia cómo se ve (tema y avisos).
+  inyecta `web/bridge.js`, que no cambia cómo se ve (tema, avisos y el gesto de atrás).
+- **Atrás y adelante con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicator.swift`,
+  `SwipeIndicatorView.swift`), en los dos modos. El gesto de WebKit desliza la página entera sobre una
+  captura de la anterior: la barra lateral de Paperclip, que nunca cambia, se iba con ella, y con Liquid
+  Glass (página transparente) además se veían las dos páginas encimadas. Lo hace la app con
+  `NSEvent.trackSwipeEvent`: la página no se mueve, entra una flecha de vidrio desde el borde siguiendo a
+  los dedos y, al completarse el gesto, navega al momento y la flecha se va en 0,2 s (sin esperar la
+  animación de macOS, que con un gesto rápido iba detrás de la página). Como con el de WebKit, si lo que
+  hay bajo el puntero todavía se desplaza a lo ancho (un tablero, una tabla), el gesto es de la página: lo
+  informa `web/bridge.js`.
 - **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
   Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
   momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo, el mismo
@@ -164,13 +173,6 @@ macos/build.sh
     pero hace que macOS 26 redondee más las esquinas (26 pt, como WhatsApp) y baje los botones de la
     ventana dentro del panel, sin moverlos a mano.
   - El arrastre de la ventana solo actúa sobre la página: los botones de la ventana reciben sus clics.
-  - **Atrás y adelante con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicatorView.swift`): el gesto de
-    WebKit desliza una captura de la página anterior debajo de la actual, y con la página transparente se
-    veían las dos encimadas mientras el panel de vidrio se quedaba quieto. Con vidrio lo hace la app con
-    `NSEvent.trackSwipeEvent`: la página no se mueve, entra una flecha de vidrio desde el borde y, si el
-    gesto se completa, navega. Como el de WebKit, si lo que hay bajo el puntero todavía se desplaza a lo
-    ancho (un tablero, una tabla), el gesto es de la página: lo informa `web/glass.js`. Sin vidrio queda el
-    de WebKit, como en Safari.
   - En pantalla completa esa barra se esconde y aparece con la barra de menús, como en Safari, y el
     panel toma el color de la ventana en vez del fondo de pantalla.
   - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
