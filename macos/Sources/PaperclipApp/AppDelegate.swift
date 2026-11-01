@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case .window: await MainWindowSnapshot.run(config: config, to: directory)
                 case .page: await PageSnapshot.run(config: config, to: directory)
                 case .welcome: await WelcomeSnapshot.run(to: directory)
+                case .about: await AboutSnapshot.run(to: directory)
                 }
                 NSApp.terminate(nil)
             }
@@ -288,6 +289,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func reloadPage(_ sender: Any?) {
         windowController?.reload()
+    }
+
+    @objc func showAbout(_ sender: Any?) {
+        NSApp.activate()
+        AboutPanel.show()
+    }
+
+    /// Ventana → Paperclip Dispatch (Cmd+0): la ventana vuelve, como al tocar el ícono del Dock.
+    @objc func showMainWindow(_ sender: Any?) {
+        _ = applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
+    }
+
+    /// Los enlaces del menú Ayuda (la dirección va en `representedObject`): en el navegador.
+    @objc func openLink(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? URL else { return }
+        NSWorkspace.shared.open(url)
     }
 
     /// «Buscar actualizaciones…» del menú: la ventana al frente y el panel con las dos, revisando.

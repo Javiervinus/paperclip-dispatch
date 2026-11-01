@@ -14,7 +14,8 @@
 #   PAPERCLIP_SERVER_URL=<vacía: la bienvenida la pide; con valor, la app la adopta la primera vez>
 #   PAPERCLIP_UPDATE_SCRIPT=<vacía: actualiza con `paperclipai update`; con valor, con ese script>
 #   SIGN_IDENTITY=<la primera «Developer ID Application» del llavero; «-» firma sin identidad>
-# Las de las actualizaciones de la app (appcast, llave pública) están en macos/release.env.
+# Las de las actualizaciones de la app (appcast, llave pública) y las de «Acerca de» (autor, repositorio)
+# están en macos/release.env.
 # Sin `set -u`: el gancho de cuentas de ~/.zshenv corre en cada `cd` y lee variables que pueden no existir.
 set -eo pipefail
 
@@ -113,6 +114,19 @@ if [[ -n $UPDATE_FEED_URL ]]; then
   plist SUAutomaticallyUpdate bool true
   plist SUScheduledCheckInterval integer "$UPDATE_CHECK_INTERVAL"
 fi
+# Quién la hace y dónde está su código («Acerca de» y el menú Ayuda). Sin REPOSITORY_URL, el del remoto
+# origin si está en GitHub, como hace release.sh.
+if [[ -z $REPOSITORY_URL ]]; then
+  ORIGIN=$(git -C "$REPO" remote get-url origin 2>/dev/null) || ORIGIN=
+  [[ $ORIGIN == *github.com* ]] &&
+    REPOSITORY_URL=https://github.com/$(sed -E 's#^(https://github.com/|git@github.com:)##; s#\.git$##' <<<"$ORIGIN")
+fi
+if [[ -n $APP_AUTHOR ]]; then
+  plist DispatchAuthor string "$APP_AUTHOR"
+  plist NSHumanReadableCopyright string "© $(date +%Y) $APP_AUTHOR"
+fi
+[[ -n $APP_AUTHOR_URL ]] && plist DispatchAuthorURL string "$APP_AUTHOR_URL"
+[[ -n $REPOSITORY_URL ]] && plist DispatchRepositoryURL string "$REPOSITORY_URL"
 plutil -lint "$PLIST" >/dev/null
 
 # De adentro hacia afuera y sin --deep, como pide Sparkle: sus ayudantes, el framework y la app.

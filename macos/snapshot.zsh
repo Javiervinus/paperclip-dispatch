@@ -3,6 +3,7 @@
 #   macos/snapshot.zsh settings [carpeta]       cada pestaña de Ajustes, en claro y en oscuro
 #   macos/snapshot.zsh window [carpeta]         la ventana de Paperclip, normal y con Liquid Glass
 #   macos/snapshot.zsh welcome [carpeta]        cada paso de la bienvenida y la ventana sin conexión
+#   macos/snapshot.zsh about [carpeta]          el panel «Acerca de»
 #   macos/snapshot.zsh page <ruta> [carpeta]    una página de Paperclip con la app, para mostrarla
 #       SIZE=1512x982 (tamaño de la ventana, en puntos)
 #       ANCHORS="|En qué se fue la semana" (una captura por ancla, separadas por «|»; vacía = arriba)
@@ -17,14 +18,14 @@
 # pantalla.
 set -euo pipefail
 
-USAGE="Uso: snapshot.zsh settings|window|welcome [carpeta] · snapshot.zsh page <ruta> [carpeta]"
+USAGE="Uso: snapshot.zsh settings|window|welcome|about [carpeta] · snapshot.zsh page <ruta> [carpeta]"
 KIND=${1:?$USAGE}
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
 APP=${APP_PATH:-$APP_NAME}
 EXTRA=()
 NO_SHADOW=(-o)
 case $KIND in
-  settings|window|welcome)
+  settings|window|welcome|about)
     OUT=${2:-$(mktemp -d)/$KIND} ;;
   page)
     ROUTE=${2:?$USAGE}
