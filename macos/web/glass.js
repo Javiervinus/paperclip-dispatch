@@ -6,6 +6,8 @@
 //   versión.
 // - Si el puntero está sobre una parte vacía de esas barras: desde ahí se mueve la ventana, como en una
 //   barra de título de macOS. La app decide en el clic mismo, así que se avisa al mover el puntero.
+// - Si lo que hay bajo el puntero todavía se desplaza a lo ancho, y hacia qué lado: ese desplazamiento es
+//   de la página y no el gesto de atrás y adelante de la app, como con el de WebKit.
 (() => {
   if (window.top !== window || window.__paperclipAppGlass) return;
   window.__paperclipAppGlass = true;
@@ -120,6 +122,32 @@
     return Boolean(bar) && bar.getBoundingClientRect().top <= titlebar;
   };
 
+  // Hacia qué lado se puede desplazar a lo ancho lo que hay bajo el puntero (un tablero, una tabla ancha).
+  let pointerTarget = null;
+  let horizontalScroll = { back: false, forward: false };
+  let pendingScrollCheck = 0;
+  const scrollableSides = (target) => {
+    const sides = { back: false, forward: false };
+    for (let element = target; element && element !== document.documentElement; element = element.parentElement) {
+      if (element.scrollWidth <= element.clientWidth) continue;
+      const overflow = getComputedStyle(element).overflowX;
+      if (overflow !== "auto" && overflow !== "scroll") continue;
+      if (element.scrollLeft > 0) sides.back = true;
+      if (element.scrollLeft + element.clientWidth < element.scrollWidth - 1) sides.forward = true;
+    }
+    return sides;
+  };
+  const checkHorizontalScroll = () => {
+    pendingScrollCheck = 0;
+    const sides = scrollableSides(pointerTarget);
+    if (sides.back === horizontalScroll.back && sides.forward === horizontalScroll.forward) return;
+    horizontalScroll = sides;
+    post({ type: "horizontalScroll", ...sides });
+  };
+  const scheduleScrollCheck = () => {
+    if (!pendingScrollCheck) pendingScrollCheck = requestAnimationFrame(checkHorizontalScroll);
+  };
+
   const start = () => {
     report();
     window.addEventListener("resize", schedule);
@@ -132,10 +160,16 @@
     // algo cambió.
     setInterval(schedule, 1000);
 
-    document.addEventListener("mousemove", (event) => setDragArea(isDragArea(event)), {
-      capture: true,
-      passive: true,
-    });
+    document.addEventListener(
+      "mousemove",
+      (event) => {
+        setDragArea(isDragArea(event));
+        pointerTarget = event.target instanceof Element ? event.target : null;
+        scheduleScrollCheck();
+      },
+      { capture: true, passive: true },
+    );
+    document.addEventListener("scroll", scheduleScrollCheck, { capture: true, passive: true });
     document.documentElement.addEventListener("mouseleave", () => setDragArea(false));
   };
 
