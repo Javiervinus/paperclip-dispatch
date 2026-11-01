@@ -81,6 +81,9 @@ final class TelegramChannel {
         var href: String?
         /// Si ya tiene el botón «Explícamela».
         var explainable: Bool?
+        /// Tarea trabada cuyo agente ya va en camino: lo que dice el mensaje en lugar del botón, que espera en
+        /// `choices` hasta que la corrida termine.
+        var onTheWay: String?
     }
 
     struct PendingReply: Codable {
@@ -289,6 +292,11 @@ final class TelegramChannel {
             if let updated = state.messages[item.id] { await setKeyboard(messageId, for: updated) }
         }
 
+        // Una tarea trabada que ya salió pierde o recupera «Despertar a …» según su agente vaya en camino o no.
+        for item in items where item.wakeTarget != nil && !sending.contains(item.id) {
+            await refreshWake(item)
+        }
+
         let fresh = items.filter { item in
             guard !sending.contains(item.id) else { return false }
             guard let sent = state.messages[item.id] else { return true }
@@ -339,19 +347,20 @@ final class TelegramChannel {
             companyId: companyId,
             messageId: nil,
             html: TelegramFormat.decision(item, prompt: prompt),
-            choices: prompt.choices,
+            choices: prompt.choices + (prompt.onTheWay.map { [$0.choice] } ?? []),
             issueId: item.issueId,
             issueIdentifier: item.relatedIssue?.identifier,
             brief: TelegramFormat.brief(item, prompt: prompt),
             href: item.subject?.href ?? item.relatedIssue?.href,
-            explainable: true
+            explainable: true,
+            onTheWay: prompt.onTheWay?.text
         )
         state.nextKey += 1
 
         func params(link: Bool) -> [String: Any] {
             [
                 "chat_id": chatId,
-                "text": sent.html,
+                "text": TelegramFormat.withProgress(sent),
                 "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
                 "reply_markup": ["inline_keyboard": keyboard(for: sent, link: link)],
@@ -375,9 +384,10 @@ final class TelegramChannel {
         state.messages[item.id] = sent
     }
 
-    /// Una fila por opción (`c:<key>:<n>`), «Explícamela» (`e:<key>`) y el enlace a Paperclip.
+    /// Una fila por opción (`c:<key>:<n>`), «Explícamela» (`e:<key>`) y el enlace a Paperclip. Sin opciones si
+    /// el agente ya va en camino.
     func keyboard(for sent: SentDecision, link: Bool = true) -> [[[String: Any]]] {
-        var rows: [[[String: Any]]] = sent.choices.indices.map { index in
+        var rows: [[[String: Any]]] = sent.onTheWay != nil ? [] : sent.choices.indices.map { index in
             [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
         }
         if explainEnabled { rows.append([["text": String(localized: "💡 Explain it to me"), "callback_data": "e:\(sent.key)"]]) }
@@ -587,6 +597,10 @@ final class TelegramChannel {
         }
         do {
             try await resolver.perform(choice.action, text: text)
+        } catch let invalid as DecisionResolver.InvalidText {
+            // P. ej. un monto que no es un número: no se mandó nada y se vuelve a pedir.
+            await askText(invalid.prompt, for: choice, itemId: itemId, index: index, replyTo: sent.messageId)
+            return
         } catch {
             if await resolver.isPending(itemId: itemId, companyId: sent.companyId) == false {
                 // Se resolvió o se canceló en otro lado (en la Mac, por el agente) antes de que llegara esto.
@@ -626,6 +640,58 @@ final class TelegramChannel {
             if let messageId = sent.messageId { await edit(messageId, html: sent.html + "\n\n" + status) }
         }
         requestRefresh?()
+    }
+
+    /// Revisa si el agente de una tarea trabada que ya salió va en camino y, si cambió, edita el mensaje: dice
+    /// «⏳ Ya va en camino…» y pierde el botón, o lo recupera cuando la corrida termina y la tarea sigue
+    /// trabada. Si no se pueden leer las corridas, queda como está hasta la próxima vuelta.
+    private func refreshWake(_ item: AttentionItem) async {
+        guard let target = item.wakeTarget, let sent = state.messages[item.id], sent.closedAt == nil,
+              sent.messageId != nil, !working.contains(item.id),
+              let agentName = sent.choices.lazy.compactMap({ choice -> String?? in
+                  if case let .wakeAgent(_, name) = choice.action { name } else { nil }
+              }).first,
+              let progress = await resolver.wakeProgress(target)
+        else { return }
+        let onTheWay: String? = switch progress {
+        case .idle: nil
+        case let .onTheWay(running): WakeText.onTheWay(running: running, target: target, agentName: agentName)
+        }
+        // Mientras se leían las corridas pudo contestarse o cerrarse.
+        guard let current = state.messages[item.id], current.closedAt == nil, !working.contains(item.id),
+              let messageId = current.messageId, current.onTheWay != onTheWay
+        else { return }
+        var updated = current
+        updated.onTheWay = onTheWay
+        // Solo se guarda si Telegram aceptó el cambio: si no, se vuelve a intentar en la próxima vuelta.
+        guard await editKeepingButtons(messageId, for: updated) else { return }
+        state.messages[item.id]?.onTheWay = onTheWay
+        save()
+    }
+
+    /// Cambia el texto de un mensaje y deja sus botones como están en `sent`. Dice si Telegram lo aceptó.
+    private func editKeepingButtons(_ messageId: Int, for sent: SentDecision) async -> Bool {
+        guard let bot, let chatId = state.chatId else { return false }
+        func params(link: Bool) -> [String: Any] {
+            [
+                "chat_id": chatId,
+                "message_id": messageId,
+                "text": TelegramFormat.withProgress(sent),
+                "parse_mode": "HTML",
+                "link_preview_options": ["is_disabled": true],
+                "reply_markup": ["inline_keyboard": keyboard(for: sent, link: link)],
+            ]
+        }
+        do {
+            try await bot.send("editMessageText", params(link: true))
+            return true
+        } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("BUTTON_URL_INVALID") {
+            return (try? await bot.send("editMessageText", params(link: false))) != nil
+        } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("message is not modified") {
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func comment(_ text: String, on sent: SentDecision, replyTo: Int) async {
@@ -823,8 +889,13 @@ enum TelegramFormat {
 
         let origin = [item.originAgentName, issueLine(item)].compactMap { $0 }.joined(separator: " · ")
         if !origin.isEmpty { lines.append("<i>\(escape(origin))</i>") }
-        if prompt.choices.isEmpty { lines.append(String(localized: "Answer it in Paperclip.")) }
+        if prompt.choices.isEmpty && prompt.onTheWay == nil { lines.append(String(localized: "Answer it in Paperclip.")) }
         return lines.joined(separator: "\n")
+    }
+
+    /// El mensaje con «⏳ Ya va en camino…» al final, si el agente de la tarea trabada ya tiene una corrida.
+    static func withProgress(_ sent: TelegramChannel.SentDecision) -> String {
+        sent.onTheWay.map { sent.html + "\n\n" + escape($0) } ?? sent.html
     }
 
     /// Cómo terminó el botón «Despertar a …».
@@ -847,10 +918,13 @@ enum TelegramFormat {
         if let title = item.subject?.title { lines.append(String(localized: "Title: \(title)")) }
         if let question = prompt.question { lines.append(String(localized: "Question: \(question)")) }
         if let details = prompt.details, !details.isEmpty { lines.append(String(localized: "Details:\n\(truncated(details))")) }
-        if prompt.choices.isEmpty {
+        // Si el agente va en camino, el botón para despertarlo está escondido por ahora, pero sigue siendo una opción.
+        if let hold = prompt.onTheWay { lines.append(hold.text) }
+        let choices = prompt.choices + (prompt.onTheWay.map { [$0.choice] } ?? [])
+        if choices.isEmpty {
             lines.append(String(localized: "It’s answered on the Paperclip page."))
         } else {
-            let options = prompt.choices.map { choice in
+            let options = choices.map { choice in
                 String(localized: "“\(choice.label)”") + (choice.asks.map { String(localized: " (asks you to write: \($0))") } ?? "")
             }
             lines.append(String(localized: "Options: \(options.joined(separator: " / "))"))
@@ -883,7 +957,8 @@ enum TelegramFormat {
             case "connection_intent": String(localized: "Connection")
             default: String(localized: "Confirmation")
             }
-        case "approval": String(localized: "Approval")
+        case "approval":
+            item.extras.metadata?.type == "request_board_approval" ? String(localized: "Board approval") : String(localized: "Approval")
         case "decision": String(localized: "Decision")
         case "join_request": String(localized: "Access request")
         case "recovery_action": String(localized: "Recovery")

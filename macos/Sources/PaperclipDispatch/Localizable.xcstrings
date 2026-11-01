@@ -101,6 +101,32 @@
         }
       }
     },
+    "%@ asks to join the company as %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ asks to join the company as %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ pide entrar a la company como %2$@."
+          }
+        }
+      }
+    },
+    "%@ asks to join the company.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ pide entrar a la company."
+          }
+        }
+      }
+    },
     "%@ is no longer assigned to %@, or it’s already closed.": {
       "localizations": {
         "es": {
@@ -157,6 +183,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld %%"
+          }
+        }
+      }
+    },
+    "**Recommended action:** %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Acción recomendada:** %@"
+          }
+        }
+      }
+    },
+    "**Risks:**": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Riesgos:**"
           }
         }
       }
@@ -291,6 +337,16 @@
         }
       }
     },
+    "Accept": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
+          }
+        }
+      }
+    },
     "Access request": {
       "localizations": {
         "es": {
@@ -421,6 +477,16 @@
         }
       }
     },
+    "An agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un agente"
+          }
+        }
+      }
+    },
     "An agent failed": {
       "localizations": {
         "es": {
@@ -521,6 +587,16 @@
         }
       }
     },
+    "Approved.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprobado."
+          }
+        }
+      }
+    },
     "Auto": {
       "localizations": {
         "es": {
@@ -607,6 +683,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Banners, sonido y el número en el Dock: todo encendido."
+          }
+        }
+      }
+    },
+    "Board approval": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprobación de board"
           }
         }
       }
@@ -1221,6 +1307,16 @@
         }
       }
     },
+    "Dismiss": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar"
+          }
+        }
+      }
+    },
     "Dispatch %@": {
       "localizations": {
         "es": {
@@ -1641,6 +1737,16 @@
         }
       }
     },
+    "It has to be more than what was already spent.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiene que ser más que lo ya gastado."
+          }
+        }
+      }
+    },
     "It installs in Terminal": {
       "localizations": {
         "es": {
@@ -1791,12 +1897,42 @@
         }
       }
     },
+    "It’s waiting for your approval.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espera tu aprobación."
+          }
+        }
+      }
+    },
+    "It’s waiting for your review.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Espera tu revisión."
+          }
+        }
+      }
+    },
     "I’ve Installed It": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Ya lo instalé"
+          }
+        }
+      }
+    },
+    "Keep paused": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantener en pausa"
           }
         }
       }
@@ -1921,6 +2057,26 @@
         }
       }
     },
+    "New budget in USD (more than %@ already spent):": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presupuesto nuevo en USD (más que los %@ ya gastados):"
+          }
+        }
+      }
+    },
+    "New budget in USD:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presupuesto nuevo en USD:"
+          }
+        }
+      }
+    },
     "New versions": {
       "localizations": {
         "es": {
@@ -2007,6 +2163,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No hizo falta despertar"
+          }
+        }
+      }
+    },
+    "Nobody is reviewing it: there’s no reviewer, card or run to move it forward.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nadie la está revisando: no hay revisor, tarjeta ni corrida que la haga avanzar."
           }
         }
       }
@@ -2411,6 +2577,26 @@
         }
       }
     },
+    "Paperclip didn’t retry it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no la reintentó."
+          }
+        }
+      }
+    },
+    "Paperclip didn’t retry it: “%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no la reintentó: «%@»"
+          }
+        }
+      }
+    },
     "Paperclip is installed, but not running": {
       "localizations": {
         "es": {
@@ -2697,6 +2883,16 @@
         }
       }
     },
+    "Raise budget": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subir presupuesto"
+          }
+        }
+      }
+    },
     "Reading the task…": {
       "localizations": {
         "es": {
@@ -2893,6 +3089,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reiniciando…"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
           }
         }
       }
@@ -3127,12 +3333,38 @@
         }
       }
     },
+    "Someone": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alguien"
+          }
+        }
+      }
+    },
     "Something is waiting for your decision.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Algo espera tu decisión."
+          }
+        }
+      }
+    },
+    "Spent %@ of a %@ budget.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Spent %1$@ of a %2$@ budget."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gastado: %1$@ de un presupuesto de %2$@."
           }
         }
       }
@@ -3307,6 +3539,16 @@
         }
       }
     },
+    "That isn’t an amount in USD.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eso no es un monto en USD."
+          }
+        }
+      }
+    },
     "That name can’t be found on the network. Check the address.": {
       "localizations": {
         "es": {
@@ -3343,6 +3585,32 @@
           "stringUnit": {
             "state": "translated",
             "value": "El agente"
+          }
+        }
+      }
+    },
+    "The agent %@ asks to join the company (adapter %@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The agent %1$@ asks to join the company (adapter %2$@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El agente %1$@ pide entrar a la company (adaptador %2$@)."
+          }
+        }
+      }
+    },
+    "The agent %@ asks to join the company.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El agente %@ pide entrar a la company."
           }
         }
       }
@@ -4367,6 +4635,16 @@
         }
       }
     },
+    "admin": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "administrador"
+          }
+        }
+      }
+    },
     "another computer": {
       "localizations": {
         "es": {
@@ -4528,6 +4806,26 @@
         }
       }
     },
+    "operator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "operador"
+          }
+        }
+      }
+    },
+    "owner": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "propietario"
+          }
+        }
+      }
+    },
     "that agent": {
       "localizations": {
         "es": {
@@ -4554,6 +4852,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "la tarea"
+          }
+        }
+      }
+    },
+    "viewer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lector"
           }
         }
       }
@@ -4654,6 +4962,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "…y más."
+          }
+        }
+      }
+    },
+    "⏳ On its way: %@ has a queued run on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "⏳ On its way: %1$@ has a queued run on %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⏳ Ya va en camino: %1$@ tiene una corrida en cola en %2$@."
+          }
+        }
+      }
+    },
+    "⏳ On its way: %@ has a run in progress on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "⏳ On its way: %1$@ has a run in progress on %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⏳ Ya va en camino: %1$@ tiene una corrida en curso en %2$@."
           }
         }
       }

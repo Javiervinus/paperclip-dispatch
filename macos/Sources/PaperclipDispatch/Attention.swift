@@ -57,6 +57,8 @@ struct AttentionItem: Decodable, Sendable {
     let whyNow: String?
     /// Lo que Paperclip propone hacer con ella (p. ej. `nudge` en una tarea trabada).
     let decisionVerbs: [AttentionVerb]
+    /// Lo que solo usan algunos tipos (presupuesto, corridas fallidas, aprobaciones de board…).
+    let extras: AttentionExtras
 
     private enum CodingKeys: String, CodingKey {
         case id, sourceKind, subject, relatedIssue, project, detail, inlineResolvable, originAgentName, whyNow
@@ -76,6 +78,7 @@ struct AttentionItem: Decodable, Sendable {
         whyNow = try? container.decodeIfPresent(String.self, forKey: .whyNow)
         decisionVerbs = (try? container.decodeIfPresent([Lossy<AttentionVerb>].self, forKey: .decisionVerbs))?
             .compactMap(\.value) ?? []
+        extras = AttentionExtras(decoder)
     }
 
     /// La tarea donde vive, para comentar en ella.
