@@ -90,8 +90,19 @@ macos/build.sh
   `Personal/paperclip/scripts`; con `PAPERCLIP_UPDATE_SCRIPT=` (vacía) se arma como para cualquiera.
 - **No trae ninguna dirección escrita.** La dirección se guarda en los ajustes de la app (`serverURL`). Si
   un build trae `PAPERCLIP_SERVER_URL`, la app la adopta la primera vez.
-- **Bienvenida** (`WelcomeView.swift`, `PaperclipLocator.swift`). Se abre la primera vez y desde Ajustes →
-  Paperclip → «Cambiar…». Busca Paperclip donde lo deja su CLI: `~/.paperclip/instances/<id>/`, o
+- **Bienvenida** (`WelcomeView.swift`, `WelcomeIntroStep.swift`, `WelcomeNotificationsStep.swift`,
+  `PaperclipLocator.swift`). La primera vez son tres pasos, con puntos abajo que dicen en cuál va y los
+  botones a 28 pt del borde:
+  1. **Qué es:** el nombre de la app, para qué sirve en una línea y tres cosas que gana, cada una con su
+     símbolo en el color de acento. Abajo, discreto, «no es una app oficial».
+  2. **Conectar** con Paperclip (lo de abajo). Ya busca mientras se lee el primer paso.
+  3. **Avisos:** primero un aviso de ejemplo y el ícono del Dock con su número, y recién después «Permitir
+     avisos», que muestra el aviso de permiso de macOS. Si se niega o quedan a medias (sin banner o sin el
+     número), lo dice y ofrece Ajustes del Sistema; se actualiza al volver de ahí. No obliga: «Abrir
+     Paperclip» funciona igual. Debajo, «Abrir al iniciar sesión», encendido por defecto.
+  La app ya no pide el permiso al abrirse: lo pide este paso, el recordatorio o Ajustes → Avisos. Desde
+  Ajustes → Paperclip → «Cambiar…» la bienvenida es solo el paso de conectar. Busca Paperclip donde lo deja
+  su CLI: `~/.paperclip/instances/<id>/`, o
   `PAPERCLIP_HOME` y `PAPERCLIP_INSTANCE_ID` (`config.json`, `runtime-info.json`, y el LaunchAgent
   `ing.paperclip.paperclipai`). Lo comprueba con `GET /api/health`, que no pide sesión.
   - Si responde, ofrece abrirlo con la dirección que da Paperclip (`dashboardUrl`; aquí, la de Tailscale).
@@ -103,6 +114,23 @@ macos/build.sh
   - Una dirección escrita se guarda solo si responde un Paperclip.
   - La primera vez, cerrar la bienvenida cierra la app. Al cambiar de Paperclip, la app se vuelve a abrir:
     la ventana, los avisos y el bot quedan atados a la dirección con que arrancaron.
+- **Sugerencias** (`Tip.swift`, `TipCenter.swift`, `TipSheetView.swift`). Lo que no va en la bienvenida
+  porque la alargaría, como conectar Telegram, sale después en una hoja de la ventana, con un dibujo de lo
+  que se gana. Hoy hay una (Telegram, si no hay bot); las que vengan se agregan en `Tip`.
+  - Sale unos 4 s después de una revisión de Decisions con la sesión iniciada (nunca a media carga ni en la
+    pantalla de inicio), solo con la ventana al frente y sin hojas ni la vista sin conexión. Si no se puede
+    en ese momento, se intenta en la revisión siguiente. Al iniciar sesión, la app revisa enseguida (la
+    página cambia de dirección), sin esperar el minuto.
+  - Cada una sale una vez («Ahora no» tampoco la hace volver) y como mucho una al día (`tipsShown`,
+    `tipLastShownAt`). «Configurar Telegram» abre Ajustes directo en la pestaña Telegram.
+- **Recordatorio de avisos** (`NotificationNudge.swift`, `NotificationNudgeView.swift`). Si los avisos
+  están apagados o a medias (sin banner o sin el número en el Dock) y en Ajustes → Avisos se quiere lo que
+  falta, una píldora de vidrio abajo, sobre la página, lo dice. No tapa Paperclip ni bloquea nada.
+  - «Activar» pide el permiso si nunca se pidió; si se negó o está a medias, «Ajustar» abre Ajustes del
+    Sistema en la página de la app. Al arreglarse, dice «Avisos activados» un momento y se va.
+  - Sale unos 8 s después de entrar a Paperclip, o enseguida al cerrar una sugerencia; nunca con una hoja
+    abierta. Una vez por apertura de la app. La × la esconde una semana; después de tres veces, no vuelve
+    (`notificationNudgeSnoozedUntil`, `notificationNudgeDismissals`).
 - **Sin conexión** (`OfflineView.swift`). Si Paperclip no responde (o un proxy como `tailscale serve`
   contesta 502, 503 o 504), la ventana lo dice en vez de quedar en blanco. Vuelve a probar cada 3 s y
   regresa sola a la página. Ofrece «Reintentar», «Cambiar dirección…» y, si es el de esta Mac y está
@@ -196,7 +224,8 @@ macos/build.sh
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
     adopta como ajuste.
   - **Avisos:** de decisiones, también con la ventana al frente, número del Dock, permiso de macOS y un
-    aviso de prueba.
+    aviso de prueba. El permiso muestra lo que de verdad deja macOS: «Permitir avisos» si nunca se pidió,
+    «Permitidos», o «Ajustar» / «Abrir Ajustes del Sistema» si faltan los banners o el número, o se negó.
   - **Telegram:** conectar el bot en dos pasos, vincular el chat con el QR (con el avión de Telegram al
     centro, por eso va con corrección alta), y ya conectado: envío, prueba, «Explicar decisiones» y quitar
     el bot (pide confirmación). Al vincular, la pestaña pasa sola a lo de conectado.
@@ -207,14 +236,16 @@ macos/build.sh
   - Ensayo visual, para revisar el diseño sin tapar nada en pantalla: `macos/snapshot.zsh settings
     [carpeta]` (`Snapshot.swift`). Abre una segunda copia de la app, sin ícono ni foco, que pone cada
     pestaña en una ventana fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin
-    vincular). El script las captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal
+    vincular; Avisos también sin pedir y a medias). El script las captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal
     necesita permiso de Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot
     ni avisa. En las capturas los interruptores y el vidrio salen más apagados, porque la ventana no está
     activa.
     - macOS solo captura ventanas que tocan una pantalla: cada una queda con un punto adentro, en el borde
       izquierdo (`SnapshotableWindow` evita que macOS la acomode). Con la pantalla bloqueada no captura.
-    - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos.
-    - `welcome` captura cada paso de la bienvenida, con datos de muestra, y la ventana sin conexión.
+    - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos, y en dos casos con el
+      recordatorio de avisos.
+    - `welcome` captura cada paso de la bienvenida (también los estados del permiso), con datos de
+      muestra, la sugerencia de Telegram y la ventana sin conexión.
     - `SHADOW=1` deja la sombra de la ventana también en `settings`, `window` y `welcome`.
     - `APP_PATH=<ruta a un .app>` ensaya otra copia, como una de prueba fuera de Aplicaciones (`open -a`
       no encuentra apps por nombre en `/tmp`).

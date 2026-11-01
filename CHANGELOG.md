@@ -21,8 +21,9 @@ The first release. Everything below is new, so this entry describes the app rath
   fails, and the number of pending decisions on the Dock icon.
 - **Answer from Telegram.** Link a Telegram bot to get each decision on your phone and approve, reject or
   ask "explain it to me" from there.
-- **A welcome that finds Paperclip.** On first launch the app looks for Paperclip on this Mac, starts it
-  if it is off, helps install it if it is missing, or takes the address of one on another computer.
+- **A welcome that gets you set up.** On first launch the app introduces itself, finds Paperclip on this
+  Mac (starting it, helping install it, or taking another address) and shows what notifications look like
+  before asking for them. If they end up off, it reminds you, without getting in the way.
 - **Updates for both, in one place.** The button at the top right shows the version of Paperclip and of
   this app. Paperclip updates only when you say so; the app downloads its own updates and installs them
   when you restart it or quit.

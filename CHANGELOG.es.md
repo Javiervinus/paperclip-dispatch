@@ -23,8 +23,9 @@ cambios.
   aprobación o falla, y el número de decisiones pendientes en el ícono del Dock.
 - **Responder desde Telegram.** Vincula un bot de Telegram para recibir cada decisión en el teléfono y
   aprobarla, rechazarla o pedir «explícamela» desde ahí.
-- **Una bienvenida que encuentra Paperclip.** La primera vez, la app busca Paperclip en esta Mac, lo
-  enciende si está apagado, ayuda a instalarlo si falta o toma la dirección de uno en otra computadora.
+- **Una bienvenida que te deja listo.** La primera vez la app se presenta, encuentra Paperclip en esta Mac
+  (lo enciende, ayuda a instalarlo o toma la dirección de otro) y muestra cómo se ven los avisos antes de
+  pedirlos. Si quedan apagados, te lo recuerda, sin estorbar.
 - **Las actualizaciones de los dos, en un solo lugar.** El botón de arriba a la derecha muestra la versión
   de Paperclip y la de esta app. Paperclip se actualiza solo cuando tú dices; la app baja sus versiones
   sola y las instala cuando la reinicias o la cierras.
