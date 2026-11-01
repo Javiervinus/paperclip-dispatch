@@ -18,7 +18,7 @@ set -euo pipefail
 
 USAGE="Uso: snapshot.zsh settings|window|welcome [carpeta] · snapshot.zsh page <ruta> [carpeta]"
 KIND=${1:?$USAGE}
-APP_NAME=${APP_NAME:-Paperclip Swift}
+APP_NAME=${APP_NAME:-Paperclip Dispatch}
 EXTRA=()
 NO_SHADOW=(-o)
 case $KIND in

@@ -1,12 +1,12 @@
 #!/bin/zsh
-# Arma la app nativa (Swift, Liquid Glass) y la instala en /Applications.
+# Arma Paperclip Dispatch, la app nativa (Swift, Liquid Glass), y la instala en /Applications.
 #
 # Compila con `swift build`, arma el .app a mano (Info.plist, ícono, archivos de la página) y lo firma
 # con la identidad Developer ID del llavero. La dirección de Paperclip la elige cada uno en la bienvenida.
 # Si la app está abierta, se cierra solo para reemplazarla y se vuelve a abrir.
 #
 # Variables (con su valor por defecto). Las de tu Mac pueden ir en macos/build.local.env, que no se sube:
-#   APP_NAME="Paperclip Swift"  APP_ID=com.javiervinueza.paperclip.swift  INSTALL_DIR=/Applications
+#   APP_NAME="Paperclip Dispatch"  APP_ID=com.javiervinueza.paperclip.swift  INSTALL_DIR=/Applications
 #   PAPERCLIP_SERVER_URL=<vacía: la bienvenida la pide; con valor, la app la adopta la primera vez>
 #   PAPERCLIP_UPDATE_SCRIPT=<vacía: actualiza con `paperclipai update`; con valor, con ese script>
 #   SIGN_IDENTITY=<la primera «Developer ID Application» del llavero; «-» firma sin identidad>
@@ -16,7 +16,7 @@ set -eo pipefail
 ROOT=${0:A:h}
 REPO=${ROOT:h}
 [[ -f $ROOT/build.local.env ]] && source "$ROOT/build.local.env"
-APP_NAME=${APP_NAME:-Paperclip Swift}
+APP_NAME=${APP_NAME:-Paperclip Dispatch}
 APP_ID=${APP_ID:-com.javiervinueza.paperclip.swift}
 APP_VERSION=${APP_VERSION:-0.1.0}
 INSTALL_DIR=${INSTALL_DIR:-/Applications}
@@ -46,7 +46,11 @@ cp "$ROOT/web/bridge.js" "$ROOT/web/glass.js" "$ROOT/web/glass.css" "$APP/Conten
 # La app está en español: con esta carpeta, macOS también le da en español sus textos (errores, menús).
 mkdir -p "$APP/Contents/Resources/es.lproj"
 touch "$APP/Contents/Resources/es.lproj/Localizable.strings"
-"$REPO/scripts/make-icns.zsh" "$APP/Contents/Resources/AppIcon.icns"
+# El ícono es un documento de Icon Composer (AppIcon.icon): claro, oscuro, transparente y tintado, como
+# los íconos de macOS 26. actool lo compila en Assets.car, más un AppIcon.icns para lo que no lee el .car.
+xcrun actool "$ROOT/AppIcon.icon" --compile "$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 26.0 --app-icon AppIcon --output-partial-info-plist "$WORK/icon.plist" \
+  --errors --warnings >/dev/null
 
 PLIST=$APP/Contents/Info.plist
 plutil -create xml1 "$PLIST"
@@ -56,6 +60,7 @@ plist CFBundleName string "$APP_NAME"
 plist CFBundleDisplayName string "$APP_NAME"
 plist CFBundleExecutable string "$EXECUTABLE"
 plist CFBundleIconFile string AppIcon
+plist CFBundleIconName string AppIcon
 plist CFBundlePackageType string APPL
 plist CFBundleShortVersionString string "$APP_VERSION"
 plist CFBundleVersion string "$APP_VERSION"
