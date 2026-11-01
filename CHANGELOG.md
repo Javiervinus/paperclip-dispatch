@@ -20,6 +20,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   task, who assigned it, its project and how it starts; reply to the message to comment on the task. When
   it’s closed or reassigned, the message says so. The ones you assign yourself don’t notify, and Settings →
   Notifications can turn it off.
+- **Answer more decisions from Telegram.** Join requests, reviews waiting for you, board approvals, failed
+  runs, agent errors and budget stops now come with their own buttons, and “Wake up” only shows when the
+  agent isn’t already on its way: if it has a run queued or in progress, the message and the Mac
+  notification say so instead.
 
 ### Fixed
 

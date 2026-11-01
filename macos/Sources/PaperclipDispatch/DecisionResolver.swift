@@ -15,6 +15,22 @@ enum DecisionAction: Codable, Hashable, Sendable {
     case decide(decisionId: String, optionId: String)
     /// Tarea trabada: despertar al agente que la tiene («Nudge»), en esa tarea.
     case wakeAgent(WakeTarget, agentName: String?)
+    /// Solicitudes de acceso, revisiones, corridas fallidas, errores de agente y presupuesto (`QueueDecisions`).
+    case queue(QueueAction)
+}
+
+/// Si el agente de una tarea trabada ya va en camino: tiene una corrida en cola o en curso en esa tarea.
+enum WakeProgress: Equatable, Sendable {
+    case idle
+    case onTheWay(running: Bool)
+}
+
+/// Una tarea trabada cuyo agente ya va en camino: el aviso lo dice y sale sin el botón. En Telegram el mensaje
+/// lo recupera cuando la corrida termina y la tarea sigue trabada; en la Mac, el aviso nuevo que llega si la
+/// tarea vuelve a trabarse después de la corrida.
+struct WakeHold: Sendable {
+    let text: String
+    let choice: DecisionChoice
 }
 
 /// Cómo terminó un despertar pedido con el botón.
@@ -63,6 +79,15 @@ enum WakeText {
             (String(localized: "Couldn’t wake up \(agentName ?? String(localized: "the agent"))"), error)
         }
     }
+
+    /// En lugar del botón, cuando el agente ya tiene una corrida en esa tarea.
+    static func onTheWay(running: Bool, target: WakeTarget, agentName: String?) -> String {
+        let agent = agentName ?? String(localized: "The agent")
+        let task = target.issueIdentifier ?? String(localized: "the task")
+        return running
+            ? String(localized: "⏳ On its way: \(agent) has a run in progress on \(task).")
+            : String(localized: "⏳ On its way: \(agent) has a queued run on \(task).")
+    }
 }
 
 /// Un botón: lo que dice y lo que hace.
@@ -84,6 +109,8 @@ struct DecisionPrompt: Sendable {
     /// Las de varios pasos (formularios, tareas sugeridas, casillas, veredictos, decisiones con campos): se
     /// contestan de a poco y se mandan juntas. Van sin `choices`, así que en la Mac abren Paperclip.
     var card: DecisionCard?
+    /// Tarea trabada cuyo agente ya va en camino: `choices` queda vacío y el botón espera aquí.
+    var onTheWay: WakeHold?
 }
 
 /// Lee lo que hace falta de cada tipo de decisión y aplica la respuesta.
@@ -105,11 +132,20 @@ struct DecisionResolver {
 
     func prompt(for item: AttentionItem) async -> DecisionPrompt {
         var prompt = DecisionPrompt(question: item.detail?.promptExcerpt)
-        // Paperclip no la deja resolver desde fuera, pero propone despertar al agente que la tiene.
+        // Paperclip no la deja resolver desde fuera, pero propone despertar al agente que la tiene. Si el agente
+        // ya va en camino, sale sin el botón; si no se pueden leer sus corridas, con el botón, como antes.
         if let target = item.wakeTarget {
-            prompt.choices = [Self.wakeChoice(target, agentName: await agentName(target.agentId))]
+            async let progress = wakeProgress(target)
+            let name = await agentName(target.agentId)
+            let choice = Self.wakeChoice(target, agentName: name)
+            if case let .onTheWay(running)? = await progress {
+                prompt.onTheWay = WakeHold(text: WakeText.onTheWay(running: running, target: target, agentName: name), choice: choice)
+            } else {
+                prompt.choices = [choice]
+            }
             return prompt
         }
+        if let queued = await queuePrompt(for: item, base: prompt) { return queued }
         guard item.inlineResolvable, let subjectId = item.subject?.id else { return prompt }
         do {
             switch item.sourceKind {
@@ -189,6 +225,8 @@ struct DecisionResolver {
             guard outcome == .accepted else {
                 throw WakeError(message: WakeText.result(outcome, target: target, agentName: agentName).body)
             }
+        case let .queue(action):
+            try await perform(action, text: text)
         }
     }
 
@@ -236,6 +274,15 @@ struct DecisionResolver {
         } catch {
             return .failed(error.localizedDescription)
         }
+    }
+
+    /// Si el agente ya tiene una corrida en cola o en curso en la tarea (`live-runs`, lo mismo que muestra la
+    /// tarea en la página). `nil` si no se pudo saber.
+    func wakeProgress(_ target: WakeTarget) async -> WakeProgress? {
+        guard let runs: [Lossy<LiveRun>] = try? await api.get("api/issues/\(target.issueId)/live-runs") else { return nil }
+        let statuses = runs.compactMap(\.value).filter { $0.agentId == target.agentId }.compactMap(\.status)
+        if statuses.contains("running") { return .onTheWay(running: true) }
+        return statuses.contains("queued") ? .onTheWay(running: false) : .idle
     }
 
     /// El nombre del agente, para el botón. `nil` si no se pudo leer.
@@ -433,6 +480,11 @@ struct DecisionResolver {
             reason = try? container.decodeIfPresent(String.self, forKey: .reason)
             message = try? container.decodeIfPresent(String.self, forKey: .message)
         }
+    }
+
+    private struct LiveRun: Decodable {
+        let agentId: String?
+        let status: String?
     }
 
     private struct AgentSummary: Decodable {

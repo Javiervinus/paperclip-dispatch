@@ -22,6 +22,10 @@ manda aquí.
   qué tarea es, quién te la asignó, su proyecto y cómo empieza; responde al mensaje para comentar en la
   tarea. Cuando se cierra o se reasigna, el mensaje lo dice. Las que te asignas tú no avisan, y se apaga en
   Ajustes → Avisos.
+- **Más decisiones se contestan desde Telegram.** Las solicitudes de acceso, las revisiones que te esperan,
+  las aprobaciones de board, las corridas fallidas, los errores de agentes y los topes de presupuesto traen
+  sus propios botones, y «Despertar» solo aparece si el agente no va en camino: si tiene una corrida en
+  cola o en curso, el mensaje y el aviso de la Mac lo dicen en su lugar.
 
 ### Arreglado
 

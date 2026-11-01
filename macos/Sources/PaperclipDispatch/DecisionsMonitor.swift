@@ -159,12 +159,15 @@ final class DecisionsMonitor {
         }
         for item in fresh {
             let notice = Self.notice(for: item)
-            // Una tarea trabada a nombre de un agente lleva el botón para despertarlo.
+            var body = notice.body
+            // Una tarea trabada a nombre de un agente lleva el botón para despertarlo, salvo que ya vaya en camino.
             var wake: WakeButton?
             if let target = item.wakeTarget {
-                wake = WakeButton(target: target, agentName: await resolver.agentName(target.agentId))
+                async let progress = resolver.wakeProgress(target)
+                let agentName = await resolver.agentName(target.agentId)
+                (body, wake) = Self.wakeNotice(body: body, target: target, agentName: agentName, progress: await progress)
             }
-            notifications.show(id: item.id, tag: item.id, title: notice.title, body: notice.body, href: notice.href, wake: wake)
+            notifications.show(id: item.id, tag: item.id, title: notice.title, body: body, href: notice.href, wake: wake)
         }
     }
 
@@ -174,6 +177,20 @@ final class DecisionsMonitor {
         let body: String = item.detail?.promptExcerpt ?? item.subject?.title ?? item.whyNow
             ?? String(localized: "Something is waiting for your decision.")
         return (parts.isEmpty ? "Paperclip" : parts.joined(separator: " · "), body, item.subject?.href ?? item.relatedIssue?.href)
+    }
+
+    /// El aviso de una tarea trabada a nombre de un agente: con el botón para despertarlo o, si ya tiene una
+    /// corrida en la tarea, con «⏳ Ya va en camino…» y sin el botón. Si no se supo (`progress` nil), con el botón.
+    static func wakeNotice(
+        body: String,
+        target: WakeTarget,
+        agentName: String?,
+        progress: WakeProgress?
+    ) -> (body: String, wake: WakeButton?) {
+        guard case let .onTheWay(running)? = progress else {
+            return (body, WakeButton(target: target, agentName: agentName))
+        }
+        return (body + "\n" + WakeText.onTheWay(running: running, target: target, agentName: agentName), nil)
     }
 
     /// Se apretó «Despertar a …» en un aviso: despierta al agente (solo esta vez, sin reintentos) y cambia el

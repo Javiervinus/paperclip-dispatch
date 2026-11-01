@@ -44,6 +44,11 @@ final class PaperclipAPI {
         _ = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))
     }
 
+    /// Un cambio en algo que ya existe (p. ej. el estado de una tarea).
+    func patch(_ path: String, _ body: [String: Any]) async throws {
+        _ = try await send("PATCH", path, query: [], body: JSONSerialization.data(withJSONObject: body))
+    }
+
     /// Un cambio cuya respuesta sí hace falta (p. ej. si Paperclip aceptó o saltó un despertar).
     func post<T: Decodable>(_ path: String, _ body: [String: Any] = [:], returning: T.Type) async throws -> T {
         let data = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))

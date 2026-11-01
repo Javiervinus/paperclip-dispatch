@@ -3,7 +3,8 @@ import SwiftUI
 
 /// Ensayo de los avisos de una tarea trabada (`macos/snapshot.zsh notifications`), en claro y en oscuro: el
 /// aviso de la Mac y el mensaje de Telegram, con un agente y con una persona, y cómo quedan después de
-/// apretar «Despertar a …» (aceptado, saltado, ya en marcha, sin hacer falta o con error). No avisa ni manda
+/// apretar «Despertar a …» (aceptado, saltado, ya en marcha, sin hacer falta o con error). También cuando el
+/// agente ya va en camino (una corrida en cola o en curso): sin el botón. No avisa ni manda
 /// nada: los avisos de macOS los dibuja el sistema y el mensaje vive en Telegram, así que se dibujan aquí con
 /// el mismo título, texto y botones que arma el código de verdad (`DecisionsMonitor.notice`, `WakeText`,
 /// `TelegramFormat`, `TelegramChannel.keyboard`). Los archivos van en inglés (`mac-agent-light.png`).
@@ -51,19 +52,35 @@ enum NotificationsSnapshot {
             let notice = DecisionsMonitor.notice(for: item)
             return MacNoticePreview(title: notice.title, body: notice.body, action: wake?.title)
         }
+        func macProgress(_ progress: WakeProgress) -> MacNoticePreview {
+            let notice = DecisionsMonitor.notice(for: agentItem)
+            let shown = DecisionsMonitor.wakeNotice(body: notice.body, target: target, agentName: operations.name, progress: progress)
+            return MacNoticePreview(title: notice.title, body: shown.body, action: shown.wake?.title)
+        }
         func macResult(_ outcome: WakeOutcome) -> MacNoticePreview {
             let text = WakeText.result(outcome, target: target, agentName: operations.name)
             return MacNoticePreview(title: text.title, body: text.body, action: outcome.allowsRetry ? button.title : nil)
         }
-        func message(_ item: AttentionItem, agentName: String?) -> TelegramMessagePreview {
+        /// `running`: el agente ya va en camino, con una corrida en curso (`true`) o en cola (`false`).
+        func message(_ item: AttentionItem, agentName: String?, running: Bool? = nil) -> TelegramMessagePreview {
             let choices = item.wakeTarget.map { [DecisionResolver.wakeChoice($0, agentName: agentName)] } ?? []
-            let prompt = DecisionPrompt(question: item.detail?.promptExcerpt, choices: choices)
+            var prompt = DecisionPrompt(question: item.detail?.promptExcerpt, choices: choices)
+            if let running, let wakeTarget = item.wakeTarget, let choice = choices.first {
+                prompt.choices = []
+                prompt.onTheWay = WakeHold(
+                    text: WakeText.onTheWay(running: running, target: wakeTarget, agentName: agentName),
+                    choice: choice
+                )
+            }
             let sent = TelegramChannel.SentDecision(
                 key: 1, companyId: "", messageId: nil, html: TelegramFormat.decision(item, prompt: prompt),
                 choices: choices, issueId: item.issueId, issueIdentifier: item.relatedIssue?.identifier,
-                href: item.subject?.href ?? item.relatedIssue?.href
+                href: item.subject?.href ?? item.relatedIssue?.href, onTheWay: prompt.onTheWay?.text
             )
-            return TelegramMessagePreview(html: sent.html, buttons: channel.keyboard(for: sent).map { $0.compactMap { $0["text"] as? String } })
+            return TelegramMessagePreview(
+                html: channel.messageText(sent),
+                buttons: channel.keyboard(for: sent).map { $0.compactMap { $0["text"] as? String } }
+            )
         }
         func telegramResult(_ outcome: WakeOutcome) -> [TelegramMessagePreview] {
             let original = message(agentItem, agentName: operations.name)
@@ -83,6 +100,8 @@ enum NotificationsSnapshot {
         var cases: [(file: String, view: AnyView)] = [
             ("mac-agent", AnyView(MacScene(notices: [mac(agentItem, wake: button)]))),
             ("mac-person", AnyView(MacScene(notices: [mac(personItem, wake: nil)]))),
+            ("mac-on-the-way-queued", AnyView(MacScene(notices: [macProgress(.onTheWay(running: false))]))),
+            ("mac-on-the-way-running", AnyView(MacScene(notices: [macProgress(.onTheWay(running: true))]))),
             ("mac-accepted", AnyView(MacScene(notices: [macResult(accepted)]))),
             ("mac-skipped", AnyView(MacScene(notices: [macResult(skipped)]))),
             ("mac-already-running", AnyView(MacScene(notices: [macResult(alreadyRunning)]))),
@@ -90,6 +109,8 @@ enum NotificationsSnapshot {
             ("mac-failed", AnyView(MacScene(notices: [macResult(failed)]))),
             ("telegram-agent", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name)]))),
             ("telegram-person", AnyView(TelegramScene(messages: [message(personItem, agentName: nil)]))),
+            ("telegram-on-the-way-queued", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name, running: false)]))),
+            ("telegram-on-the-way-running", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name, running: true)]))),
             ("telegram-accepted", AnyView(TelegramScene(messages: telegramResult(accepted)))),
             ("telegram-skipped", AnyView(TelegramScene(messages: telegramResult(skipped)))),
             ("telegram-already-running", AnyView(TelegramScene(messages: telegramResult(alreadyRunning)))),
