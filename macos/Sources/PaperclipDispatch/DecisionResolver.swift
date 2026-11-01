@@ -90,6 +90,11 @@ struct DecisionPrompt: Sendable {
 /// sugeridas, secretos) se abre en Paperclip.
 @MainActor
 struct DecisionResolver {
+    /// Lo que va delante de la clave de idempotencia de cada decisión contestada desde la app.
+    private static let idempotencyPrefix = "paperclip-dispatch"
+    /// Los estados de una tarea cerrada: ahí ya no hay a quién despertar.
+    private static let closedStatuses: Set<String> = ["done", "cancelled"]
+
     let api: PaperclipAPI
 
     func prompt(for item: AttentionItem) async -> DecisionPrompt {
@@ -160,7 +165,7 @@ struct DecisionResolver {
             // La misma clave si se toca dos veces: Paperclip la aplica una sola vez.
             try await api.post(
                 "api/decisions/\(decisionId)/decide",
-                ["optionId": optionId, "idempotencyKey": "paperclip-dispatch:\(decisionId):\(optionId)"]
+                ["optionId": optionId, "idempotencyKey": "\(Self.idempotencyPrefix):\(decisionId):\(optionId)"]
             )
         case let .wakeAgent(target, agentName):
             // La Mac y Telegram llaman a `wake`, que dice cómo terminó; aquí solo cuenta si se aceptó.
@@ -182,7 +187,7 @@ struct DecisionResolver {
     func wake(_ target: WakeTarget) async -> WakeOutcome {
         do {
             let issue: IssueSummary = try await api.get("api/issues/\(target.issueId)")
-            guard issue.assigneeAgentId == target.agentId, !["done", "cancelled"].contains(issue.status ?? "")
+            guard issue.assigneeAgentId == target.agentId, !Self.closedStatuses.contains(issue.status ?? "")
             else { return .notStuck }
             let response: WakeResponse = try await api.post(
                 "api/agents/\(target.agentId)/wakeup",

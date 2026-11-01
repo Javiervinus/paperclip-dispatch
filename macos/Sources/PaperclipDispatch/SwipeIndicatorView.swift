@@ -3,9 +3,9 @@ import SwiftUI
 /// La flecha del gesto de atrás y adelante (`PaperclipWebView`): un círculo de vidrio que entra desde el
 /// borde siguiendo a los dedos, en vez de deslizar la página. A media altura de la ventana.
 struct SwipeIndicatorView: View {
-    static let size: CGFloat = 44
+    private static let size: CGFloat = 44
     /// Cuánto se aleja del borde con el gesto completo.
-    static let margin: CGFloat = 20
+    private static let margin: CGFloat = 20
 
     let model: SwipeIndicator
 

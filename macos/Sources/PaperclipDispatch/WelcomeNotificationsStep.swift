@@ -148,6 +148,9 @@ private struct NotificationPreview: View {
     private static let size = CGSize(width: 470, height: 132)
     private static let bannerWidth: CGFloat = 360
     private static let dockTile: CGFloat = 92
+    /// Lo que espera el banner para bajar, para que se vea entrar después de que aparece el paso.
+    private static let appearDelay: Duration = .milliseconds(250)
+    private static let appearAnimation: Animation = .spring(duration: 0.7, bounce: 0.3)
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
@@ -166,8 +169,8 @@ private struct NotificationPreview: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Ejemplo de aviso: el CEO pide tu decisión en VIN-214, y el ícono del Dock con 2 pendientes.")
         .task {
-            try? await Task.sleep(for: .milliseconds(250))
-            withAnimation(.spring(duration: 0.7, bounce: 0.3)) { shown = true }
+            try? await Task.sleep(for: Self.appearDelay)
+            withAnimation(Self.appearAnimation) { shown = true }
         }
     }
 

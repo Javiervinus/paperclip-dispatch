@@ -18,6 +18,8 @@
   // Paperclip pasa a su vista móvil bajo 768 px (MOBILE_BREAKPOINT de SidebarContext): ahí la barra
   // lateral es un cajón y no lleva vidrio.
   const desktop = window.matchMedia("(min-width: 768px)");
+  // Cada cuánto se vuelve a mirar la página por si cambió sin aviso (ver start).
+  const RECHECK_INTERVAL_MS = 1000;
   // Las dos barras de arriba (cabecera de Sidebar y BreadcrumbBar) miden --sz-60px. Otros elementos
   // usan min-h-(--sz-60px), por eso además tienen que empezar arriba de todo.
   const TOP_BAR_SELECTOR = '[class*="h-(--sz-60px)"]';
@@ -148,7 +150,7 @@
     });
     // Paperclip arma y cambia la interfaz sin recargar (React): se revisa seguido y solo se avisa si
     // algo cambió.
-    setInterval(schedule, 1000);
+    setInterval(schedule, RECHECK_INTERVAL_MS);
 
     document.addEventListener("mousemove", (event) => setDragArea(isDragArea(event)), {
       capture: true,

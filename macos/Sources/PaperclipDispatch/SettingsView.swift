@@ -43,7 +43,7 @@ struct SettingsPaneView: View {
 
 private struct GeneralPane: View {
     @Bindable var preferences: Preferences
-    @Bindable var updater: AppUpdater
+    let updater: AppUpdater
 
     @State private var loginItemStatus = LoginItem.status
     @State private var loginItemError: String?
@@ -124,8 +124,8 @@ private struct AppUpdatesSection: View {
                     .contentTransition(.opacity)
                     .animation(SettingsDesign.animation, value: line)
             }
-            if let link = (updater.phase.release ?? updater.whatsNew)?.notesURL {
-                LabeledContent("Novedades de la \((updater.phase.release ?? updater.whatsNew)?.version ?? "")") {
+            if let release = updater.phase.release ?? updater.whatsNew, let link = release.notesURL {
+                LabeledContent("Novedades de la \(release.version)") {
                     Link(destination: link) { Label("Ver en GitHub", systemImage: "arrow.up.right") }
                 }
             }

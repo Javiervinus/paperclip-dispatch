@@ -229,11 +229,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if current.serverURL != url { relaunch() }
     }
 
+    /// Segundos que espera la copia nueva a que esta termine de cerrarse.
+    private static let relaunchDelay = 1
+
     private func relaunch() {
         let reopen = Process()
         reopen.executableURL = URL(fileURLWithPath: "/bin/sh")
         // Espera a que esta copia termine de cerrarse antes de abrir la nueva.
-        reopen.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        reopen.arguments = ["-c", "sleep \(Self.relaunchDelay); /usr/bin/open \"$0\"", Bundle.main.bundlePath]
         try? reopen.run()
         NSApp.terminate(nil)
     }
