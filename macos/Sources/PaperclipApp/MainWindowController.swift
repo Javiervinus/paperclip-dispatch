@@ -77,6 +77,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private var topBarHeight: CGFloat = 0
     /// En la vista angosta de Paperclip (móvil) la barra de arriba es otra y no hay lugar para el botón.
     private var pageIsDesktop = true
+    /// Con vidrio, el botón de la versión flota sobre la página y solo sale en el Dashboard
+    /// (`/<company>/dashboard`): es la única página sin nada arriba a la derecha. En las otras ahí van
+    /// botones de Paperclip, o el panel de propiedades de una tarea, que llega hasta arriba.
+    private static let pageWithFreeCorner = "dashboard"
+    private var pageHasFreeCorner: Bool { webView.url?.lastPathComponent == Self.pageWithFreeCorner }
 
     private let offline = OfflineModel()
     private var offlineView: NSView?
@@ -116,7 +121,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             MainActor.assumeIsolated { self?.updateTitle() }
         }
         urlObservation = webView.observe(\.url) { [weak self] _, _ in
-            MainActor.assumeIsolated { self?.onPageChange?() }
+            MainActor.assumeIsolated {
+                self?.refreshUpdateButton()
+                self?.onPageChange?()
+            }
         }
         pageColorObservation = webView.observe(\.underPageBackgroundColor) { [weak self] _, _ in
             MainActor.assumeIsolated { self?.updateTitlebarColor() }
@@ -399,7 +407,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     }
 
     /// Muestra u oculta el botón de la versión, arriba a la derecha: en la barra de la ventana o, con vidrio,
-    /// centrado en la barra de la ruta de Paperclip.
+    /// centrado en la barra de la ruta de Paperclip, solo en el Dashboard (`pageWithFreeCorner`).
     func setUpdateButton(_ button: NSButton, visible: Bool) {
         updateButtonWanted = visible
         if updateButton !== button {
@@ -422,7 +430,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             return
         }
         updateButtonCenterY?.constant = topBarHeight / 2
-        updateButton.isHidden = !updateButtonWanted || !pageIsDesktop || topBarHeight == 0
+        updateButton.isHidden = !updateButtonWanted || !pageIsDesktop || topBarHeight == 0 || !pageHasFreeCorner
         syncPageState()
     }
 
