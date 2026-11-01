@@ -1667,6 +1667,26 @@
         }
       }
     },
+    "In review, but Paperclip didn’t wake up %@ to review it, and the app’s automatic wake-up didn’t work either.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero Paperclip no despertó a %@ para revisarla, y el despertar automático de la app tampoco funcionó."
+          }
+        }
+      }
+    },
+    "In review, but Paperclip didn’t wake up the reviewing agent.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero Paperclip no despertó al agente revisor."
+          }
+        }
+      }
+    },
     "Install it on this Mac": {
       "localizations": {
         "es": {
@@ -1883,6 +1903,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ya está en la %@."
+          }
+        }
+      }
+    },
+    "It’s on by default because it’s a known Paperclip bug: without it, those tasks wait until someone notices. It works quietly; only if the wake-up fails do you get the stuck-task notification with its button. It will go away once Paperclip fixes the bug.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viene activado porque es un bug conocido de Paperclip: sin esto, esas tareas esperan hasta que alguien se dé cuenta. Trabaja en silencio; solo si el despertar falla te llega el aviso de la tarea trabada con su botón. Desaparecerá cuando Paperclip arregle el bug."
           }
         }
       }
@@ -2647,6 +2677,16 @@
         }
       }
     },
+    "Paperclip issue #18315 on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El issue #18315 de Paperclip en GitHub"
+          }
+        }
+      }
+    },
     "Paperclip never updates on its own: restarting it interrupts whatever the agents are doing, so you choose when.": {
       "localizations": {
         "es": {
@@ -3119,6 +3159,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Revisar el contrato con el cliente"
+          }
+        }
+      }
+    },
+    "Reviews": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisiones"
           }
         }
       }
@@ -3661,6 +3711,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "La que abres en el navegador para ver Paperclip. Si pide iniciar sesión, lo haces en la ventana de la app."
+          }
+        }
+      }
+    },
+    "The reviewing agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El agente revisor"
           }
         }
       }
@@ -4325,6 +4385,16 @@
         }
       }
     },
+    "Wake up reviewers Paperclip forgets": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despertar a los revisores que Paperclip olvida"
+          }
+        }
+      }
+    },
     "Wake up the agent": {
       "localizations": {
         "es": {
@@ -4441,6 +4511,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Novedades de la %@"
+          }
+        }
+      }
+    },
+    "When an agent hands a task over for review, Paperclip sometimes doesn’t wake up the reviewing agent, and the task sits in review with no one on it. If %lld minutes go by and the reviewer still isn’t working on it, the app wakes it up, once.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando un agente pasa una tarea a revisión, a veces Paperclip no despierta al agente revisor y la tarea se queda en revisión sin nadie. Si pasan %lld minutos y el revisor sigue sin trabajar en ella, la app lo despierta, una sola vez."
           }
         }
       }

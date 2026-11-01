@@ -34,6 +34,7 @@ final class Preferences {
         static let notifyWhileLooking = "notifyWhileLooking"
         static let dockBadge = "dockBadge"
         static let liquidGlassPage = "liquidGlassPage"
+        static let wakeStrandedReviewers = "wakeStrandedReviewers"
     }
 
     var appearance: Appearance {
@@ -61,6 +62,12 @@ final class Preferences {
         didSet { save(liquidGlassPage, Key.liquidGlassPage) }
     }
 
+    /// Despertar al agente revisor que Paperclip se salta (`ReviewWaker`). Encendido por defecto: es un bug de
+    /// Paperclip y, sin esto, la tarea queda en revisión sin que nadie la revise.
+    var wakeStrandedReviewers: Bool {
+        didSet { save(wakeStrandedReviewers, Key.wakeStrandedReviewers) }
+    }
+
     /// La app aplica los cambios aquí (tema, número del Dock, vidrio).
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private let defaults: UserDefaults
@@ -73,12 +80,14 @@ final class Preferences {
             Key.notifyWhileLooking: false,
             Key.dockBadge: true,
             Key.liquidGlassPage: false,
+            Key.wakeStrandedReviewers: true,
         ])
         appearance = defaults.string(forKey: Key.appearance).flatMap(Appearance.init) ?? .system
         decisionNotifications = defaults.bool(forKey: Key.decisionNotifications)
         notifyWhileLooking = defaults.bool(forKey: Key.notifyWhileLooking)
         dockBadge = defaults.bool(forKey: Key.dockBadge)
         liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
+        wakeStrandedReviewers = defaults.bool(forKey: Key.wakeStrandedReviewers)
     }
 
     private func save(_ value: Any, _ key: String) {
