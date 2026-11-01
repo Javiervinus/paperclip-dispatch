@@ -8,6 +8,7 @@
 #       ANCHORS="|En qué se fue la semana" (una captura por ancla, separadas por «|»; vacía = arriba)
 #       La captura de page lleva la sombra de la ventana, para ponerla sobre un fondo.
 #   SHADOW=1 deja la sombra también en settings, window y welcome.
+#   APP_PATH=<ruta a un .app> ensaya otra copia (una de prueba fuera de Aplicaciones); si no, la instalada.
 #   ACTIVE=1 las muestra de a una en el centro de la pantalla, al frente, para que se vean activas (botones
 #       de color). Tapa la pantalla unos segundos por ventana: solo cuando nadie está usando la Mac.
 # Por defecto usa una carpeta temporal e imprime cuál. Abre una segunda copia de la app instalada, que pone
@@ -19,6 +20,7 @@ set -euo pipefail
 USAGE="Uso: snapshot.zsh settings|window|welcome [carpeta] · snapshot.zsh page <ruta> [carpeta]"
 KIND=${1:?$USAGE}
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
+APP=${APP_PATH:-$APP_NAME}
 EXTRA=()
 NO_SHADOW=(-o)
 case $KIND in
@@ -39,7 +41,7 @@ rm -f "$OUT/windows.txt" "$OUT/captured" "$OUT"/window-*.txt(N) "$OUT"/captured-
 
 if [[ ${ACTIVE:-} == 1 ]]; then
   # Sin -g: la copia abre al frente, para que sus ventanas puedan quedar activas.
-  open -n -a "$APP_NAME" --args -PaperclipSnapshot "$KIND" -PaperclipSnapshotDirectory "$OUT" \
+  open -n -a "$APP" --args -PaperclipSnapshot "$KIND" -PaperclipSnapshotDirectory "$OUT" \
     -PaperclipSnapshotActive YES "${EXTRA[@]}"
   pid=
   for _ in {1..30}; do
@@ -67,7 +69,7 @@ if [[ ${ACTIVE:-} == 1 ]]; then
   exit 0
 fi
 
-open -g -n -a "$APP_NAME" --args -PaperclipSnapshot "$KIND" -PaperclipSnapshotDirectory "$OUT" "${EXTRA[@]}"
+open -g -n -a "$APP" --args -PaperclipSnapshot "$KIND" -PaperclipSnapshotDirectory "$OUT" "${EXTRA[@]}"
 
 for _ in {1..90}; do
   [[ -s $OUT/windows.txt ]] && break
