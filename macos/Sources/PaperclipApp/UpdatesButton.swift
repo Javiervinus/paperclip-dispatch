@@ -15,6 +15,9 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     private let checkPaperclip: () -> Void
     /// Las novedades se dan por vistas al cerrar el panel en que se mostraron.
     private var showedWhatsNew = false
+    /// Con el panel abierto el botón no se angosta (al pasar a «Revisando…», por ejemplo): el panel cuelga
+    /// de él y se correría hacia un lado.
+    private var openWidth: NSLayoutConstraint?
 
     /// `checkPaperclip` y `updatePaperclip`: lo de Paperclip lo hace `UpdateController` (en los ensayos,
     /// nada).
@@ -63,6 +66,9 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     func showPanel() {
         guard !popover.isShown else { return }
         if button.window != nil, !button.isHidden {
+            let width = button.widthAnchor.constraint(greaterThanOrEqualToConstant: button.frame.width)
+            width.isActive = true
+            openWidth = width
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         } else if let content = host.window?.contentView {
             // Sin botón a la vista (la vista angosta de Paperclip): desde la esquina de arriba a la derecha.
@@ -86,6 +92,8 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     }
 
     func popoverDidClose(_ notification: Notification) {
+        openWidth?.isActive = false
+        openWidth = nil
         if showedWhatsNew { app.dismissWhatsNew() }
         showedWhatsNew = false
     }
