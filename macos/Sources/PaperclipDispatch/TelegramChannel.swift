@@ -360,7 +360,7 @@ final class TelegramChannel {
     }
 
     /// Una fila por opción (`c:<key>:<n>`), «Explícamela» (`e:<key>`) y el enlace a Paperclip.
-    private func keyboard(for sent: SentDecision, link: Bool = true) -> [[[String: Any]]] {
+    func keyboard(for sent: SentDecision, link: Bool = true) -> [[[String: Any]]] {
         var rows: [[[String: Any]]] = sent.choices.indices.map { index in
             [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
         }
@@ -454,7 +454,11 @@ final class TelegramChannel {
             await askText(asks, for: choice, itemId: itemId, index: index, replyTo: sent.messageId)
             return
         }
-        await answer(callback, "Enviando a Paperclip…")
+        if case let .wakeAgent(_, agentName) = choice.action {
+            await answer(callback, "Despertando a \(agentName ?? "el agente")…")
+        } else {
+            await answer(callback, "Enviando a Paperclip…")
+        }
         await apply(itemId: itemId, choice: index, text: nil)
     }
 
@@ -555,6 +559,10 @@ final class TelegramChannel {
         working.insert(itemId)
         defer { working.remove(itemId) }
         let choice = sent.choices[index]
+        if case let .wakeAgent(target, agentName) = choice.action {
+            await wake(target, agentName: agentName, itemId: itemId, sent: sent)
+            return
+        }
         do {
             try await resolver.perform(choice.action, text: text)
         } catch {
@@ -578,6 +586,22 @@ final class TelegramChannel {
                 "✅ Enviado a \(sent.issueIdentifier ?? "Paperclip"): «\(choice.label)», con tu texto.",
                 replyTo: replyTo
             )
+        }
+        requestRefresh?()
+    }
+
+    /// «Despertar a …»: una sola vez, sin reintentos. Si el agente ya trabaja (o no hacía falta), el mensaje lo
+    /// dice y pierde los botones; si Paperclip lo saltó o falló, se contesta debajo y el botón queda para volver
+    /// a intentarlo.
+    private func wake(_ target: WakeTarget, agentName: String?, itemId: String, sent: SentDecision) async {
+        let outcome = await resolver.wake(target)
+        let status = TelegramFormat.wakeResult(outcome, target: target, agentName: agentName)
+        if outcome.allowsRetry {
+            _ = try? await sendHTML(status, replyTo: sent.messageId)
+        } else {
+            state.messages[itemId]?.closedAt = Date()
+            save()
+            if let messageId = sent.messageId { await edit(messageId, html: sent.html + "\n\n" + status) }
         }
         requestRefresh?()
     }
@@ -779,6 +803,20 @@ enum TelegramFormat {
         if !origin.isEmpty { lines.append("<i>\(escape(origin))</i>") }
         if prompt.choices.isEmpty { lines.append("Se contesta en Paperclip.") }
         return lines.joined(separator: "\n")
+    }
+
+    /// Cómo terminó el botón «Despertar a …».
+    static func wakeResult(_ outcome: WakeOutcome, target: WakeTarget, agentName: String?) -> String {
+        let text = WakeText.result(outcome, target: target, agentName: agentName)
+        let mark = switch outcome {
+        case .accepted, .alreadyRunning: "✅"
+        case .notStuck: "☑️"
+        case .skipped: "⏭️"
+        case .failed: "❌"
+        }
+        var html = "\(mark) <b>\(escape(text.title)).</b> \(escape(text.body))"
+        if outcome.allowsRetry { html += "\n<i>Puedes volver a apretar el botón.</i>" }
+        return html
     }
 
     /// La decisión en texto simple, para dársela al modelo que la explica.
