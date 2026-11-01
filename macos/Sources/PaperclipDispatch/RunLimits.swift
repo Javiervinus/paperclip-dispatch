@@ -168,6 +168,8 @@ final class RunLimitMonitor {
     private var checkedAt: [String: Date] = [:]
     /// Cuántas corridas pedir de un agente, si la última vez no alcanzaron.
     private var window: [String: Int] = [:]
+    /// Los agentes con un tope que no es un número, ya anotados en el registro.
+    private var unreadableNoted: Set<String> = []
 
     init(
         api: PaperclipAPI,
@@ -204,7 +206,8 @@ final class RunLimitMonitor {
         }
         // Un agente en pausa o dado de baja no corre igual, y uno con tope 0 está apagado a propósito: avisarlo
         // cada día sería ruido.
-        for agent in agents.compactMap(\.value) where agent.limitUnreadable {
+        // Una vez por agente mientras la app está abierta: se revisa cada pocos minutos.
+        for agent in agents.compactMap(\.value) where agent.limitUnreadable && unreadableNoted.insert(agent.id).inserted {
             Unexpected.note("api/companies/\(company.id)/agents", "\(agent.id): maxDailyRuns isn’t a number, no notice")
         }
         let watched = agents.compactMap(\.value).filter { agent in

@@ -40,7 +40,7 @@ enum LivePreview {
 
     /// La dirección que abre «Ver en vivo»: la del entregable principal (`isPrimary`) o, si ninguno lo es, la
     /// del más reciente. `nil` si ninguno sirve (otro tipo, sin dirección o cerrado).
-    static func pick(_ products: [IssueWorkProduct], issueId: String = "") -> URL? {
+    static func pick(_ products: [IssueWorkProduct], issueId: String) -> URL? {
         let path = "api/issues/\(issueId)/work-products"
         let candidates = products.compactMap { product -> (product: IssueWorkProduct, url: URL)? in
             guard let type = product.type, types.contains(type) else {
