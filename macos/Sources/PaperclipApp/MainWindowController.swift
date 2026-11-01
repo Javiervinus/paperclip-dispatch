@@ -70,6 +70,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private var updateButtonWanted = false
     private var titleObservation: NSKeyValueObservation?
     private var urlObservation: NSKeyValueObservation?
+    private var pageColorObservation: NSKeyValueObservation?
     /// Lo que flota abajo y al centro, sobre la página (el recordatorio de avisos).
     private var bottomOverlay: NSView?
     /// Alto de las barras de arriba de Paperclip (--sz-60px), en puntos; lo informa glass.js.
@@ -117,6 +118,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         urlObservation = webView.observe(\.url) { [weak self] _, _ in
             MainActor.assumeIsolated { self?.onPageChange?() }
         }
+        pageColorObservation = webView.observe(\.underPageBackgroundColor) { [weak self] _, _ in
+            MainActor.assumeIsolated { self?.updateTitlebarColor() }
+        }
         webView.load(URLRequest(url: initialURL ?? config.serverURL))
     }
 
@@ -129,7 +133,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     private func configure(_ window: NSWindow, remembersFrame: Bool) {
         window.title = AppConfig.appName
-        window.toolbarStyle = .unified
         window.isReleasedWhenClosed = false
         window.tabbingMode = .disallowed
         window.contentMinSize = Self.minimumContentSize
@@ -193,14 +196,18 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         } else {
             window.styleMask.remove(.fullSizeContentView)
         }
-        window.titleVisibility = glass ? .hidden : .visible
-        window.titlebarAppearsTransparent = glass
-        window.titlebarSeparatorStyle = glass ? .none : .automatic
+        // Sin título en la barra (la página ya dice dónde estás) y barra transparente: sin vidrio se ve el
+        // fondo de la ventana, que toma el color de la página (updateTitlebarColor). La barra compacta, solo
+        // sin vidrio: con vidrio los semáforos van a la altura de la barra de Paperclip.
+        window.toolbarStyle = glass ? .unified : .unifiedCompact
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
         window.isOpaque = !glass
-        window.backgroundColor = glass ? .clear : .windowBackgroundColor
         // Con vidrio, transparente: donde la página no pinta fondo se ven el vidrio y la ventana.
         webView.setValue(!glass, forKey: "drawsBackground")
         webView.underPageBackgroundColor = glass ? .clear : nil
+        updateTitlebarColor()
         base.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         setSidebarPanel(nil, radius: 0)
         topBarHeight = 0
@@ -259,11 +266,25 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         return item
     }
 
-    /// El título de la página, como en un navegador: en el modo normal se lee en la barra y siempre en el
-    /// menú Ventana.
+    /// El título de la página, como en un navegador: no se muestra en la barra, pero lo usan el menú Ventana,
+    /// Mission Control y VoiceOver.
     private func updateTitle() {
         let title = webView.title?.trimmingCharacters(in: .whitespaces) ?? ""
         window?.title = title.isEmpty ? AppConfig.appName : title
+    }
+
+    /// Sin vidrio, la barra de arriba (transparente) muestra el fondo de la ventana: se le da el de la página,
+    /// el que WebKit saca de su <html> y <body>, para que la barra y Paperclip sean una sola superficie. Sin
+    /// conexión, el de macOS, como la vista que la tapa.
+    private func updateTitlebarColor() {
+        guard let window else { return }
+        window.backgroundColor = if glass {
+            .clear
+        } else if offlineView == nil, let page = webView.underPageBackgroundColor, page.alphaComponent > 0 {
+            page
+        } else {
+            .windowBackgroundColor
+        }
     }
 
     /// Con vidrio no hay barra de título nativa: la ventana se mueve desde las partes vacías de las barras de
@@ -644,6 +665,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             hosting.autoresizingMask = [.width, .height]
             container.addSubview(hosting, positioned: .above, relativeTo: webView)
             offlineView = hosting
+            updateTitlebarColor()
             bottomOverlay?.isHidden = true
             // Sin página cargada, WKWebView se queda con los atajos (⌘, ⌘R…) y no se los pasa al menú.
             window?.makeFirstResponder(nil)
@@ -692,6 +714,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         guard let offlineView else { return }
         offlineView.removeFromSuperview()
         self.offlineView = nil
+        updateTitlebarColor()
         bottomOverlay?.isHidden = false
         failedURL = nil
         webView.isHidden = false
