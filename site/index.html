@@ -31,6 +31,26 @@
   <meta name="twitter:image:alt" content="The Paperclip Dispatch icon, a stuck-task notification with its Wake up button and the app window">
   <link rel="icon" href="images/icon-64.png" sizes="64x64" type="image/png">
   <link rel="apple-touch-icon" href="images/icon-180.png">
+  <!-- Datos estructurados (schema.org) para los buscadores: la app, gratis, para macOS, y dónde bajarla -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Paperclip Dispatch",
+    "description": "Your Paperclip in its own Mac window, with a notification when an agent needs you, a Dock badge and answers from Telegram. Free, MIT.",
+    "url": "%%SITE_URL%%",
+    "inLanguage": "en",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS 26 Tahoe or later",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "downloadUrl": "%%DMG_URL%%",
+    "image": "%%SITE_URL%%social/card.jpg",
+    "license": "%%REPO_URL%%/blob/main/LICENSE",
+    "sameAs": "%%REPO_URL%%",
+    "author": { "@type": "Person", "name": "%%AUTHOR%%", "url": "%%AUTHOR_URL%%" }
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -43,111 +63,121 @@
       <span>Paperclip Dispatch</span>
     </a>
     <nav class="bar-links" aria-label="Elsewhere">
-      <a class="link" href="%%REPO_URL%%">GitHub</a>
+      <a class="link bar-github" href="%%REPO_URL%%">GitHub</a>
       <a class="link" href="es/" hreflang="es" lang="es">Español</a>
+      <a class="button button-small" href="%%DMG_URL%%">Download</a>
     </nav>
   </header>
 
   <main>
     <section class="hero" aria-labelledby="hero-title">
-      <div class="sentence">
-        <h1 id="hero-title" class="sentence-words">Decisions find<br class="br-wide"> you</h1>
-        <!-- Avisos de ejemplo con el título, el texto y el botón que arma la app (DecisionsMonitor.notice,
-             WakeText). Llegan de a uno, solo con CSS; con «reducir movimiento» queda el primero. La casilla los pausa. -->
-        <span class="strip" data-ui>
-          <input class="notices-pause" type="checkbox" aria-label="Pause the sample notifications">
-          <span class="notices" aria-hidden="true">
-            <span class="notice is-in">
-              <span class="notice-text">
-                <span class="notice-head"><span class="notice-title">ACME-221</span></span>
-                <span class="notice-body">Redesign the pricing page</span>
-              </span>
-              <span class="notice-action">Wake up CEO</span>
+      <h1 id="hero-title" class="hero-title">Decisions find you</h1>
+
+      <!-- Avisos de ejemplo de macOS 26, dibujados aquí con el título, el texto y el botón que arma la app
+           (DecisionsMonitor.notice, WakeText). Sin JS quedan estos tres, quietos. notices.js los hace llegar de a
+           uno y les da la X, el clic, el deslizar para cerrarlos y el botón «Wake up CEO», que trae el aviso de
+           respuesta (el de la plantilla). -->
+      <div class="desk" data-ui data-close-label="Close" data-pause-label="Pause" data-resume-label="Resume">
+        <ol class="stack" aria-label="Sample notifications">
+          <li class="notice is-first" data-kind="stuck">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">ACME-221</span></span>
+              <span class="notice-body">Redesign the pricing page</span>
             </span>
-            <span class="notice">
-              <span class="notice-text">
-                <span class="notice-head"><span class="notice-title">Paperclip accepted the wake-up</span><span class="notice-time">now</span></span>
-                <span class="notice-body">CEO will work on ACME-220.</span>
-              </span>
+            <span class="notice-action" data-then="woken">Wake up CEO</span>
+          </li>
+          <li class="notice is-first" data-kind="question">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">CEO · ACME-224</span><span class="notice-time">now</span></span>
+              <span class="notice-body">Which plans go on the new pricing page?</span>
             </span>
-            <span class="notice">
-              <span class="notice-text">
-                <span class="notice-head"><span class="notice-title">CEO</span><span class="notice-time">now</span></span>
-                <span class="notice-body">Hire a design agent</span>
-              </span>
+          </li>
+          <li class="notice is-first" data-kind="approval">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">Chief of Staff · ACME-219</span><span class="notice-time">now</span></span>
+              <span class="notice-body">Approve the plan for the quarterly report?</span>
             </span>
-            <span class="notice">
-              <span class="notice-text">
-                <span class="notice-head"><span class="notice-title">CEO · ACME-224</span><span class="notice-time">now</span></span>
-                <span class="notice-body">Which plans go on the new pricing page?</span>
-              </span>
+          </li>
+        </ol>
+        <template class="deck">
+          <li class="notice" data-kind="hire">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">CEO</span><span class="notice-time">now</span></span>
+              <span class="notice-body">Hire a design agent</span>
             </span>
-            <span class="notice">
-              <span class="notice-text">
-                <span class="notice-head"><span class="notice-title">Chief of Staff · ACME-219</span><span class="notice-time">now</span></span>
-                <span class="notice-body">Approve the plan for the quarterly report?</span>
-              </span>
+          </li>
+          <li class="notice" data-kind="woken" data-reply>
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">Paperclip accepted the wake-up</span><span class="notice-time">now</span></span>
+              <span class="notice-body">CEO will work on ACME-220.</span>
             </span>
-          </span>
-          <svg class="pause-glyph" viewBox="0 0 16 16" aria-hidden="true"><path class="glyph-pause" d="M5 4h2v8H5zm4 0h2v8H9z"/><path class="glyph-play" d="M5.5 3.8v8.4L12 8z"/></svg>
-        </span>
+          </li>
+        </template>
+        <p class="desk-note note">Sample notifications with the app’s own wording. Try <strong>Wake up CEO</strong>.</p>
       </div>
 
-      <div class="hero-body">
-        <p class="lead">A Mac app that puts your Paperclip in its own window and tells you when an agent needs you, even with the window closed.</p>
+      <p class="lead">A Mac app that puts your Paperclip in its own window and tells you when an agent needs you, even with the window closed.</p>
 
-        <div class="get">
-          <div class="download">
-            <a class="button" href="%%DMG_URL%%">Download for Mac</a>
-            <span class="build-version note">Version %%VERSION%%</span>
-          </div>
-          <div class="brew" data-ui>
-            <span class="note" id="brew-label">Or with Homebrew</span>
-            <div class="command">
-              <code id="brew-command">brew install --cask <span class="nowrap">%%BREW_CASK%%</span></code>
-              <button class="copy" type="button" data-copy="brew-command" data-copied="Copied" data-copied-status="Copied to the clipboard." data-selected-status="Selected. Press ⌘C to copy." aria-describedby="brew-label">Copy</button>
-            </div>
-            <span class="copied visually-hidden" role="status" aria-live="polite"></span>
-          </div>
-          <p class="note requirements">Free and open source (MIT). For macOS 26 Tahoe, on Apple silicon or Intel, with Paperclip running on this Mac or at an address it can reach.</p>
+      <div class="get">
+        <div class="download">
+          <a class="button" href="%%DMG_URL%%">Download for Mac</a>
+          <span class="build-version note">Version %%VERSION%%</span>
         </div>
+        <div class="brew" data-ui>
+          <span class="note" id="brew-label">Or with Homebrew</span>
+          <div class="command">
+            <code id="brew-command">brew install --cask <span class="nowrap">%%BREW_CASK%%</span></code>
+            <button class="copy" type="button" data-copy="brew-command" data-copied="Copied" data-copied-status="Copied to the clipboard." data-selected-status="Selected. Press ⌘C to copy." aria-describedby="brew-label">Copy</button>
+          </div>
+          <span class="copied visually-hidden" role="status" aria-live="polite"></span>
+        </div>
+        <p class="note requirements">Free and open source (MIT). For macOS 26 Tahoe, on Apple silicon or Intel, with Paperclip running on this Mac or at an address it can reach.</p>
       </div>
 
       <picture class="window">
-        <source media="(prefers-color-scheme: dark)" sizes="calc(100vw - 2rem)"
+        <source media="(prefers-color-scheme: dark)" sizes="(min-width: 1264px) 1200px, calc(100vw - 2rem)"
           srcset="images/window-dark-640.webp 640w, images/window-dark-1280.webp 1280w, images/window-dark-2560.webp 2560w">
-        <img src="images/window-light-1280.webp" sizes="calc(100vw - 2rem)"
+        <img src="images/window-light-1280.webp" sizes="(min-width: 1264px) 1200px, calc(100vw - 2rem)"
           srcset="images/window-light-640.webp 640w, images/window-light-1280.webp 1280w, images/window-light-2560.webp 2560w"
           width="2560" height="1600" loading="lazy" decoding="async" alt="Paperclip Dispatch showing the Paperclip dashboard in a native Mac window">
       </picture>
     </section>
 
     <section class="tab" aria-labelledby="tab-title">
-      <div class="tab-intro">
+      <div class="section-head">
         <h2 id="tab-title">What a tab can’t do</h2>
         <p class="statement">Paperclip runs as a local server, and you use it from a browser tab. Dispatch turns that tab into a Mac app that keeps watching after you close the window.</p>
       </div>
 
-      <article class="row row-notify">
+      <article class="row">
         <div class="row-text">
           <h3>Notifications, window closed</h3>
           <p>When an agent asks a question, needs an approval, fails or hits a budget alert, you get a macOS notification. Click it and that decision opens. The app checks Paperclip every minute on its own.</p>
           <p>If a task sits with an agent that isn’t working on it, the notification offers <strong>Wake up ‹agent›</strong> and then tells you whether Paperclip woke the agent or skipped it.</p>
         </div>
-        <figure class="row-media media-notify">
-          <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="images/notification-dark-880.webp">
-            <img src="images/notification-880.webp" width="880" height="224" loading="lazy" decoding="async" alt="A stuck-task notification with a Wake up button">
-          </picture>
+        <figure class="tile tile-notify" data-ui role="img" aria-label="A stuck-task notification with its Wake up CEO button, and the notification that follows: Paperclip accepted the wake-up">
+          <span class="notice is-still" aria-hidden="true">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">ACME-221</span></span>
+              <span class="notice-body">Redesign the pricing page</span>
+            </span>
+            <span class="notice-action">Wake up CEO</span>
+          </span>
+          <span class="notice is-still" aria-hidden="true">
+            <span class="notice-text">
+              <span class="notice-head"><span class="notice-title">Paperclip accepted the wake-up</span><span class="notice-time">now</span></span>
+              <span class="notice-body">CEO will work on ACME-220.</span>
+            </span>
+          </span>
         </figure>
       </article>
 
-      <article class="row row-dock">
+      <article class="row row-flip">
         <div class="row-text">
           <h3>A number on the Dock</h3>
           <p>The Dock icon shows the same number as Decisions in Paperclip’s sidebar, so you can see what is waiting without opening the window.</p>
         </div>
-        <figure class="row-media media-dock" data-ui role="img" aria-label="The app icon with a sample count on its Dock badge">
+        <figure class="tile tile-dock" data-ui role="img" aria-label="The app icon with a sample count on its Dock badge">
           <span class="dock">
             <img src="images/icon-384.webp" width="384" height="384" loading="lazy" decoding="async" alt="">
             <span class="badge" aria-hidden="true">3</span>
@@ -155,13 +185,13 @@
         </figure>
       </article>
 
-      <article class="row row-glass">
+      <article class="row">
         <div class="row-text">
           <h3>Liquid Glass, if you want it</h3>
           <p>Paperclip fills the whole window, with no title bar. The app adds the Mac’s menus, shortcuts for back, forward, home and copy link, two-finger swipes, and an optional Liquid Glass sidebar.</p>
         </div>
-        <figure class="row-media media-glass">
-          <img src="images/window-glass-1280.webp" sizes="(min-width: 900px) 1270px, 190vw"
+        <figure class="tile tile-glass">
+          <img src="images/window-glass-1280.webp" sizes="(min-width: 900px) 1280px, 230vw"
             srcset="images/window-glass-1280.webp 1280w, images/window-glass-2560.webp 2560w"
             width="2560" height="1600" loading="lazy" decoding="async" alt="The Paperclip sidebar in Liquid Glass">
         </figure>
@@ -216,9 +246,11 @@
       <h2 id="setup-title">Set up once, update in one place</h2>
 
       <article class="setup-step setup-welcome">
-        <img src="images/welcome-1280.webp" sizes="(min-width: 900px) 52vw, calc(100vw - 2rem)"
-          srcset="images/welcome-640.webp 640w, images/welcome-1280.webp 1280w"
-          width="1280" height="1160" loading="lazy" decoding="async" alt="The connection step of the first-launch setup">
+        <figure class="tile tile-shot">
+          <img src="images/welcome-1280.webp" sizes="(min-width: 900px) 600px, calc(100vw - 2rem)"
+            srcset="images/welcome-640.webp 640w, images/welcome-1280.webp 1280w"
+            width="1280" height="1160" loading="lazy" decoding="async" alt="The connection step of the first-launch setup">
+        </figure>
         <div class="setup-text">
           <h3>It finds your Paperclip</h3>
           <p>On first launch the app looks for Paperclip on this Mac. If it is running, it opens it. If it is off, the app starts it, and if it is missing, it helps you install it. You can also type another address. Before asking for permission, it shows you what a notification looks like.</p>
@@ -226,9 +258,11 @@
       </article>
 
       <article class="setup-step setup-settings">
-        <img src="images/settings-1160.webp" sizes="(min-width: 900px) 34vw, calc(100vw - 2rem)"
-          srcset="images/settings-580.webp 580w, images/settings-1160.webp 1160w"
-          width="1160" height="1440" loading="lazy" decoding="async" alt="Settings, General tab">
+        <figure class="tile tile-shot">
+          <img src="images/settings-1160.webp" sizes="(min-width: 900px) 420px, 70vw"
+            srcset="images/settings-580.webp 580w, images/settings-1160.webp 1160w"
+            width="1160" height="1440" loading="lazy" decoding="async" alt="Settings, General tab">
+        </figure>
         <div class="setup-text">
           <h3>One button for both versions</h3>
           <p>A single button shows the version of the app and of Paperclip. The app downloads its own updates in the background and installs them only when you restart or quit it. Paperclip updates only when you ask.</p>
@@ -277,29 +311,31 @@
 
     <section class="faq" aria-labelledby="faq-title">
       <h2 id="faq-title">Questions</h2>
-      <div class="qa">
-        <h3>Does it change my Paperclip?</h3>
-        <p>No. It opens the Paperclip you already run and talks to it through the same API as Paperclip’s own pages. The server, its data and its agents keep running on their own, and closing the app stops nothing.</p>
-      </div>
-      <div class="qa">
-        <h3>Do I need Tailscale?</h3>
-        <p>No. If Paperclip runs on this Mac, the app finds it, and Telegram works without a public address. Tailscale is one way to reach a Paperclip that runs on another machine.</p>
-      </div>
-      <div class="qa">
-        <h3>What about Android or iPhone?</h3>
-        <p>The app is for the Mac only. Decisions still reach any phone through Telegram, with their buttons, while the app runs on your Mac.</p>
-      </div>
-      <div class="qa">
-        <h3>Is it official?</h3>
-        <p>No. Paperclip Dispatch is an independent project, not made, endorsed or supported by the Paperclip team.</p>
-      </div>
-      <div class="qa">
-        <h3>How much does it cost?</h3>
-        <p>Nothing. It is free and open source, under the MIT license.</p>
-      </div>
-      <div class="qa">
-        <h3>What does it collect?</h3>
-        <p>Nothing. It has no servers. It talks to your Paperclip, to GitHub to look for new versions, to Telegram only if you connect a bot, and to the CLI you pick for “Explain it to me” only when you tap it. That CLI sends the decision’s context to its own provider, with your account.</p>
+      <div class="qa-list">
+        <div class="qa">
+          <h3>Does it change my Paperclip?</h3>
+          <p>No. It opens the Paperclip you already run and talks to it through the same API as Paperclip’s own pages. The server, its data and its agents keep running on their own, and closing the app stops nothing.</p>
+        </div>
+        <div class="qa">
+          <h3>Do I need Tailscale?</h3>
+          <p>No. If Paperclip runs on this Mac, the app finds it, and Telegram works without a public address. Tailscale is one way to reach a Paperclip that runs on another machine.</p>
+        </div>
+        <div class="qa">
+          <h3>What about Android or iPhone?</h3>
+          <p>The app is for the Mac only. Decisions still reach any phone through Telegram, with their buttons, while the app runs on your Mac.</p>
+        </div>
+        <div class="qa">
+          <h3>Is it official?</h3>
+          <p>No. Paperclip Dispatch is an independent project, not made, endorsed or supported by the Paperclip team.</p>
+        </div>
+        <div class="qa">
+          <h3>How much does it cost?</h3>
+          <p>Nothing. It is free and open source, under the MIT license.</p>
+        </div>
+        <div class="qa">
+          <h3>What does it collect?</h3>
+          <p>Nothing. It has no servers. It talks to your Paperclip, to GitHub to look for new versions, to Telegram only if you connect a bot, and to the CLI you pick for “Explain it to me” only when you tap it. That CLI sends the decision’s context to its own provider, with your account.</p>
+        </div>
       </div>
     </section>
   </main>
@@ -320,5 +356,6 @@
   </footer>
 
   <script src="copy.js" defer></script>
+  <script src="notices.js" defer></script>
 </body>
 </html>
