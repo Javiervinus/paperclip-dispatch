@@ -6,7 +6,7 @@
   <title>Paperclip Dispatch: a Mac app for Paperclip</title>
   <meta name="description" content="Your Paperclip in its own Mac window, with a notification when an agent needs you, a Dock badge and answers from Telegram. Free, MIT.">
   <meta name="color-scheme" content="light dark">
-  <link rel="icon" href="images/icon.png" type="image/png">
+  <link rel="icon" href="images/icon-64.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
 <body>
   <header class="bar">
     <a class="wordmark" href="./" aria-label="Paperclip Dispatch, home">
-      <img src="images/icon.png" width="28" height="28" alt="">
+      <img src="images/icon-64.png" width="28" height="28" alt="">
       <span>Paperclip Dispatch</span>
     </a>
     <nav aria-label="Elsewhere">
@@ -27,7 +27,12 @@
     <section class="hero" aria-labelledby="hero-title">
       <h1 id="hero-title" class="sentence">
         <span class="sentence-words">Decisions find<br class="br-wide"> you</span>
-        <span class="strip shutter"><img src="images/notification.png" width="880" height="240" alt="" fetchpriority="high"></span>
+        <span class="strip shutter">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="images/notification-dark-880.webp">
+            <img src="images/notification-880.webp" width="880" height="224" alt="" fetchpriority="high">
+          </picture>
+        </span>
       </h1>
 
       <div class="hero-body">
@@ -51,8 +56,11 @@
       </div>
 
       <picture class="window">
-        <source media="(prefers-color-scheme: dark)" srcset="images/window-dark.png">
-        <img src="images/window-light.png" width="2560" height="1600" alt="Paperclip Dispatch showing the Paperclip dashboard in a native Mac window">
+        <source media="(prefers-color-scheme: dark)" sizes="calc(100vw - 2rem)"
+          srcset="images/window-dark-640.webp 640w, images/window-dark-1280.webp 1280w, images/window-dark-2560.webp 2560w">
+        <img src="images/window-light-1280.webp" sizes="calc(100vw - 2rem)"
+          srcset="images/window-light-640.webp 640w, images/window-light-1280.webp 1280w, images/window-light-2560.webp 2560w"
+          width="2560" height="1600" loading="lazy" decoding="async" alt="Paperclip Dispatch showing the Paperclip dashboard in a native Mac window">
       </picture>
     </section>
 
@@ -69,7 +77,10 @@
           <p>If a task sits with an agent that isn’t working on it, the notification offers <strong>Wake up ‹agent›</strong> and then tells you whether Paperclip woke the agent or skipped it.</p>
         </div>
         <figure class="row-media media-notify">
-          <img src="images/notification.png" width="880" height="240" loading="lazy" alt="A stuck-task notification with a Wake up button">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="images/notification-dark-880.webp">
+            <img src="images/notification-880.webp" width="880" height="224" loading="lazy" decoding="async" alt="A stuck-task notification with a Wake up button">
+          </picture>
         </figure>
       </article>
 
@@ -80,7 +91,7 @@
         </div>
         <figure class="row-media media-dock" data-ui role="img" aria-label="The app icon with a sample count on its Dock badge">
           <span class="dock">
-            <img src="images/icon.png" width="512" height="512" loading="lazy" alt="">
+            <img src="images/icon-384.webp" width="384" height="384" loading="lazy" decoding="async" alt="">
             <span class="badge" aria-hidden="true">3</span>
           </span>
         </figure>
@@ -92,7 +103,9 @@
           <p>Paperclip fills the whole window, with no title bar. The app adds the Mac’s menus, shortcuts for back, forward, home and copy link, two-finger swipes, and an optional Liquid Glass sidebar.</p>
         </div>
         <figure class="row-media media-glass">
-          <img src="images/window-glass.png" width="2560" height="1600" loading="lazy" alt="The Paperclip sidebar in Liquid Glass">
+          <img src="images/window-glass-1280.webp" sizes="(min-width: 900px) 1270px, 190vw"
+            srcset="images/window-glass-1280.webp 1280w, images/window-glass-2560.webp 2560w"
+            width="2560" height="1600" loading="lazy" decoding="async" alt="The Paperclip sidebar in Liquid Glass">
         </figure>
       </article>
     </section>

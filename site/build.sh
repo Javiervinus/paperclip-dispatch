@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Arma la landing en una carpeta lista para servir o publicar (GitHub Pages): copia las páginas, estilos y
-# scripts de site/, trae de docs/images solo las capturas que usa la página (docs/images es su única fuente:
+# scripts de site/, hace desde docs/images las imágenes que nombra la página (docs/images es su única fuente:
 # no se copian al repo) y llena los datos que no se escriben a mano.
 #   site/build.sh                           deja la página en _site/ (ignorada por git)
 #   OUTPUT_DIR=/tmp/landing site/build.sh   en otra carpeta (vacía, nueva o armada antes por este script)
@@ -12,6 +12,9 @@
 #   %%DMG_URL%%     el .dmg de ese release
 #   %%BREW_CASK%%   <dueño en minúsculas>/tap/<cask>: el tap <dueño>/homebrew-tap y el cask que nombra
 #                   macos/update-cask.sh (APP_NAME en minúsculas y con guiones). HOMEBREW_TAP y CASK_TOKEN lo cambian.
+# Las imágenes: la página nombra cada una como images/<captura>-<ancho>.webp (o .png) y aquí se hace desde
+# docs/images/<captura>.png, con ese ancho en píxeles (nunca más ancho que la captura). Necesita cwebp y dwebp
+# (brew install webp, apt install webp).
 # Si GitHub no responde (sin red, límite de la API), el botón apunta a releases/latest y la versión se quita.
 # GITHUB_TOKEN, si está, se usa para la API (en Actions evita el límite de pedidos).
 set -euo pipefail
@@ -21,7 +24,7 @@ ROOT=$(dirname "$SITE")
 MARKER=.landing-build
 
 fail() { echo "build.sh: $*" >&2; exit 1; }
-command -v jq >/dev/null || fail "falta jq"
+for tool in jq file cwebp dwebp; do command -v "$tool" >/dev/null || fail "falta $tool"; done
 
 # La carpeta de salida, como ruta absoluta. Solo se borra si está vacía o la armó este script (MARKER).
 OUTPUT_DIR=${OUTPUT_DIR:-$ROOT/_site}
@@ -76,11 +79,39 @@ mkdir -p "$OUTPUT_DIR/images"
     cp "$file" "$OUTPUT_DIR/$file"
   done)
 
-# Las capturas que nombra la página, tal como están en docs/images
-images=$(grep -rhoE 'images/[A-Za-z0-9._-]+\.png' "$OUTPUT_DIR" --include='*.html' --include='*.css' | sort -u)
+# Las imágenes que nombra la página, en el ancho que pide cada una
+# (las rutas a docs/images que nombran los comentarios no cuentan; una ruta desde la raíz del dominio, sí falla:
+# en GitHub Pages la página vive en /<repo>/)
+images=
+for ref in $(grep -rhoE '[A-Za-z0-9._/-]*images/[A-Za-z0-9._-]+\.(webp|png)' "$OUTPUT_DIR" --include='*.html' --include='*.css' | sort -u); do
+  case $ref in
+    docs/images/*) ;;
+    images/* | ./images/*) images+="${ref#./} " ;;
+    *) fail "la página usa $ref; las imágenes van con una ruta relativa: images/<captura>-<ancho>.webp" ;;
+  esac
+done
+images=$(tr ' ' '\n' <<<"$images" | sed '/^$/d' | sort -u)
 for image in $images; do
-  [[ -f $ROOT/docs/$image ]] || fail "la página usa $image y no está en docs/images"
-  cp "$ROOT/docs/$image" "$OUTPUT_DIR/$image"
+  [[ $image =~ ^images/(.+)-([1-9][0-9]*)\.(webp|png)$ ]] ||
+    fail "la página usa $image; las imágenes se nombran images/<captura>-<ancho>.webp (o .png), con el ancho sin ceros adelante"
+  source_png=$ROOT/docs/images/${BASH_REMATCH[1]}.png width=${BASH_REMATCH[2]} format=${BASH_REMATCH[3]}
+  [[ -f $source_png ]] || fail "la página usa $image y no existe docs/images/${source_png##*/}"
+  source_width=$(file "$source_png" | sed -nE 's/.*PNG image data, ([0-9]+) x.*/\1/p')
+  [[ -n $source_width ]] || fail "no pude leer el ancho de docs/images/${source_png##*/}"
+  (( width <= source_width )) || fail "$image pide $width px y docs/images/${source_png##*/} mide $source_width"
+  resize=()
+  (( width < source_width )) && resize=(-resize "$width" 0)
+  if [[ $format == webp ]]; then
+    # Con sharp_yuv el texto de las capturas no se borronea en los bordes
+    cwebp -quiet -q 85 -m 6 -sharp_yuv -metadata none ${resize[@]+"${resize[@]}"} "$source_png" -o "$OUTPUT_DIR/$image"
+  elif (( ${#resize[@]} == 0 )); then
+    cp "$source_png" "$OUTPUT_DIR/$image"
+  else
+    # Un PNG achicado (p. ej. el ícono de la pestaña): sin pérdida y de vuelta a PNG
+    cwebp -quiet -lossless -metadata none ${resize[@]+"${resize[@]}"} "$source_png" -o "$OUTPUT_DIR/$image.tmp.webp"
+    dwebp -quiet "$OUTPUT_DIR/$image.tmp.webp" -o "$OUTPUT_DIR/$image"
+    rm -f "$OUTPUT_DIR/$image.tmp.webp"
+  fi
 done
 
 # Los datos
@@ -104,5 +135,5 @@ while IFS= read -r -d '' page; do
 done < <(find "$OUTPUT_DIR" -name '*.html' -print0)
 (( pages > 0 )) || fail "no quedó ninguna página en $OUTPUT_DIR"
 
-echo "Página armada en $OUTPUT_DIR (versión ${VERSION:-sin número}, $(wc -w <<<"$images" | tr -d ' ') capturas)"
+echo "Página armada en $OUTPUT_DIR (versión ${VERSION:-sin número}, $(wc -w <<<"$images" | tr -d ' ') imágenes, $(du -sk "$OUTPUT_DIR/images" | cut -f1) KB)"
 echo "Descarga: $DMG_URL"

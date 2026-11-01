@@ -54,7 +54,8 @@ body {
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
 }
-img { display: block; max-width: 100%; height: auto; }
+img, picture { display: block; max-width: 100%; }
+img { height: auto; }
 h1, h2, h3, p, figure { margin: 0; }
 h1, h2, h3 { font-weight: 500; text-wrap: balance; }
 p { text-wrap: pretty; }
@@ -116,17 +117,30 @@ a { color: inherit; }
 .sentence-words { display: block; }
 .br-wide { display: none; }
 
-/* El aviso, recortado a su banda, se apoya en la línea base y mide la altura de las mayúsculas. */
+/* El aviso, con la tarjeta entera y un margen parejo del fondo de la captura, se apoya en la línea base y mide
+   la altura de las mayúsculas. La captura (docs/images/notification.png) mide 880 × 224 px y la tarjeta ocupa
+   x 56–824, y 88–200: el recorte deja 16 px alrededor. Los márgenes en % se miden sobre el ancho del recorte. */
 .strip {
+  --src-w: 880;
+  --src-h: 224;
+  --cut-x: 40;
+  --cut-y: 72;
+  --cut-w: 800;
+  --cut-h: 144;
   display: block;
   margin-top: 0.12em;
   width: 100%;
-  aspect-ratio: 880 / 240;
+  aspect-ratio: var(--cut-w) / var(--cut-h);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--surface);
 }
-.strip img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 63%; }
+.strip img {
+  width: calc(100% * var(--src-w) / var(--cut-w));
+  max-width: none;
+  margin: calc(-100% * var(--cut-y) / var(--cut-w)) 0 0 calc(-100% * var(--cut-x) / var(--cut-w));
+  transform-origin: 50% calc(100% * (var(--cut-y) + var(--cut-h) / 2) / var(--src-h));
+}
 
 @media (min-width: 640px) {
   .sentence-words { display: inline; }
@@ -134,9 +148,7 @@ a { color: inherit; }
   .strip {
     display: inline-block;
     vertical-align: baseline;
-    width: 4.2em;
-    height: 0.72em;
-    aspect-ratio: auto;
+    width: calc(0.72em * var(--cut-w) / var(--cut-h));
     margin: 0 0 0 0.12em;
     border-radius: 0.09em;
   }
