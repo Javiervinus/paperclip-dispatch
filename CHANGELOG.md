@@ -9,7 +9,7 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
-## Unreleased
+## 0.1.0 — 2026-11-01
 
 The first release. Everything below is new, so this entry describes the app rather than listing changes.
 
@@ -19,12 +19,13 @@ The first release. Everything below is new, so this entry describes the app rath
   window, with no title bar, in its black and white and with Liquid Glass and the Mac's own menus,
   shortcuts and window behavior.
 - **Decisions without looking.** A Mac notification when an agent asks a question, needs an approval or
-  fails, and on the Dock icon the same number as Decisions in Paperclip's sidebar.
-- **Answer from Telegram.** Link a Telegram bot to get each decision on your phone and approve, reject or
-  ask "explain it to me" from there.
+  fails, or a budget alert goes off, and on the Dock icon the same number as Decisions in Paperclip's
+  sidebar.
+- **Answer from Telegram.** Link a Telegram bot to get each decision on your phone and approve, reject,
+  answer or ask "explain it to me" from there.
 - **Unstick a task in one click.** When a task is stuck with an agent (e.g. a reviewer Paperclip never
-  woke up), the Mac notification and the Telegram message offer "Wake up <agent>" and tell you whether
-  Paperclip accepted or skipped it.
+  woke up), the Mac notification and the Telegram message offer a button to wake that agent up and tell
+  you whether Paperclip woke it or skipped it.
 - **A welcome that gets you set up.** On first launch the app introduces itself, finds Paperclip on this
   Mac (starting it, helping install it, or taking another address) and shows what notifications look like
   before asking for them. If they end up off, it reminds you, without getting in the way.
