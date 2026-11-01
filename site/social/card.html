@@ -35,18 +35,28 @@
   }
   .icon { position: absolute; left: 64px; top: 64px; width: 112px; height: 112px; }
   h1 { position: absolute; left: 64px; top: 210px; margin: 0; font: inherit; }
-  /* El aviso con el mismo recorte que el hero (site/styles.css, .strip): la captura mide 880 × 224, la
-     tarjeta va de x 56 a 824 y de y 88 a 200, y el recorte deja 16 px alrededor (800 × 144), aquí a 0,88 */
+  /* El aviso con el mismo recorte que el hero: los mismos números que .strip en site/styles.css (la captura
+     mide 880 × 224 y el recorte es de 800 × 144 desde x 40, y 72), aquí a la escala --scale */
   .notification {
+    --src-w: 880;
+    --cut-x: 40;
+    --cut-y: 72;
+    --cut-w: 800;
+    --cut-h: 144;
+    --scale: 0.88;
     position: absolute;
     left: 64px;
     top: 424px;
-    width: 704px;
-    height: 127px;
+    width: calc(var(--cut-w) * var(--scale) * 1px);
+    height: calc(var(--cut-h) * var(--scale) * 1px);
     overflow: hidden;
     border-radius: 18px;
   }
-  .notification img { display: block; width: 774px; margin: -63px 0 0 -35px; }
+  .notification img {
+    display: block;
+    width: calc(var(--src-w) * var(--scale) * 1px);
+    margin: calc(var(--cut-y) * var(--scale) * -1px) 0 0 calc(var(--cut-x) * var(--scale) * -1px);
+  }
 </style>
 </head>
 <body>

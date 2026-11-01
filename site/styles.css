@@ -156,6 +156,8 @@ a { color: inherit; }
     margin: 0 0 0 0.12em;
     border-radius: 0.09em;
   }
+  /* En español «te encuentran» y el aviso no caben en una línea: el aviso baja a la suya, en el margen */
+  .sentence:lang(es) .strip { display: block; margin: 0.12em 0 0; }
 }
 
 .hero-body {
