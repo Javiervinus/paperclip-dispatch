@@ -121,6 +121,8 @@ enum NotificationsSnapshot {
             ]))),
         ]
         cases += assignedTaskCases(channel: channel)
+        cases += livePreviewCases(channel: channel, stuck: agentItem, wake: button)
+        cases += runLimitCases(channel: channel)
         var windows: [Snapshot.Window] = []
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
@@ -197,8 +199,19 @@ enum NotificationsSnapshot {
 struct MacNoticePreview {
     let title: String
     let body: String
-    /// El botón del aviso, si lo tiene.
-    let action: String?
+    /// Los botones del aviso. Con uno, macOS lo muestra tal cual; con más, en el menú «Opciones», que aquí se ve
+    /// abierto.
+    let actions: [String]
+
+    init(title: String, body: String, action: String?) {
+        self.init(title: title, body: body, actions: action.map { [$0] } ?? [])
+    }
+
+    init(title: String, body: String, actions: [String]) {
+        self.title = title
+        self.body = body
+        self.actions = actions
+    }
 }
 
 struct MacScene: View {
@@ -228,36 +241,58 @@ struct MacScene: View {
 private struct MacNoticeView: View {
     let notice: MacNoticePreview
 
+    /// Con un botón, ese; con más, «Opciones».
+    private var buttonLabel: String? {
+        notice.actions.count > 1 ? String(localized: "Options") : notice.actions.first
+    }
+
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: 34, height: 34)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(notice.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                    Spacer(minLength: 6)
-                    if notice.action == nil {
-                        Text("now").font(.system(size: 11)).foregroundStyle(.secondary)
+        VStack(alignment: .trailing, spacing: 6) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .frame(width: 34, height: 34)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(notice.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                        Spacer(minLength: 6)
+                        if notice.actions.isEmpty {
+                            Text("now").font(.system(size: 11)).foregroundStyle(.secondary)
+                        }
+                    }
+                    Text(notice.body).font(.system(size: 13)).lineLimit(5).fixedSize(horizontal: false, vertical: true)
+                }
+                if let action = buttonLabel {
+                    Text(action)
+                        .font(.system(size: 12, weight: .medium))
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: 110)
+                        .background(.quaternary, in: Capsule())
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            // El menú «Opciones», abierto.
+            if notice.actions.count > 1 {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(notice.actions, id: \.self) { action in
+                        Text(action)
+                            .font(.system(size: 13))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                Text(notice.body).font(.system(size: 13)).lineLimit(4).fixedSize(horizontal: false, vertical: true)
-            }
-            if let action = notice.action {
-                Text(action)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .frame(maxWidth: 110)
-                    .background(.quaternary, in: Capsule())
+                .padding(.vertical, 5)
+                .frame(width: 200)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 11)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }
 
