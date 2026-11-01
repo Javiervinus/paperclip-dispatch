@@ -12,6 +12,7 @@
 #       La captura de page lleva la sombra de la ventana, para ponerla sobre un fondo.
 #   SHADOW=1 deja la sombra también en settings, window y welcome.
 #   APP_PATH=<ruta a un .app> ensaya otra copia (una de prueba fuera de Aplicaciones); si no, la instalada.
+#   APP_LANGUAGE=en|es abre la copia en ese idioma (con -AppleLanguages, sin tocar el de la Mac); si no, el de la Mac.
 #   ACTIVE=1 las muestra de a una en el centro de la pantalla, al frente, para que se vean activas (botones
 #       de color). Tapa la pantalla unos segundos por ventana: solo cuando nadie está usando la Mac.
 # Por defecto usa una carpeta temporal e imprime cuál. Abre una segunda copia de la app instalada, que pone
@@ -39,6 +40,7 @@ case $KIND in
     print -u2 "$USAGE"; exit 2 ;;
 esac
 [[ ${SHADOW:-} == 1 ]] && NO_SHADOW=()
+[[ -n ${APP_LANGUAGE:-} ]] && EXTRA+=(-AppleLanguages "($APP_LANGUAGE)")
 mkdir -p "$OUT"
 rm -f "$OUT/windows.txt" "$OUT/captured" "$OUT"/window-*.txt(N) "$OUT"/captured-*(N) "$OUT/done"
 

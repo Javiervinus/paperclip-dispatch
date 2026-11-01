@@ -10,7 +10,7 @@ struct PermissionPromptHint: View {
 
     var body: some View {
         Label {
-            Text("Responde arriba a la derecha: **Opciones → Permitir**.")
+            Text("Respond at the top right: **Options → Allow**.")
         } icon: {
             Image(systemName: "arrow.up.right.circle.fill")
                 .symbolEffect(.wiggle.up, options: .repeat(.periodic(delay: Self.wiggleDelay)), isActive: !reduceMotion)

@@ -1,3 +1,5 @@
+import Foundation
+
 /// Una sugerencia que sale una sola vez, ya dentro de Paperclip, en un cuadro sobre la ventana. Las que
 /// vengan se agregan aquí, con su texto, y en `TipSheetView` con su dibujo.
 enum Tip: String, CaseIterable {
@@ -11,14 +13,14 @@ enum Tip: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .telegram: "Responde desde el teléfono"
+        case .telegram: String(localized: "Reply from your phone")
         }
     }
 
     var message: String {
         switch self {
         case .telegram:
-            "Conecta un bot de Telegram y cada decisión te llega como mensaje, con sus botones. Lo que tocas ahí se aplica en Paperclip."
+            String(localized: "Connect a Telegram bot and every decision reaches you as a message, with its buttons. Whatever you tap there is applied in Paperclip.")
         }
     }
 
@@ -26,22 +28,22 @@ enum Tip: String, CaseIterable {
     var facts: [Fact] {
         switch self {
         case .telegram: [
-            Fact(symbol: "clock", text: "Unos 2 minutos"),
-            Fact(symbol: "iphone", text: "Sin configurar tu red"),
+            Fact(symbol: "clock", text: String(localized: "About 2 minutes")),
+            Fact(symbol: "iphone", text: String(localized: "No network setup")),
         ]
         }
     }
 
     var actionTitle: String {
         switch self {
-        case .telegram: "Configurar Telegram"
+        case .telegram: String(localized: "Set Up Telegram")
         }
     }
 
     /// Dónde queda, para quien diga «Ahora no».
     var footnote: String {
         switch self {
-        case .telegram: "Siempre está en Ajustes → Telegram."
+        case .telegram: String(localized: "It’s always in Settings → Telegram.")
         }
     }
 }

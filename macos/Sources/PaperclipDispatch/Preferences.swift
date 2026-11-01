@@ -12,9 +12,9 @@ final class Preferences {
 
         var title: String {
             switch self {
-            case .system: "Sistema"
-            case .light: "Claro"
-            case .dark: "Oscuro"
+            case .system: String(localized: "Auto")
+            case .light: String(localized: "Light")
+            case .dark: String(localized: "Dark")
             }
         }
 

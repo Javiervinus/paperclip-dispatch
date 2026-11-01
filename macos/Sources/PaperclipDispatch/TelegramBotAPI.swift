@@ -30,7 +30,7 @@ struct TelegramBotAPI {
         timeout: TimeInterval = defaultTimeout
     ) async throws -> T {
         guard let url = URL(string: "https://api.telegram.org/bot\(token)/\(method)") else {
-            throw Failure(code: nil, reason: "El token tiene caracteres que no van.")
+            throw Failure(code: nil, reason: String(localized: "The token has invalid characters."))
         }
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = "POST"
@@ -45,7 +45,7 @@ struct TelegramBotAPI {
             try await Task.sleep(for: .seconds(wait))
             return try await call(method, params, timeout: timeout)
         }
-        throw Failure(code: envelope.errorCode, reason: envelope.description ?? "Telegram no respondió bien.")
+        throw Failure(code: envelope.errorCode, reason: envelope.description ?? String(localized: "Telegram didn’t respond properly."))
     }
 
     /// Para los métodos cuya respuesta no hace falta.

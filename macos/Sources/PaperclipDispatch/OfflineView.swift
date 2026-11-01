@@ -20,19 +20,19 @@ final class OfflineModel {
         guard error.domain == NSURLErrorDomain else { return error.localizedDescription }
         switch error.code {
         case NSURLErrorCannotConnectToHost:
-            return "No acepta conexiones: Paperclip puede estar apagado."
+            return String(localized: "It isn’t accepting connections: Paperclip may not be running.")
         case NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed:
-            return "No se encuentra ese nombre en la red. Revisa la dirección."
+            return String(localized: "That name can’t be found on the network. Check the address.")
         case NSURLErrorTimedOut:
-            return "No contestó a tiempo."
+            return String(localized: "It didn’t respond in time.")
         case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
-            return "Esta Mac no tiene conexión a la red."
+            return String(localized: "This Mac isn’t connected to the network.")
         case NSURLErrorSecureConnectionFailed, NSURLErrorServerCertificateHasBadDate,
              NSURLErrorServerCertificateUntrusted, NSURLErrorServerCertificateHasUnknownRoot,
              NSURLErrorServerCertificateNotYetValid, NSURLErrorClientCertificateRejected:
-            return "La conexión segura falló: el certificado no es válido."
+            return String(localized: "The secure connection failed: the certificate isn’t valid.")
         default:
-            return "No se pudo conectar (error \(error.code))."
+            return String(localized: "Couldn’t connect (error \(error.code)).")
         }
     }
 
@@ -52,7 +52,7 @@ struct OfflineView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("No se puede abrir Paperclip")
+            Text("Can’t open Paperclip")
                 .font(.title2)
                 .bold()
             VStack(spacing: 4) {
@@ -65,7 +65,7 @@ struct OfflineView: View {
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             Label {
-                Text(model.starting ? "Encendiendo… puede tardar un minuto." : "Se vuelve a intentar cada pocos segundos.")
+                Text(model.starting ? "Starting… this may take a minute." : "Trying again every few seconds.")
             } icon: {
                 ProgressView().controlSize(.mini)
             }
@@ -75,14 +75,14 @@ struct OfflineView: View {
                 WarningRow(text: error)
             }
             HStack(spacing: 10) {
-                Button("Cambiar dirección…") { model.onChangeServer?() }
+                Button("Change Address…") { model.onChangeServer?() }
                     .buttonStyle(.glass)
                 if model.local != nil {
-                    Button("Encender Paperclip", action: model.start)
+                    Button("Start Paperclip", action: model.start)
                         .buttonStyle(.glass)
                         .disabled(model.starting)
                 }
-                Button("Reintentar") { model.onRetry?() }
+                Button("Try Again") { model.onRetry?() }
                     .buttonStyle(.glassProminent)
                     .keyboardShortcut(.defaultAction)
             }
@@ -96,8 +96,8 @@ struct OfflineView: View {
     }
 
     private var detail: String {
-        if model.local != nil { return "Paperclip está apagado en esta Mac." }
-        guard let url = model.serverURL, let host = url.host() else { return "Paperclip no responde." }
-        return "\(url.port.map { "\(host):\($0)" } ?? host) no responde."
+        if model.local != nil { return String(localized: "Paperclip isn’t running on this Mac.") }
+        guard let url = model.serverURL, let host = url.host() else { return String(localized: "Paperclip isn’t responding.") }
+        return String(localized: "\(url.port.map { "\(host):\($0)" } ?? host) isn’t responding.")
     }
 }

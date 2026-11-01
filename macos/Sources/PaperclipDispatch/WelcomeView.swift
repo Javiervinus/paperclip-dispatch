@@ -147,7 +147,7 @@ final class WelcomeModel {
 
     func connectAddress() {
         guard let url = PaperclipLocator.serverURL(address) else {
-            addressError = "Escribe una dirección, por ejemplo 192.168.1.20:3100."
+            addressError = String(localized: "Enter an address, for example 192.168.1.20:3100.")
             return
         }
         checkingAddress = true
@@ -181,7 +181,7 @@ final class WelcomeModel {
             do {
                 try LoginItem.setEnabled(true)
             } catch {
-                NSLog("Paperclip Dispatch: no pude activar el inicio de sesión: %@", error.localizedDescription)
+                NSLog("Paperclip Dispatch: couldn't turn on launch at login: %@", error.localizedDescription)
             }
         }
         onConnect?(chosenURL)
@@ -339,17 +339,17 @@ struct WelcomeView: View {
 
     private var title: String {
         switch model.mode {
-        case .firstRun: "Conecta tu Paperclip"
-        case .change: "Cambiar de Paperclip"
+        case .firstRun: String(localized: "Connect your Paperclip")
+        case .change: String(localized: "Switch Paperclip")
         }
     }
 
     private var subtitle: String {
         switch model.mode {
         case .firstRun:
-            if case .found = model.step { return "Dispatch abre el Paperclip que ya usas. Encontré este en tu Mac:" }
-            return "Dispatch abre el Paperclip que ya usas."
-        case let .change(current): return "Ahora usas \(current.host() ?? current.absoluteString). Elige a cuál conectarte."
+            if case .found = model.step { return String(localized: "Dispatch opens the Paperclip you already use. I found this one on your Mac:") }
+            return String(localized: "Dispatch opens the Paperclip you already use.")
+        case let .change(current): return String(localized: "You’re using \(current.host() ?? current.absoluteString) now. Choose which one to connect to.")
         }
     }
 
@@ -357,11 +357,11 @@ struct WelcomeView: View {
     @ViewBuilder private var links: some View {
         switch model.step {
         case .found, .stopped:
-            Button("Usar otra dirección…", action: model.showAddress).buttonStyle(.link)
+            Button("Use Another Address…", action: model.showAddress).buttonStyle(.link)
         case .notFound:
             HStack(spacing: 18) {
-                Button("Buscar de nuevo", action: model.searchAgain).buttonStyle(.link)
-                Link("¿Qué es Paperclip?", destination: PaperclipLocator.websiteURL)
+                Button("Search Again", action: model.searchAgain).buttonStyle(.link)
+                Link("What is Paperclip?", destination: PaperclipLocator.websiteURL)
             }
             .font(.callout)
         case .searching, .address, .install:
@@ -375,7 +375,7 @@ struct WelcomeView: View {
         switch model.step {
         case .searching:
             Label {
-                Text("Buscando Paperclip en esta Mac…")
+                Text("Looking for Paperclip on this Mac…")
             } icon: {
                 ProgressView().controlSize(.small)
             }
@@ -383,22 +383,22 @@ struct WelcomeView: View {
             .padding(.top, 12)
         case let .found(local, health):
             WelcomeCard {
-                StatusLine(color: .green, title: "Paperclip está encendido en esta Mac") {
+                StatusLine(color: .green, title: String(localized: "Paperclip is running on this Mac")) {
                     AddressText(url: local.url)
                     Text(foundDetail(health)).foregroundStyle(.secondary)
                 }
             }
         case let .stopped(local):
             WelcomeCard {
-                StatusLine(color: .orange, title: "Paperclip está instalado, pero apagado") {
+                StatusLine(color: .orange, title: String(localized: "Paperclip is installed, but not running")) {
                     AddressText(url: local.url)
                     Text(local.hasService
-                        ? "Se enciende con su servicio, sin abrir nada."
-                        : "Se enciende en una ventana de la Terminal, que tiene que quedar abierta.")
+                        ? "It starts with its service, without opening anything."
+                        : "It starts in a Terminal window, which has to stay open.")
                         .foregroundStyle(.secondary)
                     if model.starting {
                         Label {
-                            Text("Encendiendo… puede tardar un minuto.")
+                            Text("Starting… this may take a minute.")
                         } icon: {
                             ProgressView().controlSize(.mini)
                         }
@@ -411,28 +411,28 @@ struct WelcomeView: View {
             }
         case .notFound:
             VStack(spacing: 14) {
-                Text("No encontré Paperclip en esta Mac.")
+                Text("Couldn’t find Paperclip on this Mac.")
                     .font(.headline)
                 WelcomeCard(spacing: 0) {
                     ChoiceRow(
-                        title: "Instalarlo en esta Mac",
-                        detail: "Es gratis y de código abierto. Se instala con su comando oficial; necesita Node.js."
+                        title: String(localized: "Install it on this Mac"),
+                        detail: String(localized: "It’s free and open source. It installs with its official command and needs Node.js.")
                     ) {
-                        Button("Instalar…", action: model.showInstall).buttonStyle(.glass)
+                        Button("Install…", action: model.showInstall).buttonStyle(.glass)
                     }
                     Divider().padding(.vertical, 12)
                     ChoiceRow(
-                        title: "Conectarme a uno que ya tengo",
-                        detail: "En otra computadora de tu red o por Tailscale."
+                        title: String(localized: "Connect to one I already have"),
+                        detail: String(localized: "On another computer on your network or over Tailscale.")
                     ) {
-                        Button("Escribir dirección…", action: model.showAddress).buttonStyle(.glass)
+                        Button("Enter Address…", action: model.showAddress).buttonStyle(.glass)
                     }
                 }
             }
         case .address:
             WelcomeCard {
-                Text("Dirección de Paperclip").font(.headline)
-                TextField("Dirección", text: $model.address, prompt: Text("http://192.168.1.20:3100"))
+                Text("Paperclip address").font(.headline)
+                TextField("Address", text: $model.address, prompt: Text("http://192.168.1.20:3100"))
                     .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                     .focused($addressFocused)
@@ -443,7 +443,7 @@ struct WelcomeView: View {
                         await Task.yield()
                         addressFocused = true
                     }
-                Text("La que abres en el navegador para ver Paperclip. Si pide iniciar sesión, lo haces en la ventana de la app.")
+                Text("The one you open in your browser to see Paperclip. If it asks you to sign in, you do that in the app’s window.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -460,7 +460,7 @@ struct WelcomeView: View {
         switch model.node {
         case .checking:
             Label {
-                Text("Revisando Node.js…")
+                Text("Checking Node.js…")
             } icon: {
                 ProgressView().controlSize(.small)
             }
@@ -469,14 +469,14 @@ struct WelcomeView: View {
         case .missing, .old:
             WelcomeCard {
                 StatusLine(color: .orange, title: nodeTitle) {
-                    Text("Paperclip corre sobre Node.js \(PaperclipLocator.minimumNode.major).\(PaperclipLocator.minimumNode.minor) o más nuevo. Instálalo desde su página y vuelve aquí.")
+                    Text("Paperclip runs on Node.js \(PaperclipLocator.minimumNode.major).\(PaperclipLocator.minimumNode.minor) or newer. Install it from its website and come back here.")
                         .foregroundStyle(.secondary)
                     HStack {
                         if let url = PaperclipLocator.nodeDownloadURL {
-                            Button("Descargar Node.js") { NSWorkspace.shared.open(url) }
+                            Button("Download Node.js") { NSWorkspace.shared.open(url) }
                                 .buttonStyle(.glass)
                         }
-                        Button("Ya lo instalé") { Task { await model.checkNode() } }
+                        Button("I’ve Installed It") { Task { await model.checkNode() } }
                             .buttonStyle(.glass)
                     }
                     .padding(.top, 4)
@@ -484,7 +484,7 @@ struct WelcomeView: View {
             }
         case let .ready(version):
             WelcomeCard {
-                Text(model.installerOpened ? "Instalando en la Terminal" : "Se instala en la Terminal").font(.headline)
+                Text(model.installerOpened ? "Installing in Terminal" : "It installs in Terminal").font(.headline)
                 HStack(spacing: 6) {
                     Text(PaperclipLocator.installCommand)
                         .font(.callout.monospaced())
@@ -494,13 +494,13 @@ struct WelcomeView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(.fill.tertiary, in: .rect(cornerRadius: 6))
-                Text("Es su comando oficial, con Node.js \(version.dropFirst()). Queda en modo local: solo en esta Mac y sin contraseña. Al terminar, Paperclip queda encendido en esa ventana y aquí se sigue solo.")
+                Text("It’s the official command, with Node.js \(String(version.dropFirst())). It sets up local mode: only on this Mac and with no password. When it’s done, Paperclip keeps running in that window and this continues on its own.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if model.installerOpened {
                     Label {
-                        Text("Esperando a que Paperclip arranque…")
+                        Text("Waiting for Paperclip to start…")
                     } icon: {
                         ProgressView().controlSize(.mini)
                     }
@@ -512,13 +512,13 @@ struct WelcomeView: View {
     }
 
     private var nodeTitle: String {
-        if case let .old(version) = model.node { return "Tienes Node.js \(version.dropFirst()): hace falta uno más nuevo" }
-        return "Falta Node.js"
+        if case let .old(version) = model.node { return String(localized: "You have Node.js \(String(version.dropFirst())): a newer one is needed") }
+        return String(localized: "Node.js is missing")
     }
 
     private func foundDetail(_ health: PaperclipHealth) -> String {
-        let access = health.needsSignIn ? "Te va a pedir iniciar sesión." : "Modo local: entras directo, sin contraseña."
-        return health.version.map { "Versión \($0). \(access)" } ?? access
+        let access = health.needsSignIn ? String(localized: "You’ll be asked to sign in.") : String(localized: "Local mode: you go straight in, no password.")
+        return health.version.map { String(localized: "Version \($0). \(access)") } ?? access
     }
 
     // MARK: Botones
@@ -530,7 +530,7 @@ struct WelcomeView: View {
             leadingItem
             Spacer(minLength: 0)
             if case .change = model.mode, model.step == .address || isInstalling {
-                Button("Cancelar", action: model.cancel)
+                Button("Cancel", action: model.cancel)
                     .keyboardShortcut(.cancelAction)
                     .buttonStyle(.glass)
                     .controlSize(.large)
@@ -557,20 +557,20 @@ struct WelcomeView: View {
     @ViewBuilder private var leadingItem: some View {
         switch model.phase {
         case .intro:
-            Text("Hecho para Paperclip · no es una app oficial")
+            Text("Made for Paperclip · not an official app")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         case .notifications:
-            Button("Atrás") { model.go(to: .connect) }.buttonStyle(.glass).controlSize(.large)
+            Button("Back") { model.go(to: .connect) }.buttonStyle(.glass).controlSize(.large)
         case .connect:
             switch model.step {
             case .address, .install:
-                Button("Atrás", action: model.searchAgain).buttonStyle(.glass).controlSize(.large)
+                Button("Back", action: model.searchAgain).buttonStyle(.glass).controlSize(.large)
             case .searching, .found, .stopped, .notFound:
                 if model.mode == .firstRun {
-                    Button("Atrás") { model.go(to: .intro) }.buttonStyle(.glass).controlSize(.large)
+                    Button("Back") { model.go(to: .intro) }.buttonStyle(.glass).controlSize(.large)
                 } else {
-                    Button("Cancelar", action: model.cancel)
+                    Button("Cancel", action: model.cancel)
                         .keyboardShortcut(.cancelAction)
                         .buttonStyle(.glass)
                         .controlSize(.large)
@@ -582,9 +582,9 @@ struct WelcomeView: View {
     @ViewBuilder private var primaryButton: some View {
         switch model.phase {
         case .intro:
-            Button("Empezar") { model.go(to: .connect) }
+            Button("Get Started") { model.go(to: .connect) }
         case .notifications:
-            Button("Abrir Paperclip", action: model.finish)
+            Button("Open Paperclip", action: model.finish)
         case .connect:
             connectButton
         }
@@ -595,22 +595,22 @@ struct WelcomeView: View {
         let firstRun = model.mode == .firstRun
         switch model.step {
         case let .found(local, _):
-            Button(firstRun ? "Continuar" : "Abrir Paperclip") { model.connect(local.url) }
+            Button(firstRun ? "Continue" : "Open Paperclip") { model.connect(local.url) }
         case let .stopped(local):
-            Button("Encender Paperclip") { model.startPaperclip(local) }
+            Button("Start Paperclip") { model.startPaperclip(local) }
                 .disabled(model.starting)
         case .address:
             Button(action: model.connectAddress) {
                 if model.checkingAddress {
                     ProgressView().controlSize(.small)
                 } else {
-                    Text(firstRun ? "Continuar" : "Conectar")
+                    Text(firstRun ? "Continue" : "Connect")
                 }
             }
             .disabled(model.address.isEmpty || model.checkingAddress)
         case .install:
             if case .ready = model.node {
-                Button(model.installerOpened ? "Abrir la Terminal otra vez" : "Abrir la Terminal", action: model.openInstaller)
+                Button(model.installerOpened ? "Open Terminal Again" : "Open Terminal", action: model.openInstaller)
             }
         case .searching, .notFound:
             EmptyView()
@@ -633,7 +633,7 @@ private struct StepDots: View {
         }
         .animation(WelcomeDesign.animation, value: current)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Paso \(current + 1) de \(count)")
+        .accessibilityLabel("Step \(current + 1) of \(count)")
     }
 }
 
@@ -724,7 +724,7 @@ final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
         hosting.sizingOptions = []
         let window = SnapshotableWindow(contentViewController: hosting)
         window.styleMask = [.titled, .closable, .fullSizeContentView]
-        window.title = "Bienvenida"
+        window.title = String(localized: "Welcome")
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = true
@@ -738,7 +738,7 @@ final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) no se usa")
+        fatalError("init(coder:) is not used")
     }
 
     func show() {

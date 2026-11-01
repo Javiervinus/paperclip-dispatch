@@ -31,7 +31,7 @@ enum WebResources {
     private static func read(_ name: String) -> String? {
         let url = Bundle.main.resourceURL?.appending(path: name)
         guard let url, let text = try? String(contentsOf: url, encoding: .utf8) else {
-            NSLog("Paperclip Dispatch: falta %@ en Contents/Resources; vuelve a armar con build.sh", name)
+            NSLog("Paperclip Dispatch: %@ is missing from Contents/Resources; rebuild with build.sh", name)
             return nil
         }
         return text

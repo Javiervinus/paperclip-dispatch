@@ -53,19 +53,19 @@ private struct GeneralPane: View {
             Section {
                 AppearancePicker(selection: $preferences.appearance)
             } header: {
-                Text("Apariencia")
+                Text("Appearance")
             } footer: {
-                Text("«Sistema» sigue a la Mac, también cuando cambia sola por horario. Si eliges el tema en el menú de Paperclip, aquí cambia igual.")
+                Text("“Auto” follows your Mac, including when it switches on a schedule. If you pick a theme in Paperclip’s menu, it changes here too.")
                     .settingsFootnote()
             }
             Section {
                 Toggle(isOn: launchAtLogin) {
-                    Text("Abrir al iniciar sesión")
-                    Text("Así los avisos llegan desde que prendes la Mac.")
+                    Text("Open at Login")
+                    Text("So notifications arrive as soon as you turn on your Mac.")
                 }
                 if loginItemStatus == .requiresApproval {
-                    LabeledContent("macOS pide aprobarla en Ítems de inicio.") {
-                        Button("Abrir Ajustes del Sistema") { SMAppService.openSystemSettingsLoginItems() }
+                    LabeledContent("macOS needs you to approve it in Login Items.") {
+                        Button("Open System Settings") { SMAppService.openSystemSettingsLoginItems() }
                             .buttonStyle(.glass)
                     }
                 }
@@ -73,19 +73,19 @@ private struct GeneralPane: View {
                     WarningRow(text: loginItemError)
                 }
             } footer: {
-                Text("Cerrar la ventana (Cmd+W) no apaga los avisos: la app sigue revisando. Cmd+Q la cierra del todo.")
+                Text("Closing the window (Cmd+W) doesn’t turn off notifications: the app keeps checking. Cmd+Q quits it completely.")
                     .settingsFootnote()
             }
             AppUpdatesSection(updater: updater)
             Section {
                 Toggle(isOn: $preferences.liquidGlassPage) {
-                    Text("Liquid Glass en Paperclip")
-                    Text("La barra lateral de Paperclip sobre vidrio, como en las apps de macOS 26.")
+                    Text("Liquid Glass in Paperclip")
+                    Text("Paperclip’s sidebar on glass, like in macOS 26 apps.")
                 }
             } header: {
                 Text("Experimental")
             } footer: {
-                Text("Le quita el fondo a la barra lateral de Paperclip para que se vea el vidrio: una versión nueva de Paperclip lo puede descuadrar.")
+                Text("Removes the background from Paperclip’s sidebar so the glass shows through: a new version of Paperclip might throw it off.")
                     .settingsFootnote()
             }
         }
@@ -125,23 +125,23 @@ private struct AppUpdatesSection: View {
                     .animation(SettingsDesign.animation, value: line)
             }
             if let release = updater.phase.release ?? updater.whatsNew, let link = release.notesURL {
-                LabeledContent("Novedades de la \(release.version)") {
-                    Link(destination: link) { Label("Ver en GitHub", systemImage: "arrow.up.right") }
+                LabeledContent("What’s new in version \(release.version)") {
+                    Link(destination: link) { Label("View on GitHub", systemImage: "arrow.up.right") }
                 }
             }
             if let error = updater.checkError {
-                WarningRow(text: "No pude buscar versiones nuevas: \(error)")
+                WarningRow(text: String(localized: "Couldn’t check for new versions: \(error)"))
             }
             if updater.isConfigured {
                 Toggle(isOn: $updater.automaticallyDownloads) {
-                    Text("Descargar versiones nuevas solas")
-                    Text("Se instalan cuando reinicias o cierras la app: nunca se reinicia sin preguntarte.")
+                    Text("Download new versions automatically")
+                    Text("They install when you restart or quit the app: it never restarts without asking you.")
                 }
             }
         } header: {
-            Text("Actualizaciones")
+            Text("Updates")
         } footer: {
-            Text("Las de Paperclip, el servidor donde trabajan los agentes, están en la pestaña Paperclip.")
+            Text("Updates for Paperclip, the server where the agents work, are in the Paperclip tab.")
                 .settingsFootnote()
         }
     }
@@ -149,16 +149,16 @@ private struct AppUpdatesSection: View {
     private var line: String {
         switch updater.phase {
         // Un build sin appcast: solo el que se arma a mano (los publicados siempre lo traen).
-        case .idle where !updater.isConfigured: return "Esta app · armada en esta Mac: no busca versiones nuevas"
+        case .idle where !updater.isConfigured: return String(localized: "This app · built on this Mac: doesn’t check for new versions")
         case .idle:
-            if let news = updater.whatsNew { return "Esta app · recién actualizada a la \(news.version)" }
-            guard let checked = updater.lastCheckedAt else { return "Esta app · se revisa sola cada pocas horas" }
-            return "Esta app · al día · revisado a las \(checked.formatted(date: .omitted, time: .shortened))"
-        case .checking: return "Buscando…"
-        case .available(let release): return "Salió la \(release.version). Se descarga cuando aprietas."
-        case .downloading(let release, _): return "Descargando la \(release.version)…"
-        case .ready(let release): return "La \(release.version) está lista: se instala al reiniciar o al cerrar la app."
-        case .installing: return "Reiniciando…"
+            if let news = updater.whatsNew { return String(localized: "This app · just updated to \(news.version)") }
+            guard let checked = updater.lastCheckedAt else { return String(localized: "This app · checks automatically every few hours") }
+            return String(localized: "This app · up to date · checked at \(checked.formatted(date: .omitted, time: .shortened))")
+        case .checking: return String(localized: "Checking for updates…")
+        case .available(let release): return String(localized: "Version \(release.version) is out. It downloads when you click.")
+        case .downloading(let release, _): return String(localized: "Downloading \(release.version)…")
+        case .ready(let release): return String(localized: "Version \(release.version) is ready: it installs when you restart or quit the app.")
+        case .installing: return String(localized: "Restarting…")
         }
     }
 
@@ -166,12 +166,12 @@ private struct AppUpdatesSection: View {
         switch updater.phase {
         case .idle:
             if updater.isConfigured {
-                Button("Buscar ahora", action: updater.checkNow).buttonStyle(.glass)
+                Button("Check Now", action: updater.checkNow).buttonStyle(.glass)
             }
         case .checking, .installing:
             ProgressView().controlSize(.small)
         case .available:
-            Button("Descargar y reiniciar", action: updater.install).buttonStyle(.glassProminent)
+            Button("Download and Restart", action: updater.install).buttonStyle(.glassProminent)
         case .downloading(_, let progress):
             if let progress {
                 ProgressView(value: progress).frame(width: 90)
@@ -179,7 +179,7 @@ private struct AppUpdatesSection: View {
                 ProgressView().controlSize(.small)
             }
         case .ready:
-            Button("Reiniciar", action: updater.install).buttonStyle(.glassProminent)
+            Button("Restart", action: updater.install).buttonStyle(.glassProminent)
         }
     }
 }
@@ -299,7 +299,7 @@ private struct NotificationsPane: View {
                 LabeledContent {
                     permissionControl
                 } label: {
-                    Text("Permiso de macOS")
+                    Text("macOS permission")
                     if status.requestingNotifications, status.notificationAccess?.permission == .notDetermined {
                         PermissionPromptHint()
                     } else {
@@ -311,37 +311,37 @@ private struct NotificationsPane: View {
             .animation(SettingsDesign.animation, value: status.requestingNotifications)
             Section {
                 Toggle(isOn: $preferences.decisionNotifications) {
-                    Text("Avisar cuando llegue una decisión")
-                    Text("Preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto.")
+                    Text("Notify me when a decision arrives")
+                    Text("Questions and approvals from agents, their failures, and budget alerts.")
                 }
                 Toggle(isOn: $preferences.notifyWhileLooking) {
-                    Text("Avisar también si estoy mirando Paperclip")
-                    Text("Con la ventana al frente, la barra lateral ya las muestra.")
+                    Text("Notify me even while I’m looking at Paperclip")
+                    Text("With the window in front, the sidebar already shows them.")
                 }
                 .disabled(!preferences.decisionNotifications)
                 Toggle(isOn: $preferences.dockBadge) {
-                    Text("Número de pendientes en el Dock")
-                    Text("Todo lo que espera en Decisions, no solo lo de hoy.")
+                    Text("Pending count in the Dock")
+                    Text("Everything waiting in Decisions, not just today’s.")
                 }
             }
             Section {
                 LabeledContent {
                     Button(action: sendTest) {
                         if testSent {
-                            Label("Enviado", systemImage: "checkmark")
+                            Label("Sent", systemImage: "checkmark")
                         } else {
-                            Text("Probar")
+                            Text("Test")
                         }
                     }
                     .buttonStyle(.glass)
                     .disabled(status.notificationPermission == "denied")
                     .animation(SettingsDesign.animation, value: testSent)
                 } label: {
-                    Text("Aviso de prueba")
-                    Text("Para ver cómo se ve y si macOS lo deja pasar.")
+                    Text("Test notification")
+                    Text("To see how it looks and whether macOS lets it through.")
                 }
             } footer: {
-                Text("Con No molestar o un modo de concentración, los avisos no aparecen en pantalla: quedan en el Centro de notificaciones.")
+                Text("With Do Not Disturb or a Focus on, notifications don’t appear on screen: they stay in Notification Center.")
                     .settingsFootnote()
             }
         }
@@ -351,15 +351,15 @@ private struct NotificationsPane: View {
     @ViewBuilder private var permissionControl: some View {
         switch status.notificationAccess {
         case let access? where access.isComplete:
-            StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green)
+            StatusBadge(text: String(localized: "Allowed"), symbol: "checkmark.circle.fill", tint: .green)
         case let access? where access.permission == .granted:
-            Button("Ajustar", action: NotificationAccess.openSystemSettings)
+            Button("Adjust", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         case let access? where access.permission == .denied:
-            Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
+            Button("Open System Settings", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         case .some:
-            Button("Permitir avisos", action: actions.requestNotifications)
+            Button("Allow Notifications", action: actions.requestNotifications)
                 .buttonStyle(.glassProminent)
         case nil:
             EmptyView()
@@ -370,15 +370,15 @@ private struct NotificationsPane: View {
         guard let access = status.notificationAccess else { return "" }
         switch access.permission {
         case .notDetermined:
-            return "Todavía no se pidió; sin él la app no puede avisarte."
+            return String(localized: "Not requested yet; without it the app can’t notify you.")
         case .denied:
-            return "macOS tiene bloqueados los avisos de esta app."
+            return String(localized: "macOS is blocking notifications from this app.")
         case .granted:
             switch (access.banners, access.badge) {
-            case (true, true): return "Te avisa cuando una decisión espera por ti, aunque estés en otra app."
-            case (false, true): return "Sin banner: los avisos solo se ven en el Centro de notificaciones."
-            case (true, false): return "Sin el número en el Dock: macOS no deja mostrar los pendientes."
-            case (false, false): return "Sin banner ni número en el Dock: los avisos solo se ven en el Centro de notificaciones."
+            case (true, true): return String(localized: "Notifies you when a decision is waiting for you, even if you’re in another app.")
+            case (false, true): return String(localized: "No banners: notifications only show up in Notification Center.")
+            case (true, false): return String(localized: "No Dock badge: macOS won’t let the app show the pending count.")
+            case (false, false): return String(localized: "No banners or Dock badge: notifications only show up in Notification Center.")
             }
         }
     }
@@ -412,11 +412,11 @@ private struct PaperclipPane: View {
                 LabeledContent {
                     HStack(spacing: 6) {
                         CopyButton(text: actions.serverURL.absoluteString)
-                        Button("Cambiar…", action: actions.changeServer)
+                        Button("Change…", action: actions.changeServer)
                             .buttonStyle(.glass)
                     }
                 } label: {
-                    Text("Dirección")
+                    Text("Address")
                     Text(actions.serverURL.absoluteString)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -428,9 +428,9 @@ private struct PaperclipPane: View {
                             CopyButton(text: UpdateController.installCLICommand)
                         }
                     } label: {
-                        Text("Versiones nuevas")
+                        Text("New versions")
                         Text(actions.isLocalServer
-                            ? "\(reason) Se instala con \(UpdateController.installCLICommand) y se ve al volver a abrir la app."
+                            ? String(localized: "\(reason) Install it with \(UpdateController.installCLICommand) and you’ll see it when you reopen the app.")
                             : reason)
                     }
                 } else {
@@ -439,13 +439,13 @@ private struct PaperclipPane: View {
                             if status.checkingUpdate {
                                 ProgressView().controlSize(.small)
                             } else {
-                                Text("Buscar ahora")
+                                Text("Check Now")
                             }
                         }
                         .buttonStyle(.glass)
                         .disabled(status.checkingUpdate || status.updateProgress != nil)
                     } label: {
-                        Text("Versiones nuevas")
+                        Text("New versions")
                         Text(checkLine)
                             .contentTransition(.opacity)
                             .animation(SettingsDesign.animation, value: checkLine)
@@ -456,7 +456,7 @@ private struct PaperclipPane: View {
                 }
             } footer: {
                 if status.updatesUnavailable == nil {
-                    Text("Paperclip nunca se actualiza solo: reiniciarlo corta lo que estén haciendo los agentes, así que tú eliges cuándo.")
+                    Text("Paperclip never updates on its own: restarting it interrupts whatever the agents are doing, so you choose when.")
                         .settingsFootnote()
                 }
             }
@@ -465,20 +465,20 @@ private struct PaperclipPane: View {
 
     private var versionLine: String {
         if status.updatesUnavailable != nil {
-            return actions.isLocalServer ? "Instalado en esta Mac." : "En \(actions.serverURL.host() ?? "otra computadora")."
+            return actions.isLocalServer ? String(localized: "Installed on this Mac.") : String(localized: "On \(actions.serverURL.host() ?? String(localized: "another computer")).")
         }
         guard let current = status.paperclipVersion else {
-            return status.updateCheckError != nil ? "No pude leer la versión instalada." : "Revisando la versión…"
+            return status.updateCheckError != nil ? String(localized: "Couldn’t read the installed version.") : String(localized: "Checking the version…")
         }
-        if let latest = status.latestVersion { return "Tienes la \(current). Salió la \(latest)." }
-        return "Versión \(current), la última estable."
+        if let latest = status.latestVersion { return String(localized: "You have \(current). Version \(latest) is out.") }
+        return String(localized: "Version \(current), the latest stable release.")
     }
 
     /// Cuándo se revisó, para que «Buscar ahora» muestre su resultado aquí mismo.
     private var checkLine: String {
-        let every = "cada \(Int(UpdateController.checkInterval / 3600)) horas"
-        guard let checked = status.lastCheckedAt else { return "Se revisa sola \(every)." }
-        return "Revisado a las \(checked.formatted(date: .omitted, time: .shortened)); se revisa sola \(every)."
+        let every = String(localized: "every \(Int(UpdateController.checkInterval / 3600)) hours")
+        guard let checked = status.lastCheckedAt else { return String(localized: "Checks automatically \(every).") }
+        return String(localized: "Checked at \(checked.formatted(date: .omitted, time: .shortened)); checks automatically \(every).")
     }
 
     @ViewBuilder private var updateAccessory: some View {
@@ -488,15 +488,15 @@ private struct PaperclipPane: View {
                 Text(progress).font(.callout).foregroundStyle(.secondary)
             }
         } else if status.checkingUpdate {
-            StatusBadge(text: "Revisando…", symbol: "arrow.clockwise", tint: .secondary)
+            StatusBadge(text: String(localized: "Checking…"), symbol: "arrow.clockwise", tint: .secondary)
         } else if let latest = status.latestVersion {
-            Button("Actualizar a \(latest)", action: actions.installUpdate)
+            Button("Update to \(latest)", action: actions.installUpdate)
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
         } else if status.paperclipVersion != nil {
-            StatusBadge(text: "Al día", symbol: "checkmark.circle.fill", tint: .green, bounce: status.lastCheckedAt)
+            StatusBadge(text: String(localized: "Up to date"), symbol: "checkmark.circle.fill", tint: .green, bounce: status.lastCheckedAt)
         } else if status.updateCheckError != nil {
-            StatusBadge(text: "Sin revisar", symbol: "exclamationmark.triangle.fill", tint: .orange)
+            StatusBadge(text: String(localized: "Not checked"), symbol: "exclamationmark.triangle.fill", tint: .orange)
         }
     }
 }
@@ -609,8 +609,8 @@ struct CopyButton: View {
                 .frame(width: 16)
         }
         .buttonStyle(.borderless)
-        .help(copied ? "Copiado" : "Copiar")
-        .accessibilityLabel(copied ? "Copiado" : "Copiar")
+        .help(copied ? "Copied" : "Copy")
+        .accessibilityLabel(copied ? "Copied" : "Copy")
     }
 }
 

@@ -14,27 +14,27 @@ enum NotificationsSnapshot {
     /// Para que se vea el botón «Abrir en Paperclip»: con una dirección local (127.0.0.1) Telegram no lo acepta
     /// y el código no lo pone.
     private static let sampleServerURL = URL(string: "https://paperclip.example.ts.net")!
-    private static let operations = (id: "00000000-0000-4000-8000-000000000001", name: "Operaciones")
-    private static let chief = (id: "00000000-0000-4000-8000-000000000002", name: "Jefe de gabinete")
+    private static let operations = (id: "00000000-0000-4000-8000-000000000001", name: String(localized: "Operations"))
+    private static let chief = (id: "00000000-0000-4000-8000-000000000002", name: String(localized: "Chief of Staff"))
     private static let skippedMessage = "The previous execution has not released its environment lease. Wait for "
         + "cleanup before continuing this task."
-    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by Operaciones."
-    private static let failure = "Paperclip respondió 500: Internal server error"
+    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(operations.name)."
+    private static let failure = String(localized: "Paperclip returned 500: Internal server error")
 
     static func run(to directory: URL) async {
         let agentItem = sampleItem(
-            issue: ("VIN-220", "PRUEBA VIN-219 · tarea que pasa a revisión de Operaciones"),
-            blocked: ("VIN-221", "PRUEBA VIN-219 · tarea bloqueada por la de revisión"),
+            issue: ("ACME-220", String(localized: "Redesign the pricing page")),
+            blocked: ("ACME-221", String(localized: "Launch the new pricing plans")),
             agentId: operations.id
         )
         let personItem = sampleItem(
-            issue: ("VIN-222", "Revisar el contrato con el cliente"),
-            blocked: ("VIN-223", "Enviar la propuesta"),
+            issue: ("ACME-222", String(localized: "Review the client contract")),
+            blocked: ("ACME-223", String(localized: "Send the proposal")),
             agentId: nil
         )
         let chiefItem = sampleItem(
-            issue: ("VIN-219", "Paperclip Dispatch · Ronda 2: botón «Despertar a <agente>» en el aviso de tarea trabada"),
-            blocked: ("VIN-214", "Paperclip Dispatch: dejarla lista para publicar como código abierto"),
+            issue: ("ACME-219", String(localized: "Write the quarterly report for investors")),
+            blocked: ("ACME-214", String(localized: "Prepare the board meeting")),
             agentId: chief.id
         )
         guard let agentItem, let personItem, let chiefItem, let target = agentItem.wakeTarget else { return }
@@ -128,7 +128,7 @@ enum NotificationsSnapshot {
                 "id": UUID().uuidString.lowercased(),
                 "identifier": issue.identifier,
                 "title": issue.title,
-                "href": "/VIN/issues/\(issue.identifier)",
+                "href": "/ACME/issues/\(issue.identifier)",
                 "metadata": [
                     "priority": "high",
                     "assigneeAgentId": agentId.map { $0 as Any } ?? NSNull(),
@@ -140,7 +140,7 @@ enum NotificationsSnapshot {
                 "id": UUID().uuidString.lowercased(),
                 "identifier": blocked.identifier,
                 "title": blocked.title,
-                "href": "/VIN/issues/\(blocked.identifier)",
+                "href": "/ACME/issues/\(blocked.identifier)",
             ],
             "project": ["name": "Paperclip Dispatch"],
             "whyNow": "Blocks 1 task; choose the next owner or action.",
@@ -216,7 +216,7 @@ private struct MacNoticeView: View {
                     Text(notice.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Spacer(minLength: 6)
                     if notice.action == nil {
-                        Text("ahora").font(.system(size: 11)).foregroundStyle(.secondary)
+                        Text("now").font(.system(size: 11)).foregroundStyle(.secondary)
                     }
                 }
                 Text(notice.body).font(.system(size: 13)).lineLimit(4).fixedSize(horizontal: false, vertical: true)
@@ -273,7 +273,7 @@ private struct TelegramMessageView: View {
         VStack(alignment: .leading, spacing: 4) {
             VStack(alignment: .leading, spacing: 6) {
                 if message.isReply {
-                    Text("Paperclip · Tarea trabada")
+                    Text("Paperclip · Stuck task")
                         .font(.system(size: 12))
                         .foregroundStyle(accent)
                         .padding(.leading, 6)

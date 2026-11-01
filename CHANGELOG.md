@@ -31,3 +31,5 @@ The first release. Everything below is new, so this entry describes the app rath
 - **Updates for both, in one place.** The button at the top right shows the version of Paperclip and of
   this app. Paperclip updates only when you say so; the app downloads its own updates and installs them
   when you restart it or quit.
+- **In English or Spanish.** The app follows your Mac's language, and so do the Telegram bot and its
+  "explain it to me" answers.

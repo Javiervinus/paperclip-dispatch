@@ -12,13 +12,13 @@ final class PaperclipAPI {
         var errorDescription: String? {
             switch self {
             case .signedOut:
-                "La app no tiene la sesión de Paperclip: ábrela e inicia sesión."
+                String(localized: "The app isn’t signed in to Paperclip: open it and sign in.")
             case .http(404, _):
-                "Ya no existe en Paperclip."
+                String(localized: "It no longer exists in Paperclip.")
             case let .http(409, message), let .http(422, message):
-                "Paperclip no lo aceptó\(message.map { " (\($0))" } ?? ""). Puede que ya estuviera resuelta."
+                String(localized: "Paperclip didn’t accept it\(message.map { " (\($0))" } ?? ""). It may have been resolved already.")
             case let .http(status, message):
-                "Paperclip respondió \(status)\(message.map { ": \($0)" } ?? "")."
+                String(localized: "Paperclip returned \(status)\(message.map { ": \($0)" } ?? "").")
             }
         }
     }

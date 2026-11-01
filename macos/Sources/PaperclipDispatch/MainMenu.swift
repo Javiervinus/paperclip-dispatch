@@ -6,67 +6,67 @@ import AppKit
 enum MainMenu {
     static func build(appName: String) -> NSMenu {
         let main = NSMenu()
-        let services = submenu("Servicios", [])
+        let services = submenu(String(localized: "Services"), [])
         main.addItem(submenu(appName, [
-            item("Acerca de \(appName)", #selector(AppDelegate.showAbout(_:))),
+            item(String(localized: "About \(appName)"), #selector(AppDelegate.showAbout(_:))),
             // Junto a «Acerca de», donde la ponen las apps de Mac que se actualizan solas.
-            item("Buscar actualizaciones…", #selector(AppDelegate.checkForUpdates(_:))),
+            item(String(localized: "Check for Updates…"), #selector(AppDelegate.checkForUpdates(_:))),
             .separator(),
-            item("Ajustes…", #selector(AppDelegate.showSettings(_:)), ","),
+            item(String(localized: "Settings…"), #selector(AppDelegate.showSettings(_:)), ","),
             .separator(),
             services,
             .separator(),
-            item("Ocultar \(appName)", #selector(NSApplication.hide(_:)), "h"),
-            item("Ocultar otras", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
-            item("Mostrar todas", #selector(NSApplication.unhideAllApplications(_:))),
+            item(String(localized: "Hide \(appName)"), #selector(NSApplication.hide(_:)), "h"),
+            item(String(localized: "Hide Others"), #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
+            item(String(localized: "Show All"), #selector(NSApplication.unhideAllApplications(_:))),
             .separator(),
-            item("Salir de \(appName)", #selector(NSApplication.terminate(_:)), "q"),
+            item(String(localized: "Quit \(appName)"), #selector(NSApplication.terminate(_:)), "q"),
         ]))
         NSApp.servicesMenu = services.submenu
-        main.addItem(submenu("Archivo", [
+        main.addItem(submenu(String(localized: "File"), [
             // Para pegar una tarea en un chat o abrirla en otro equipo.
-            item("Copiar enlace de esta página", #selector(MainWindowController.copyPageLink(_:)), "c", [.command, .shift]),
-            item("Abrir en el navegador", #selector(MainWindowController.openPageInBrowser(_:))),
+            item(String(localized: "Copy Link to This Page"), #selector(MainWindowController.copyPageLink(_:)), "c", [.command, .shift]),
+            item(String(localized: "Open in Browser"), #selector(MainWindowController.openPageInBrowser(_:))),
             .separator(),
-            item("Cerrar ventana", #selector(NSWindow.performClose(_:)), "w"),
+            item(String(localized: "Close Window"), #selector(NSWindow.performClose(_:)), "w"),
         ]))
-        main.addItem(submenu("Edición", [
-            item("Deshacer", Selector(("undo:")), "z"),
-            item("Rehacer", Selector(("redo:")), "z", [.command, .shift]),
+        main.addItem(submenu(String(localized: "Edit"), [
+            item(String(localized: "Undo"), Selector(("undo:")), "z"),
+            item(String(localized: "Redo"), Selector(("redo:")), "z", [.command, .shift]),
             .separator(),
-            item("Cortar", #selector(NSText.cut(_:)), "x"),
-            item("Copiar", #selector(NSText.copy(_:)), "c"),
-            item("Pegar", #selector(NSText.paste(_:)), "v"),
-            item("Seleccionar todo", #selector(NSText.selectAll(_:)), "a"),
+            item(String(localized: "Cut"), #selector(NSText.cut(_:)), "x"),
+            item(String(localized: "Copy"), #selector(NSText.copy(_:)), "c"),
+            item(String(localized: "Paste"), #selector(NSText.paste(_:)), "v"),
+            item(String(localized: "Select All"), #selector(NSText.selectAll(_:)), "a"),
         ]))
-        main.addItem(submenu("Visualización", [
-            item("Recargar", #selector(AppDelegate.reloadPage(_:)), "r"),
+        main.addItem(submenu(String(localized: "View"), [
+            item(String(localized: "Reload Page"), #selector(AppDelegate.reloadPage(_:)), "r"),
             .separator(),
-            item("Tamaño real", #selector(MainWindowController.resetZoom(_:)), "0"),
-            item("Ampliar", #selector(MainWindowController.zoomIn(_:)), "+"),
-            item("Reducir", #selector(MainWindowController.zoomOut(_:)), "-"),
+            item(String(localized: "Actual Size"), #selector(MainWindowController.resetZoom(_:)), "0"),
+            item(String(localized: "Zoom In"), #selector(MainWindowController.zoomIn(_:)), "+"),
+            item(String(localized: "Zoom Out"), #selector(MainWindowController.zoomOut(_:)), "-"),
             .separator(),
-            item("Pantalla completa", #selector(NSWindow.toggleFullScreen(_:)), "f", [.command, .control]),
+            item(String(localized: "Enter Full Screen"), #selector(NSWindow.toggleFullScreen(_:)), "f", [.command, .control]),
         ]))
         // Los atajos de un navegador, también en Finder y Safari.
-        main.addItem(submenu("Ir", [
-            item("Atrás", #selector(MainWindowController.navigateBack(_:)), "["),
-            item("Adelante", #selector(MainWindowController.navigateForward(_:)), "]"),
+        main.addItem(submenu(String(localized: "Go"), [
+            item(String(localized: "Back"), #selector(MainWindowController.navigateBack(_:)), "["),
+            item(String(localized: "Forward"), #selector(MainWindowController.navigateForward(_:)), "]"),
             .separator(),
-            item("Inicio", #selector(MainWindowController.goHome(_:)), "h", [.command, .shift]),
+            item(String(localized: "Home"), #selector(MainWindowController.goHome(_:)), "h", [.command, .shift]),
         ]))
-        let window = submenu("Ventana", [
-            item("Minimizar", #selector(NSWindow.performMiniaturize(_:)), "m"),
-            item("Zoom", #selector(NSWindow.performZoom(_:))),
+        let window = submenu(String(localized: "Window"), [
+            item(String(localized: "Minimize"), #selector(NSWindow.performMiniaturize(_:)), "m"),
+            item(String(localized: "Zoom"), #selector(NSWindow.performZoom(_:))),
             .separator(),
             // Cerrar la ventana no cierra la app: desde aquí vuelve, como al tocar el ícono del Dock.
             item(appName, #selector(AppDelegate.showMainWindow(_:)), "0"),
             .separator(),
-            item("Traer todo al frente", #selector(NSApplication.arrangeInFront(_:))),
+            item(String(localized: "Bring All to Front"), #selector(NSApplication.arrangeInFront(_:))),
         ])
         main.addItem(window)
         NSApp.windowsMenu = window.submenu
-        let help = submenu("Ayuda", helpItems(appName: appName))
+        let help = submenu(String(localized: "Help"), helpItems(appName: appName))
         main.addItem(help)
         NSApp.helpMenu = help.submenu
         return main
@@ -76,17 +76,17 @@ enum MainMenu {
     private static func helpItems(appName: String) -> [NSMenuItem] {
         var items: [NSMenuItem] = []
         if let repository = AppInfo.repositoryURL {
-            items.append(link("\(appName) en GitHub", repository))
+            items.append(link(String(localized: "\(appName) on GitHub"), repository))
         }
         if let releases = AppInfo.releasesURL {
-            items.append(link("Novedades de cada versión", releases))
+            items.append(link(String(localized: "Release Notes"), releases))
         }
         if let issue = AppInfo.newIssueURL {
-            items.append(link("Reportar un problema…", issue))
+            items.append(link(String(localized: "Report an Issue…"), issue))
         }
         if !items.isEmpty { items.append(.separator()) }
-        items.append(link("Documentación de Paperclip", AppInfo.paperclipDocsURL))
-        items.append(link("Sitio de Paperclip", AppInfo.paperclipURL))
+        items.append(link(String(localized: "Paperclip Documentation"), AppInfo.paperclipDocsURL))
+        items.append(link(String(localized: "Paperclip Website"), AppInfo.paperclipURL))
         return items
     }
 

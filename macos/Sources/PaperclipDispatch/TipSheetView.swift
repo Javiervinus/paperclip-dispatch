@@ -13,7 +13,7 @@ struct TipSheetView: View {
         VStack(alignment: .leading, spacing: 0) {
             illustration
                 .padding(.bottom, 18)
-            Text("Siguiente paso")
+            Text("Next step")
                 .font(.caption.weight(.semibold))
                 .textCase(.uppercase)
                 .tracking(0.6)
@@ -40,7 +40,7 @@ struct TipSheetView: View {
             .padding(.top, 12)
             HStack(spacing: 10) {
                 Spacer(minLength: 0)
-                Button("Ahora no", action: onDismiss)
+                Button("Not Now", action: onDismiss)
                     .keyboardShortcut(.cancelAction)
                     .buttonStyle(.glass)
                 Button(tip.actionTitle, action: onAction)
@@ -91,15 +91,15 @@ private struct TelegramPreview: View {
                     .background(.white, in: .circle)
                     .clipShape(.circle)
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Tu bot").font(.subheadline.bold()).foregroundStyle(.white)
+                    Text("Your bot").font(.subheadline.bold()).foregroundStyle(.white)
                     Text("bot").font(.caption).foregroundStyle(Palette.muted)
                 }
             }
             .padding(.bottom, 5)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Aprobación").bold().foregroundStyle(.white)
-                Text("Contratar a un agente de diseño").bold().foregroundStyle(.white)
-                Text("CEO · VIN-214").italic()
+                Text("Approval").bold().foregroundStyle(.white)
+                Text("Hire a design agent").bold().foregroundStyle(.white)
+                Text("CEO · ACME-42").italic()
             }
             .font(.subheadline)
             .foregroundStyle(Palette.text)
@@ -109,11 +109,11 @@ private struct TelegramPreview: View {
             .background(Palette.bubble, in: Self.bubbleShape)
             Grid(horizontalSpacing: 5, verticalSpacing: 5) {
                 GridRow {
-                    key("Aprobar")
-                    key("Rechazar")
+                    key(String(localized: "Approve"))
+                    key(String(localized: "Reject"))
                 }
                 GridRow {
-                    key("💡 Explícamela").gridCellColumns(2)
+                    key(String(localized: "💡 Explain it to me")).gridCellColumns(2)
                 }
             }
         }
@@ -123,7 +123,7 @@ private struct TelegramPreview: View {
         .background(Palette.background, in: .rect(cornerRadius: 18))
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Ejemplo de mensaje del bot: una aprobación del CEO en VIN-214, con los botones Aprobar, Rechazar y Explícamela.")
+        .accessibilityLabel("Sample bot message: an approval from the CEO on ACME-42, with the buttons Approve, Reject, and Explain it to me.")
     }
 
     private func key(_ title: String) -> some View {

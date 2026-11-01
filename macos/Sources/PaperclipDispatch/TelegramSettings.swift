@@ -33,10 +33,10 @@ struct TelegramPane: View {
             }
         }
         .animation(SettingsDesign.animation, value: phase)
-        .confirmationDialog("¿Quitar el bot?", isPresented: $confirmingRemoval) {
-            Button("Quitar bot", role: .destructive, action: telegram.removeBot)
+        .confirmationDialog("Remove the bot?", isPresented: $confirmingRemoval) {
+            Button("Remove Bot", role: .destructive, action: telegram.removeBot)
         } message: {
-            Text("Se borra su token del llavero y deja de mandarte las decisiones. Para volver, hay que conectarlo de nuevo.")
+            Text("Its token is deleted from the Keychain and it stops sending you decisions. To use it again, you’ll have to connect it again.")
         }
     }
 
@@ -46,7 +46,7 @@ struct TelegramPane: View {
     }
 
     private var botName: String {
-        telegram.state.botUsername.map { "@\($0)" } ?? "tu bot"
+        telegram.state.botUsername.map { "@\($0)" } ?? String(localized: "your bot")
     }
 
     // MARK: Conectar
@@ -55,11 +55,11 @@ struct TelegramPane: View {
         Section {
             LabeledContent {
                 if let url = Self.botFatherURL {
-                    Button("Abrir @BotFather") { NSWorkspace.shared.open(url) }
+                    Button("Open @BotFather") { NSWorkspace.shared.open(url) }
                         .buttonStyle(.glass)
                 }
             } label: {
-                StepLabel(number: 1, title: "Crea un bot con @BotFather", detail: "Escríbele /newbot y elige un nombre: te da un token.")
+                StepLabel(number: 1, title: String(localized: "Create a bot with @BotFather"), detail: String(localized: "Send it /newbot and choose a name: it gives you a token."))
             }
             LabeledContent {
                 HStack {
@@ -68,17 +68,17 @@ struct TelegramPane: View {
                         .textFieldStyle(.roundedBorder)
                         .onSubmit(connect)
                     if working { ProgressView().controlSize(.small) }
-                    Button("Conectar", action: connect)
+                    Button("Connect", action: connect)
                         .buttonStyle(.glassProminent)
                         .disabled(token.isEmpty || working)
                 }
             } label: {
-                StepLabel(number: 2, title: "Pega aquí su token", detail: nil)
+                StepLabel(number: 2, title: String(localized: "Paste its token here"), detail: nil)
             }
         } header: {
-            Text("Conectar un bot")
+            Text("Connect a bot")
         } footer: {
-            Text("Las decisiones te llegan al teléfono con sus botones, para contestarlas desde ahí. El bot es solo tuyo y el token queda en el llavero de esta Mac, nunca en archivos. No hace falta una dirección pública: la app le pregunta a Telegram.")
+            Text("Decisions reach your phone with their buttons, so you can answer them from there. The bot is yours alone, and its token stays in this Mac’s Keychain, never in files. No public address needed: the app asks Telegram.")
                 .settingsFootnote()
         }
     }
@@ -91,15 +91,15 @@ struct TelegramPane: View {
                 HStack(spacing: 20) {
                     PairingCode(url: url)
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Vincula tu chat").font(.headline)
-                        Text("Escanea el código con la cámara del teléfono y toca Iniciar en Telegram.")
+                        Text("Connect your chat").font(.headline)
+                        Text("Scan the code with your phone’s camera and tap Start in Telegram.")
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
-                        Button("Abrir en esta Mac") { NSWorkspace.shared.open(url) }
+                        Button("Open on This Mac") { NSWorkspace.shared.open(url) }
                             .buttonStyle(.glass)
                         if let code = telegram.state.pairingCode {
                             HStack(spacing: 4) {
-                                Text("O escríbele «/start \(code)»")
+                                Text("Or send it “/start \(code)”")
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                                     .textSelection(.enabled)
@@ -107,7 +107,7 @@ struct TelegramPane: View {
                             }
                         }
                         Label {
-                            Text("Esperando…")
+                            Text("Waiting…")
                         } icon: {
                             ProgressView().controlSize(.mini)
                         }
@@ -126,8 +126,8 @@ struct TelegramPane: View {
     private var botRow: some View {
         LabeledContent {
             HStack(spacing: 10) {
-                if let chatName = telegram.state.chatName { Text("con \(chatName)") }
-                Button("Quitar…", role: .destructive) { confirmingRemoval = true }
+                if let chatName = telegram.state.chatName { Text("with \(chatName)") }
+                Button("Remove…", role: .destructive) { confirmingRemoval = true }
                     .buttonStyle(.glass)
             }
         } label: {
@@ -141,26 +141,26 @@ struct TelegramPane: View {
     @ViewBuilder private var connectedSection: some View {
         Section {
             Toggle(isOn: enabled) {
-                Text("Mandar las decisiones a Telegram")
-                Text("Cada una con sus botones; lo que tocas se aplica en Paperclip a tu nombre.")
+                Text("Send decisions to Telegram")
+                Text("Each one comes with its buttons; whatever you tap is applied in Paperclip on your behalf.")
             }
             botRow
             LabeledContent {
                 Button(action: sendTest) {
                     if testSent {
-                        Label("Enviado", systemImage: "checkmark")
+                        Label("Sent", systemImage: "checkmark")
                     } else {
-                        Text("Mandar prueba")
+                        Text("Send Test")
                     }
                 }
                 .buttonStyle(.glass)
                 .disabled(!telegram.state.enabled || working)
                 .animation(SettingsDesign.animation, value: testSent)
             } label: {
-                Text("Mensaje de prueba")
+                Text("Test message")
             }
         } footer: {
-            Text("Para escribirle al agente de una decisión, respóndele a su mensaje: le llega como comentario en la tarea. Funciona mientras esta Mac y la app estén encendidas.")
+            Text("To write to a decision’s agent, reply to its message: it arrives as a comment on the task. Works while this Mac and the app are on.")
                 .settingsFootnote()
         }
     }
@@ -204,7 +204,7 @@ private struct StepLabel: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: "\(number).circle.fill")
                 .foregroundStyle(SettingsDesign.telegramBlue)
-                .accessibilityLabel("Paso \(number)")
+                .accessibilityLabel("Step \(number)")
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                 if let detail {
@@ -252,7 +252,7 @@ private struct PairingCode: View {
         .padding(8)
         .background(.white, in: .rect(cornerRadius: 12))
         .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-        .accessibilityLabel("Código QR del enlace al bot")
+        .accessibilityLabel("QR code for the bot link")
     }
 
     /// CoreImage lo dibuja negro sobre blanco, un punto por módulo; se agranda sin suavizar.
@@ -285,22 +285,22 @@ private struct ExplainSection: View {
     var body: some View {
         Section {
             Toggle(isOn: enabled) {
-                Text("Explicar decisiones")
-                Text("Agrega «💡 Explícamela» a cada decisión: te la cuenta en pocas líneas.")
+                Text("Explain decisions")
+                Text("Adds “💡 Explain it to me” to each decision: it explains it in a few lines.")
             }
             if telegram.explainEnabled {
-                Picker("Con", selection: engine) {
+                Picker("Using", selection: engine) {
                     Text(automaticTitle).tag(Engine.automatic)
                     ForEach(cliOptions) { Text(title(for: $0)).tag($0) }
                     Divider()
                     Text(Engine.custom.title).tag(Engine.custom)
                 }
                 if telegram.engine == .custom {
-                    TextField("Comando", text: $command, prompt: Text("p. ej. gemini -p"))
+                    TextField("Command", text: $command, prompt: Text("e.g. gemini -p"))
                         .onChange(of: command) { telegram.setCustomCommand(command) }
                 } else if let effective {
-                    Picker("Modelo", selection: model(for: effective)) {
-                        Text("Automático").tag("")
+                    Picker("Model", selection: model(for: effective)) {
+                        Text("Automatic").tag("")
                         ForEach(modelOptions(for: effective)) { Text($0.title).tag($0.id) }
                     }
                     .disabled(loadingModels)
@@ -333,8 +333,8 @@ private struct ExplainSection: View {
     }
 
     private var automaticTitle: String {
-        guard let detection else { return "Automático (buscando…)" }
-        return detection.automatic.map { "Automático · \($0.title)" } ?? "Automático (no encontré ninguno)"
+        guard let detection else { return String(localized: "Automatic (searching…)") }
+        return detection.automatic.map { String(localized: "Automatic · \($0.title)") } ?? String(localized: "Automatic (none found)")
     }
 
     /// Los instalados; el elegido aparece aunque ya no esté, para que se vea qué pasó.
@@ -346,7 +346,7 @@ private struct ExplainSection: View {
 
     private func title(for engine: Engine) -> String {
         guard let detection, !detection.installed.contains(engine) else { return engine.title }
-        return "\(engine.title) (no instalado)"
+        return String(localized: "\(engine.title) (not installed)")
     }
 
     /// Los del CLI, más el guardado si el CLI ya no lo ofrece.
@@ -358,12 +358,12 @@ private struct ExplainSection: View {
 
     /// Lo justo para lo que está a la vista.
     private var footer: String {
-        let base = "Lo cuenta un CLI de esta Mac, sin herramientas: solo lee la tarea y no decide ni escribe nada."
+        let base = String(localized: "A CLI on this Mac explains it, with no tools: it only reads the task and never decides or writes anything.")
         guard telegram.explainEnabled else { return base }
         if telegram.engine == .custom {
-            return base + " El comando recibe el texto por la entrada y responde por la salida."
+            return base + " " + String(localized: "The command receives the text on standard input and replies on standard output.")
         }
-        return base + " «Automático» usa el CLI que más usan tus agentes, con su modelo por defecto y esfuerzo bajo."
+        return base + " " + String(localized: "“Automatic” uses the CLI your agents use most, with its default model and low effort.")
     }
 
     private var enabled: Binding<Bool> {

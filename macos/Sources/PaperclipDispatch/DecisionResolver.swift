@@ -42,25 +42,25 @@ enum WakeOutcome: Equatable, Sendable {
 /// Lo que se dice en el botón y después de apretarlo, igual en la Mac y en Telegram.
 enum WakeText {
     static func button(_ agentName: String?) -> String {
-        agentName.map { "Despertar a \($0)" } ?? "Despertar al agente"
+        agentName.map { String(localized: "Wake up \($0)") } ?? String(localized: "Wake up the agent")
     }
 
     /// Título y texto del aviso después de apretar el botón.
     static func result(_ outcome: WakeOutcome, target: WakeTarget, agentName: String?) -> (title: String, body: String) {
-        let agent = agentName ?? "El agente"
-        let task = target.issueIdentifier ?? "la tarea"
-        func said(_ message: String?) -> String { message.map { " Paperclip dijo: «\($0)»" } ?? "" }
+        let agent = agentName ?? String(localized: "The agent")
+        let task = target.issueIdentifier ?? String(localized: "the task")
+        func said(_ message: String?) -> String { message.map { String(localized: " Paperclip said: “\($0)”") } ?? "" }
         return switch outcome {
         case .accepted:
-            ("Paperclip aceptó el despertar", "\(agent) va a trabajar en \(task).")
+            (String(localized: "Paperclip accepted the wake-up"), String(localized: "\(agent) will work on \(task)."))
         case let .alreadyRunning(message):
-            ("Paperclip saltó el despertar", "\(task) ya tiene una corrida en marcha." + said(message))
+            (String(localized: "Paperclip skipped the wake-up"), String(localized: "\(task) already has a run in progress.") + said(message))
         case let .skipped(message):
-            ("Paperclip saltó el despertar", "\(agent) sigue sin trabajar en \(task)." + said(message))
+            (String(localized: "Paperclip skipped the wake-up"), String(localized: "\(agent) still isn’t working on \(task).") + said(message))
         case .notStuck:
-            ("No hizo falta despertar", "\(task) ya no está a nombre de \(agentName ?? "ese agente") o ya se cerró.")
+            (String(localized: "No wake-up needed"), String(localized: "\(task) is no longer assigned to \(agentName ?? String(localized: "that agent")), or it’s already closed."))
         case let .failed(error):
-            ("No se pudo despertar a \(agentName ?? "el agente")", error)
+            (String(localized: "Couldn’t wake up \(agentName ?? String(localized: "the agent"))"), error)
         }
     }
 }
@@ -112,12 +112,12 @@ struct DecisionResolver {
                 return try await interactionPrompt(issueId: issueId, interactionId: subjectId, fallback: prompt)
             case "approval":
                 prompt.choices = [
-                    DecisionChoice(label: "Aprobar", action: .approve(approvalId: subjectId), asks: nil),
-                    DecisionChoice(label: "Rechazar", action: .rejectApproval(approvalId: subjectId), asks: nil),
+                    DecisionChoice(label: String(localized: "Approve"), action: .approve(approvalId: subjectId), asks: nil),
+                    DecisionChoice(label: String(localized: "Reject"), action: .rejectApproval(approvalId: subjectId), asks: nil),
                     DecisionChoice(
-                        label: "Pedir cambios",
+                        label: String(localized: "Request changes"),
                         action: .requestRevision(approvalId: subjectId),
-                        asks: "¿Qué cambios pides?"
+                        asks: String(localized: "What changes do you want?")
                     ),
                 ]
             case "decision":
@@ -206,12 +206,12 @@ struct DecisionResolver {
                 : .skipped(message: response.message)
         } catch PaperclipAPI.APIError.signedOut {
             return .failed(
-                "Paperclip no lo permitió: la app no tiene la sesión iniciada o tu usuario no puede despertar a este agente."
+                String(localized: "Paperclip didn’t allow it: the app isn’t signed in, or your user can’t wake up this agent.")
             )
         } catch PaperclipAPI.APIError.http(404, _) {
             return .notStuck
         } catch let PaperclipAPI.APIError.http(status, message) {
-            return .failed("Paperclip respondió \(status)\(message.map { ": \($0)" } ?? ".")")
+            return .failed(String(localized: "Paperclip returned \(status)\(message.map { ": \($0)" } ?? ".")"))
         } catch {
             return .failed(error.localizedDescription)
         }
@@ -262,16 +262,16 @@ struct DecisionResolver {
             // Las que proponen guardar un secreto se revisan en la página.
             guard payload.secretProposal == nil else { return prompt }
             let reason = payload.rejectRequiresReason == true
-                ? payload.rejectReasonLabel ?? payload.declineReasonPlaceholder ?? "¿Por qué?"
+                ? payload.rejectReasonLabel ?? payload.declineReasonPlaceholder ?? String(localized: "Why?")
                 : nil
             prompt.choices = [
                 DecisionChoice(
-                    label: payload.acceptLabel ?? "Confirmar",
+                    label: payload.acceptLabel ?? String(localized: "Confirm"),
                     action: .acceptInteraction(issueId: issueId, interactionId: interactionId),
                     asks: nil
                 ),
                 DecisionChoice(
-                    label: payload.rejectLabel ?? "Rechazar",
+                    label: payload.rejectLabel ?? String(localized: "Reject"),
                     action: .rejectInteraction(issueId: issueId, interactionId: interactionId),
                     asks: reason
                 ),
@@ -292,14 +292,14 @@ struct DecisionResolver {
                         questionId: question.id,
                         optionId: option.id
                     ),
-                    asks: option.freeText == true ? option.description ?? "Escribe tu respuesta." : nil
+                    asks: option.freeText == true ? option.description ?? String(localized: "Type your answer.") : nil
                 )
             }
             if question.allowOther == true {
                 prompt.choices.append(DecisionChoice(
-                    label: "Otra respuesta…",
+                    label: String(localized: "Other answer…"),
                     action: .answer(issueId: issueId, interactionId: interactionId, questionId: question.id, optionId: nil),
-                    asks: "Escribe tu respuesta."
+                    asks: String(localized: "Type your answer.")
                 ))
             }
         default:

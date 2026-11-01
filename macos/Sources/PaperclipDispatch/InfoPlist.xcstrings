@@ -1,0 +1,60 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSCameraUsageDescription" : {
+      "comment" : "Permiso de la cámara, por si Paperclip la pide.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip asks for the camera."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip pide la cámara."
+          }
+        }
+      }
+    },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Permiso de Red local: la app habla con Paperclip en esta Mac o en otra de la red.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip Dispatch connects to Paperclip on this Mac or on another computer on your network."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip Dispatch se conecta a Paperclip en esta Mac o en otra computadora de tu red."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription" : {
+      "comment" : "Permiso del micrófono, por si Paperclip lo pide para dictar.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip asks for the microphone for dictation."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paperclip pide el micrófono para dictar."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

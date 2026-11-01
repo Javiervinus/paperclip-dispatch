@@ -38,9 +38,9 @@ enum PaperclipLocator {
 
         var message: String {
             switch self {
-            case .unreachable: "No responde. Revisa la dirección y que Paperclip esté encendido."
-            case .notPaperclip: "Responde, pero no es Paperclip."
-            case .starting: "Paperclip está arrancando: espera unos segundos."
+            case .unreachable: String(localized: "It isn’t responding. Check the address and that Paperclip is running.")
+            case .notPaperclip: String(localized: "It responds, but it isn’t Paperclip.")
+            case .starting: String(localized: "Paperclip is starting up: wait a few seconds.")
             }
         }
     }
@@ -49,7 +49,7 @@ enum PaperclipLocator {
     static let serviceLabel = "ing.paperclip.paperclipai"
     static let installCommand = "npx paperclipai@latest onboard --yes"
     static let websiteURL = AppInfo.paperclipURL
-    static let nodeDownloadURL = URL(string: "https://nodejs.org/es/download")
+    static let nodeDownloadURL = URL(string: String(localized: "https://nodejs.org/en/download", comment: "La página de descarga de Node.js en el idioma de la app."))
     /// Node.js que pide Paperclip (campo `engines` de su paquete).
     static let minimumNode = (major: 24, minor: 11)
     private static let probeTimeout: TimeInterval = 3
@@ -153,7 +153,7 @@ enum PaperclipLocator {
             let instance = shellQuoted(local.instanceId)
             openInTerminal(
                 named: "start-paperclip",
-                title: "Encendiendo Paperclip. Deja esta ventana abierta: aquí corre.",
+                title: String(localized: "Starting Paperclip. Keep this window open: it runs here."),
                 command: "if command -v paperclipai >/dev/null; then paperclipai run --instance \(instance); "
                     + "else npx paperclipai@latest run --instance \(instance); fi"
             )
@@ -164,14 +164,14 @@ enum PaperclipLocator {
         if kickstart.status == 0 { return nil }
         // Si el servicio no está cargado, se carga (y arranca solo: RunAtLoad).
         let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) \(shellQuoted(servicePlist.path))"])
-        return bootstrap.status == 0 ? nil : "macOS no pudo encender el servicio de Paperclip: \(bootstrap.tail(2))"
+        return bootstrap.status == 0 ? nil : String(localized: "macOS couldn’t start the Paperclip service: \(bootstrap.tail(2))")
     }
 
     /// Abre la Terminal con el instalador oficial (`onboard --yes`: modo local, sin login, y lo enciende).
     static func openInstaller() {
         openInTerminal(
             named: "install-paperclip",
-            title: "Instalando Paperclip con su comando oficial. Al terminar queda encendido en esta ventana.",
+            title: String(localized: "Installing Paperclip with its official command. When it’s done, it keeps running in this window."),
             command: installCommand
         )
     }

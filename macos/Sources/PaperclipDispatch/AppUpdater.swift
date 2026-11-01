@@ -114,7 +114,7 @@ final class AppUpdater: NSObject {
         do {
             try updater.start()
         } catch {
-            NSLog("Paperclip Dispatch: no pude iniciar las actualizaciones: %@", error.localizedDescription)
+            NSLog("Paperclip Dispatch: couldn't start updates: %@", error.localizedDescription)
             return
         }
         self.updater = updater

@@ -27,16 +27,16 @@ enum AboutPanel {
             text.append(NSAttributedString(string: string, attributes: attributes))
         }
         if let author = AppInfo.author {
-            append("Hecha por ")
+            append(String(localized: "Made by "))
             append(author, link: AppInfo.authorURL)
             append("\n")
         }
         if let repository = AppInfo.repositoryURL {
-            append("Código abierto en ")
+            append(String(localized: "Open source on "))
             append("GitHub", link: repository)
             append("\n")
         }
-        append("No es una app oficial de ", color: .secondaryLabelColor)
+        append(String(localized: "Not affiliated with "), color: .secondaryLabelColor)
         append("Paperclip", link: AppInfo.paperclipURL)
         append(".", color: .secondaryLabelColor)
         return text

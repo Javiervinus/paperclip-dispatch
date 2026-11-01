@@ -10,11 +10,11 @@ struct WelcomeNotificationsStep: View {
         VStack(spacing: 0) {
             NotificationPreview()
                 .padding(.top, 54)
-            Text("Que no se te pase ninguna decisión")
+            Text("Never miss a decision")
                 .font(.title)
                 .bold()
                 .padding(.top, 22)
-            Text("Dispatch te avisa solo cuando un agente espera por ti.")
+            Text("Dispatch notifies you only when an agent is waiting for you.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -23,9 +23,9 @@ struct WelcomeNotificationsStep: View {
                 permissionRow
                 Divider().padding(.vertical, 12)
                 HStack(spacing: 14) {
-                    RowText(title: "Abrir al iniciar sesión", detail: "Así los avisos llegan desde que prendes la Mac.")
+                    RowText(title: String(localized: "Open at Login"), detail: String(localized: "So notifications arrive as soon as you turn on your Mac."))
                     Spacer(minLength: 0)
-                    Toggle("Abrir al iniciar sesión", isOn: $model.launchAtLogin)
+                    Toggle("Open at Login", isOn: $model.launchAtLogin)
                         .toggleStyle(.greenSwitch)
                         .labelsHidden()
                 }
@@ -45,7 +45,7 @@ struct WelcomeNotificationsStep: View {
     private var permissionRow: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("Avisos de macOS").font(.headline)
+                Text("macOS notifications").font(.headline)
                 if waitingForAnswer {
                     PermissionPromptHint()
                         .font(.callout)
@@ -74,37 +74,37 @@ struct WelcomeNotificationsStep: View {
         case let access? where access.isComplete:
             AllowedBadge()
         case let access? where access.permission == .granted:
-            Button("Ajustar", action: NotificationAccess.openSystemSettings)
+            Button("Adjust", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         case let access? where access.permission == .denied:
-            Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
+            Button("Open System Settings", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         case _ where model.notificationRequestFailed:
-            Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
+            Button("Open System Settings", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
         default:
             // Sigue activo mientras espera: si se cierra el aviso de macOS con la ×, se puede volver a pedir.
-            Button("Permitir avisos") { Task { await model.requestNotifications() } }
+            Button("Allow Notifications") { Task { await model.requestNotifications() } }
                 .buttonStyle(.glassProminent)
                 .disabled(model.notificationAccess == nil)
         }
     }
 
     private var permissionDetail: String {
-        guard let access = model.notificationAccess else { return "Banners, sonido y el número en el Dock." }
+        guard let access = model.notificationAccess else { return String(localized: "Banners, sound, and the badge on the Dock icon.") }
         switch access.permission {
         case .notDetermined where model.notificationRequestFailed:
-            return "macOS no dejó pedir el permiso desde aquí. Actívalos en Ajustes del Sistema → Notificaciones."
+            return String(localized: "macOS didn’t allow asking for permission from here. Turn them on in System Settings → Notifications.")
         case .notDetermined:
-            return "Banners, sonido y el número en el Dock."
+            return String(localized: "Banners, sound, and the badge on the Dock icon.")
         case .denied:
-            return "Apagados. Puedes activarlos cuando quieras; la app te lo recordará."
+            return String(localized: "Off. You can turn them on anytime; the app will remind you.")
         case .granted:
             switch (access.banners, access.badge) {
-            case (true, true): return "Banners, sonido y el número en el Dock: todo encendido."
-            case (false, true): return "Permitidos, pero sin banner: solo los verías en el Centro de notificaciones."
-            case (true, false): return "Permitidos, pero sin el número en el Dock."
-            case (false, false): return "Permitidos, pero sin banner ni número en el Dock."
+            case (true, true): return String(localized: "Banners, sound, and the badge on the Dock icon: all on.")
+            case (false, true): return String(localized: "Allowed, but without banners: you’d only see them in Notification Center.")
+            case (true, false): return String(localized: "Allowed, but without the badge on the Dock icon.")
+            case (false, false): return String(localized: "Allowed, but without banners or the badge on the Dock icon.")
             }
         }
     }
@@ -118,7 +118,7 @@ private struct AllowedBadge: View {
     @State private var bounce = 0
 
     var body: some View {
-        StatusBadge(text: "Permitidos", symbol: "checkmark.circle.fill", tint: .green, bounce: bounce)
+        StatusBadge(text: String(localized: "Allowed"), symbol: "checkmark.circle.fill", tint: .green, bounce: bounce)
             .task {
                 try? await Task.sleep(for: Self.bounceDelay)
                 bounce += 1
@@ -167,7 +167,7 @@ private struct NotificationPreview: View {
         }
         .frame(width: Self.size.width, height: Self.size.height)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Ejemplo de aviso: el CEO pide tu decisión en VIN-214, y el ícono del Dock con 2 pendientes.")
+        .accessibilityLabel("Sample notification: the CEO asks for your decision on ACME-42, and the Dock icon shows 2 pending.")
         .task {
             try? await Task.sleep(for: Self.appearDelay)
             withAnimation(Self.appearAnimation) { shown = true }
@@ -178,14 +178,14 @@ private struct NotificationPreview: View {
         HStack(alignment: .top, spacing: 11) {
             AppIconImage(size: 34)
             VStack(alignment: .leading, spacing: 1) {
-                Text("CEO · VIN-214").font(.subheadline).bold()
-                Text("¿Contratamos a un agente de diseño para la página nueva?")
+                Text("CEO · ACME-42").font(.subheadline).bold()
+                Text("Should we hire a design agent for the new page?")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            Text("ahora")
+            Text("now")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }
