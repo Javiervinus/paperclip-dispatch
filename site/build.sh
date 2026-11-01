@@ -53,6 +53,7 @@ if [[ -z ${RELEASES_REPO:-} ]]; then
 fi
 [[ -n ${RELEASES_REPO:-} ]] || fail "no hay repo de GitHub: RELEASES_REPO de macos/release.env está vacío y origin no es de GitHub"
 REPOSITORY_URL=${REPOSITORY_URL:-https://github.com/$RELEASES_REPO}
+[[ -n ${APP_AUTHOR:-} ]] || fail "APP_AUTHOR de macos/release.env está vacío: el pie dice quién hizo la app"
 OWNER=${RELEASES_REPO%%/*}
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
 HOMEBREW_TAP=${HOMEBREW_TAP:-$(tr '[:upper:]' '[:lower:]' <<<"$OWNER")/tap}
@@ -142,7 +143,7 @@ while IFS= read -r -d '' page; do
   sed -i.bak \
     -e "s|%%SITE_URL%%|$(escape "$SITE_URL")|g" \
     -e "s|%%REPO_URL%%|$(escape "$REPOSITORY_URL")|g" \
-    -e "s|%%AUTHOR%%|$(escape "${APP_AUTHOR:-}")|g" \
+    -e "s|%%AUTHOR%%|$(escape "$APP_AUTHOR")|g" \
     -e "s|%%AUTHOR_URL%%|$(escape "${APP_AUTHOR_URL:-$REPOSITORY_URL}")|g" \
     -e "s|%%CASK_TOKEN%%|$(escape "$CASK_TOKEN")|g" \
     -e "s|%%DMG_URL%%|$(escape "$DMG_URL")|g" \
