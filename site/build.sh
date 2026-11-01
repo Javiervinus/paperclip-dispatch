@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Arma la landing en una carpeta lista para servir o publicar (GitHub Pages): copia las páginas (inglés en
 # index.html, español en es/index.html), estilos, scripts, sitemap.xml, robots.txt y la imagen para compartir
-# (social/card.jpg) de site/, hace desde docs/images las imágenes que nombran las páginas (docs/images es su
-# única fuente: no se copian al repo) y llena los datos que no se escriben a mano.
+# (social/card.jpg) de site/, sin los comentarios ni la sangría de páginas, estilos y scripts; hace desde
+# docs/images las imágenes que nombran las páginas (docs/images es su única fuente: no se copian al repo) y llena
+# los datos que no se escriben a mano.
 # Es lo mismo que corre .github/workflows/pages.yml antes de publicar.
 #   site/build.sh                           deja la página en _site/ (ignorada por git)
 #   OUTPUT_DIR=/tmp/landing site/build.sh   en otra carpeta (vacía, nueva o armada antes por este script)
@@ -93,6 +94,12 @@ mkdir -p "$OUTPUT_DIR/images"
     mkdir -p "$OUTPUT_DIR/$(dirname "$file")"
     cp "$file" "$OUTPUT_DIR/$file"
   done)
+
+# Los comentarios y la sangría se quedan en el repo: lo publicado no los lleva (en los scripts, solo las líneas
+# que son nada más que un comentario; las páginas no usan <pre> ni <textarea>, donde la sangría contaría)
+find "$OUTPUT_DIR" -name '*.css' -exec perl -0pi -e 's{/\*.*?\*/}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
+find "$OUTPUT_DIR" -name '*.js' -exec perl -0pi -e 's{^[ \t]*//.*\n}{}gm; s{^[ \t]+}{}gm' {} +
+find "$OUTPUT_DIR" -name '*.html' -exec perl -0pi -e 's{<!--.*?-->}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
 
 # Las imágenes que nombran las páginas, en el ancho que pide cada una
 # (las rutas a docs/images que nombran los comentarios no cuentan; una ruta desde la raíz del dominio, sí falla:
