@@ -47,9 +47,12 @@ struct AttentionItem: Decodable, Sendable {
     let inlineResolvable: Bool
     let originAgentName: String?
     let whyNow: String?
+    /// Lo que Paperclip propone hacer con ella (p. ej. `nudge` en una tarea trabada).
+    let decisionVerbs: [AttentionVerb]
 
     private enum CodingKeys: String, CodingKey {
         case id, sourceKind, subject, relatedIssue, project, detail, inlineResolvable, originAgentName, whyNow
+        case decisionVerbs
     }
 
     init(from decoder: Decoder) throws {
@@ -63,10 +66,34 @@ struct AttentionItem: Decodable, Sendable {
         inlineResolvable = (try? container.decodeIfPresent(Bool.self, forKey: .inlineResolvable)) ?? false
         originAgentName = try? container.decodeIfPresent(String.self, forKey: .originAgentName)
         whyNow = try? container.decodeIfPresent(String.self, forKey: .whyNow)
+        decisionVerbs = (try? container.decodeIfPresent([Lossy<AttentionVerb>].self, forKey: .decisionVerbs))?
+            .compactMap(\.value) ?? []
     }
 
     /// La tarea donde vive, para comentar en ella.
     var issueId: String? { subject?.metadata?.issueId ?? relatedIssue?.id }
+
+    /// Una tarea trabada a nombre de un agente, para la que Paperclip propone despertarlo («Nudge»). En ese
+    /// aviso, `subject` es la tarea trabada. Si está a nombre de una persona, o el aviso no propone despertar,
+    /// no hay a quién.
+    var wakeTarget: WakeTarget? {
+        guard sourceKind == "blocker_attention", decisionVerbs.contains(where: { $0.id == "nudge" }),
+              let issueId = subject?.id, let agentId = subject?.metadata?.assigneeAgentId
+        else { return nil }
+        return WakeTarget(agentId: agentId, issueId: issueId, issueIdentifier: subject?.identifier)
+    }
+}
+
+/// Un verbo que Paperclip propone para una decisión.
+struct AttentionVerb: Decodable, Sendable {
+    let id: String
+}
+
+/// A quién despertar y en qué tarea.
+struct WakeTarget: Codable, Hashable, Sendable {
+    let agentId: String
+    let issueId: String
+    let issueIdentifier: String?
 }
 
 struct AttentionReference: Decodable, Sendable {
@@ -93,13 +120,16 @@ struct AttentionMetadata: Decodable, Sendable {
     /// En las interacciones de una tarea: request_confirmation, ask_user_questions…
     let kind: String?
     let issueId: String?
+    /// En las que son una tarea: el agente que la tiene, si la tiene un agente.
+    let assigneeAgentId: String?
 
-    private enum CodingKeys: String, CodingKey { case kind, issueId }
+    private enum CodingKeys: String, CodingKey { case kind, issueId, assigneeAgentId }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         kind = try? container.decodeIfPresent(String.self, forKey: .kind)
         issueId = try? container.decodeIfPresent(String.self, forKey: .issueId)
+        assigneeAgentId = try? container.decodeIfPresent(String.self, forKey: .assigneeAgentId)
     }
 }
 

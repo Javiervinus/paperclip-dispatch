@@ -44,6 +44,12 @@ final class PaperclipAPI {
         _ = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))
     }
 
+    /// Un cambio cuya respuesta sí hace falta (p. ej. si Paperclip aceptó o saltó un despertar).
+    func post<T: Decodable>(_ path: String, _ body: [String: Any] = [:], returning: T.Type) async throws -> T {
+        let data = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+
     private func send(_ method: String, _ path: String, query: [URLQueryItem], body: Data?) async throws -> Data {
         var url = serverURL.appending(path: path)
         if !query.isEmpty { url.append(queryItems: query) }
