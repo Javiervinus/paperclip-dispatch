@@ -35,8 +35,9 @@
   }
   .icon { position: absolute; left: 64px; top: 64px; width: 112px; height: 112px; }
   h1 { position: absolute; left: 64px; top: 210px; margin: 0; font: inherit; }
-  /* El aviso con el mismo recorte que el hero: los mismos números que .strip en site/styles.css (la captura
-     mide 880 × 224 y el recorte es de 800 × 144 desde x 40, y 72), aquí a la escala --scale */
+  /* El aviso de la captura, recortado con 16 px alrededor de la tarjeta (la captura mide 880 × 224, la tarjeta
+     ocupa x 56–824, y 88–200 y el recorte es de 800 × 144 desde x 40, y 72), aquí a la escala --scale. Es la
+     misma proporción que el escenario del aviso del hero (.strip en site/styles.css, 400 × 72 pt). */
   .notification {
     --src-w: 880;
     --cut-x: 40;

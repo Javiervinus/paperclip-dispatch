@@ -1,10 +1,10 @@
 # Images
 
 Images used by `README.md`, `README.es.md` and the landing (`site/build.sh` makes its WebP versions from
-them; `site/styles.css` crops the hero notification by its size and card position, so update it if
-`notification.png` changes). They are taken with `macos/snapshot.zsh` from a test copy of
-the app (another `APP_ID`, in English with `APP_LANGUAGE=en`) connected to a separate Paperclip instance
-with a made-up company. No personal information is on screen (company names, tasks, addresses).
+them). The landing's hero notifications are HTML and CSS drawn with the measurements of `notification.png`
+(`site/styles.css`, `.strip`), so check them if that capture's layout changes. They are taken with
+`macos/snapshot.zsh` from a test copy of the app (another `APP_ID`, in English with `APP_LANGUAGE=en`)
+connected to a separate Paperclip instance with a made-up company. No personal information is on screen (company names, tasks, addresses).
 
 | File | What it shows | How |
 | --- | --- | --- |
