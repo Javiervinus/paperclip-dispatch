@@ -9,6 +9,19 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Added
+
+- **Answer Paperclip’s multi-step cards from Telegram.** Forms with several questions, suggested tasks,
+  checklists, item-by-item reviews and decisions with fields come as one message that updates as you go.
+  Nothing reaches Paperclip until the final button, so the agent wakes up only once.
+
+### Fixed
+
+- **Decisions come to Telegram with their buttons, and a text question has a single button to write.**
+  Until now, decisions said “Answer it in Paperclip” even when they could be answered from Telegram.
+
 ## 0.1.0 — 2026-11-01
 
 The first release. Everything below is new, so this entry describes the app rather than listing changes.

@@ -71,6 +71,16 @@
         }
       }
     },
+    "%@ (already sent)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (ya enviado)"
+          }
+        }
+      }
+    },
     "%@ (not installed)": {
       "localizations": {
         "es": {
@@ -157,6 +167,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld %%"
+          }
+        }
+      }
+    },
+    "(written answer)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(respuesta escrita)"
           }
         }
       }
@@ -851,6 +871,16 @@
         }
       }
     },
+    "Confirm selection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmar la selección"
+          }
+        }
+      }
+    },
     "Confirmation": {
       "localizations": {
         "es": {
@@ -1161,6 +1191,16 @@
         }
       }
     },
+    "Create the marked ones (%lld)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear las marcadas (%lld)"
+          }
+        }
+      }
+    },
     "Cut": {
       "localizations": {
         "es": {
@@ -1197,6 +1237,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Las decisiones te llegan al teléfono con sus botones, para contestarlas desde ahí. El bot es solo tuyo y el token queda en el llavero de esta Mac, nunca en archivos. No hace falta una dirección pública: la app le pregunta a Telegram."
+          }
+        }
+      }
+    },
+    "Defer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplazar"
           }
         }
       }
@@ -1491,6 +1541,26 @@
         }
       }
     },
+    "Give at least one verdict.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Da al menos un veredicto."
+          }
+        }
+      }
+    },
+    "Give each item a verdict": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dale un veredicto a cada ítem"
+          }
+        }
+      }
+    },
     "Go": {
       "localizations": {
         "es": {
@@ -1631,6 +1701,16 @@
         }
       }
     },
+    "It can be up to %lld characters; yours has %lld. Write it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puede tener hasta %lld caracteres; el tuyo tiene %lld. Escríbelo de nuevo."
+          }
+        }
+      }
+    },
     "It didn’t respond in time.": {
       "localizations": {
         "es": {
@@ -1761,6 +1841,16 @@
         }
       }
     },
+    "It’s answered step by step in Telegram, and everything is sent together at the end:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se contesta paso a paso en Telegram y todo se manda junto al final:"
+          }
+        }
+      }
+    },
     "It’s free and open source. It installs with its official command and needs Node.js.": {
       "localizations": {
         "es": {
@@ -1787,6 +1877,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Es su comando oficial, con Node.js %@. Queda en modo local: solo en esta Mac y sin contraseña. Al terminar, Paperclip queda encendido en esa ventana y aquí se sigue solo."
+          }
+        }
+      }
+    },
+    "I’m sending that one to Paperclip: send your text again in a moment.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esa la estoy mandando a Paperclip: vuelve a mandar tu texto en un momento."
           }
         }
       }
@@ -1891,6 +1991,106 @@
         }
       }
     },
+    "Mark at least %lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca al menos %lld."
+          }
+        }
+      }
+    },
+    "Mark at least one answer.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca al menos una respuesta."
+          }
+        }
+      }
+    },
+    "Mark at least one task.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca al menos una tarea."
+          }
+        }
+      }
+    },
+    "Mark between %lld and %lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca entre %lld y %lld."
+          }
+        }
+      }
+    },
+    "Mark exactly %lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca exactamente %lld."
+          }
+        }
+      }
+    },
+    "Mark no more than %lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca como mucho %lld."
+          }
+        }
+      }
+    },
+    "Mark one or more, then tap Next.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca una o más y toca «Siguiente»."
+          }
+        }
+      }
+    },
+    "Mark the tasks to create": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca las tareas que se crean"
+          }
+        }
+      }
+    },
+    "Mark up to %lld.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca hasta %lld."
+          }
+        }
+      }
+    },
+    "Mark your choices": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marca lo que eliges"
+          }
+        }
+      }
+    },
     "Minimize": {
       "localizations": {
         "es": {
@@ -1941,6 +2141,16 @@
         }
       }
     },
+    "Next": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        }
+      }
+    },
     "Next step": {
       "localizations": {
         "es": {
@@ -1957,6 +2167,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sin el número en el Dock: macOS no deja mostrar los pendientes."
+          }
+        }
+      }
+    },
+    "No answer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin respuesta"
           }
         }
       }
@@ -2001,6 +2221,16 @@
         }
       }
     },
+    "No verdict yet": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todavía sin veredicto"
+          }
+        }
+      }
+    },
     "No wake-up needed": {
       "localizations": {
         "es": {
@@ -2017,6 +2247,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Falta Node.js"
+          }
+        }
+      }
+    },
+    "None": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna"
           }
         }
       }
@@ -2327,6 +2567,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otro comando…"
+          }
+        }
+      }
+    },
+    "Other answer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otra respuesta"
           }
         }
       }
@@ -2667,6 +2917,26 @@
         }
       }
     },
+    "Question %lld needs an answer.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La pregunta %lld necesita una respuesta."
+          }
+        }
+      }
+    },
+    "Question %lld of %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregunta %lld de %lld"
+          }
+        }
+      }
+    },
     "Question: %@": {
       "localizations": {
         "es": {
@@ -2997,6 +3267,16 @@
         }
       }
     },
+    "Send": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar"
+          }
+        }
+      }
+    },
     "Send Test": {
       "localizations": {
         "es": {
@@ -3037,6 +3317,16 @@
         }
       }
     },
+    "Send verdicts (%lld)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar veredictos (%lld)"
+          }
+        }
+      }
+    },
     "Sending to Paperclip…": {
       "localizations": {
         "es": {
@@ -3053,6 +3343,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Enviado"
+          }
+        }
+      }
+    },
+    "Sent to Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviado a Paperclip."
           }
         }
       }
@@ -3113,6 +3413,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostrar todas"
+          }
+        }
+      }
+    },
+    "Skip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saltar"
+          }
+        }
+      }
+    },
+    "Skipped": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saltada"
           }
         }
       }
@@ -3227,12 +3547,42 @@
         }
       }
     },
+    "Tap “Write your answer” and send it as a message.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca «Escribir la respuesta» y mándala como mensaje."
+          }
+        }
+      }
+    },
+    "Tap ✏️ to change an answer, or send them all.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca ✏️ para cambiar una respuesta, o mándalas todas."
+          }
+        }
+      }
+    },
     "Task: %@": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Tarea: %@"
+          }
+        }
+      }
+    },
+    "Tasks to create:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tareas que se crean:"
           }
         }
       }
@@ -3293,6 +3643,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aviso de prueba"
+          }
+        }
+      }
+    },
+    "That button is out of date.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese botón ya no vale."
           }
         }
       }
@@ -3393,6 +3753,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "La que abres en el navegador para ver Paperclip. Si pide iniciar sesión, lo haces en la ventana de la app."
+          }
+        }
+      }
+    },
+    "The ones without a verdict stay pending.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los que no tengan veredicto siguen pendientes."
           }
         }
       }
@@ -3683,6 +4053,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esta no es de una tarea: contéstala con los botones o en Paperclip."
+          }
+        }
+      }
+    },
+    "This question needs an answer.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta pregunta necesita una respuesta."
           }
         }
       }
@@ -4107,6 +4487,16 @@
         }
       }
     },
+    "What do you decide?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué decides?"
+          }
+        }
+      }
+    },
     "What is Paperclip?": {
       "localizations": {
         "es": {
@@ -4227,6 +4617,16 @@
         }
       }
     },
+    "Write it again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escríbelo de nuevo"
+          }
+        }
+      }
+    },
     "Write the quarterly report for investors": {
       "localizations": {
         "es": {
@@ -4277,6 +4677,26 @@
         }
       }
     },
+    "You marked:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marcaste:"
+          }
+        }
+      }
+    },
+    "You rejected it: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La rechazaste: %@"
+          }
+        }
+      }
+    },
     "Your Paperclip agents, in a Mac app.": {
       "localizations": {
         "es": {
@@ -4293,6 +4713,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Las decisiones de tus agentes llegan como avisos y con el número en el Dock, aunque cierres la ventana."
+          }
+        }
+      }
+    },
+    "Your answers": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus respuestas"
           }
         }
       }
@@ -4367,6 +4797,16 @@
         }
       }
     },
+    "an agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "un agente"
+          }
+        }
+      }
+    },
     "another computer": {
       "localizations": {
         "es": {
@@ -4403,6 +4843,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "cada %lld horas"
+          }
+        }
+      }
+    },
+    "for %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "para %@"
+          }
+        }
+      }
+    },
+    "for a person": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "para una persona"
           }
         }
       }
@@ -4528,6 +4988,16 @@
         }
       }
     },
+    "optional": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "opcional"
+          }
+        }
+      }
+    },
     "that agent": {
       "localizations": {
         "es": {
@@ -4554,6 +5024,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "la tarea"
+          }
+        }
+      }
+    },
+    "unassigned": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sin asignar"
           }
         }
       }
@@ -4678,12 +5158,52 @@
         }
       }
     },
+    "✅ Sent to %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Enviado a %@."
+          }
+        }
+      }
+    },
     "✅ Sent to %@: “%@”, with your text.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "✅ Enviado a %1$@: «%2$@», con tu texto."
+          }
+        }
+      }
+    },
+    "✅ Verdicts sent. The rest are still pending.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Veredictos enviados. El resto sigue pendiente."
+          }
+        }
+      }
+    },
+    "✍️ Saved. Continue in the card for %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✍️ Guardado. Sigue en la tarjeta de %@."
+          }
+        }
+      }
+    },
+    "✍️ Write your answer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✍️ Escribir la respuesta"
           }
         }
       }

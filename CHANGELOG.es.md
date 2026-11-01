@@ -10,6 +10,21 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Nuevo
+
+- **Contesta desde Telegram las tarjetas de varios pasos de Paperclip.** Los formularios de varias
+  preguntas, las tareas sugeridas, las casillas, las revisiones por ítem y las decisiones con campos llegan
+  en un solo mensaje que se va actualizando. A Paperclip no le llega nada hasta el botón final, así que el
+  agente despierta una sola vez.
+
+### Arreglado
+
+- **Las decisiones llegan a Telegram con sus botones, y una pregunta de texto tiene un solo botón para
+  escribir.** Hasta ahora, las decisiones decían «Se contesta en Paperclip» aunque se podían contestar desde
+  Telegram.
+
 ## 0.1.0 — 2026-11-01
 
 La primera versión. Todo lo de abajo es nuevo, así que esta entrada describe la app en vez de listar

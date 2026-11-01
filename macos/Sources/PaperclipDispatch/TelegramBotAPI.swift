@@ -12,6 +12,15 @@ struct TelegramBotAPI {
         var errorDescription: String? { reason }
     }
 
+    /// La Bot API. Una copia de prueba puede apuntar a un Telegram simulado (TELEGRAM_API_URL en build.sh, que
+    /// lo deja en el Info.plist); la versión que se reparte no lo trae y habla con Telegram.
+    private static let baseURL: String = {
+        let custom = (Bundle.main.object(forInfoDictionaryKey: "TelegramAPIURL") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let custom, !custom.isEmpty else { return "https://api.telegram.org" }
+        return custom.hasSuffix("/") ? String(custom.dropLast()) : custom
+    }()
+
     /// Para los pedidos normales; `getUpdates` pasa el suyo.
     private static let defaultTimeout: TimeInterval = 20
     /// Si Telegram pide esperar más que esto (429), el pedido falla en vez de quedarse esperando.
@@ -29,7 +38,7 @@ struct TelegramBotAPI {
         _ params: [String: Any] = [:],
         timeout: TimeInterval = defaultTimeout
     ) async throws -> T {
-        guard let url = URL(string: "https://api.telegram.org/bot\(token)/\(method)") else {
+        guard let url = URL(string: "\(Self.baseURL)/bot\(token)/\(method)") else {
             throw Failure(code: nil, reason: String(localized: "The token has invalid characters."))
         }
         var request = URLRequest(url: url, timeoutInterval: timeout)
