@@ -25,9 +25,9 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   agent isn’t already on its way: if it has a run queued or in progress, the message and the Mac
   notification say so instead.
 - **“Open preview” on the cards whose task has something served to look at.** When an agent registers a
-  preview of its work in the task (a page, a web app), the Mac notification and the Telegram message of its
-  decision or assigned task bring a button that opens it, in every step of a multi-step card. A `localhost`
-  address only gets the button on the Mac.
+  preview of its work in the task (a page, a web app), the Mac notification brings an action that opens it,
+  and the Telegram message of its decision or assigned task, a link next to the description, in every step of
+  a multi-step card. A `localhost` address only opens from the Mac.
 - **You hear when an agent hits its daily run limit.** Paperclip then skips everything that would wake it,
   without saying so: a Mac notification and a Telegram message say which agent, its limit and at what time the
   count resets, with a button to its page to raise it. Once a day per agent, and Settings → Notifications can

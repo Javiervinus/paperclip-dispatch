@@ -27,9 +27,9 @@ manda aquí.
   sus propios botones, y «Despertar» solo aparece si el agente no va en camino: si tiene una corrida en
   cola o en curso, el mensaje y el aviso de la Mac lo dicen en su lugar.
 - **«Ver en vivo» en las tarjetas cuya tarea tiene algo servido para mirar.** Cuando un agente registra en la
-  tarea una vista de su trabajo (una página, una app web), el aviso de la Mac y el mensaje de Telegram de su
-  decisión o de la tarea asignada traen un botón que la abre, en todos los pasos de una tarjeta de varios
-  pasos. Una dirección `localhost` lleva el botón solo en la Mac.
+  tarea una vista de su trabajo (una página, una app web), el aviso de la Mac trae una acción que la abre, y
+  el mensaje de Telegram de su decisión o de la tarea asignada, un enlace junto a la descripción, en todos los
+  pasos de una tarjeta de varios pasos. Una dirección `localhost` solo se abre desde la Mac.
 - **Te enteras cuando un agente llega a su tope diario de corridas.** Paperclip se salta entonces todo lo que
   lo despertaría, sin decirlo: un aviso en la Mac y un mensaje en Telegram dicen qué agente es, su tope y a qué
   hora se reinicia la cuenta, con un botón a su página para subirlo. Una vez al día por agente, y se apaga en
