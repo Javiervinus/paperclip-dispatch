@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paperclip Dispatch: a Mac app for Paperclip</title>
+  <meta name="description" content="Your Paperclip in its own Mac window, with a notification when an agent needs you, a Dock badge and answers from Telegram. Free, MIT.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="images/icon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="wordmark" href="./" aria-label="Paperclip Dispatch, home">
+      <img src="images/icon.png" width="28" height="28" alt="">
+      <span>Paperclip Dispatch</span>
+    </a>
+    <nav aria-label="Elsewhere">
+      <a class="link" href="%%REPO_URL%%">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title" class="sentence">
+        <span class="sentence-words">Decisions find<br class="br-wide"> you</span>
+        <span class="strip shutter"><img src="images/notification.png" width="880" height="240" alt="" fetchpriority="high"></span>
+      </h1>
+
+      <div class="hero-body">
+        <p class="lead">A Mac app that puts your Paperclip in its own window and tells you when an agent needs you, even with the window closed.</p>
+
+        <div class="get">
+          <div class="download">
+            <a class="button" href="%%DMG_URL%%">Download for Mac</a>
+            <span class="build-version note">Version %%VERSION%%</span>
+          </div>
+          <div class="brew" data-ui>
+            <span class="note" id="brew-label">Or with Homebrew</span>
+            <div class="command">
+              <code id="brew-command">brew install --cask %%BREW_CASK%%</code>
+              <button class="copy" type="button" data-copy="brew-command" data-copied="Copied" data-copied-status="Copied to the clipboard." data-selected-status="Selected. Press ⌘C to copy." aria-describedby="brew-label">Copy</button>
+            </div>
+            <span class="copied visually-hidden" role="status" aria-live="polite"></span>
+          </div>
+          <p class="note requirements">Free and open source (MIT). For macOS 26 Tahoe, on Apple silicon or Intel, with Paperclip running on this Mac or at an address it can reach.</p>
+        </div>
+      </div>
+
+      <picture class="window">
+        <source media="(prefers-color-scheme: dark)" srcset="images/window-dark.png">
+        <img src="images/window-light.png" width="2560" height="1600" alt="Paperclip Dispatch showing the Paperclip dashboard in a native Mac window">
+      </picture>
+    </section>
+
+    <section class="tab" aria-labelledby="tab-title">
+      <div class="tab-intro">
+        <h2 id="tab-title">What a tab can’t do</h2>
+        <p class="statement">Paperclip runs as a local server, and you use it from a browser tab. Dispatch turns that tab into a Mac app that keeps watching after you close the window.</p>
+      </div>
+
+      <article class="row row-notify">
+        <div class="row-text">
+          <h3>Notifications, window closed</h3>
+          <p>When an agent asks a question, needs an approval, fails or hits a budget alert, you get a macOS notification. Click it and that decision opens. The app checks Paperclip every minute on its own.</p>
+          <p>If a task sits with an agent that isn’t working on it, the notification offers <strong>Wake up ‹agent›</strong> and then tells you whether Paperclip woke the agent or skipped it.</p>
+        </div>
+        <figure class="row-media media-notify">
+          <img src="images/notification.png" width="880" height="240" loading="lazy" alt="A stuck-task notification with a Wake up button">
+        </figure>
+      </article>
+
+      <article class="row row-dock">
+        <div class="row-text">
+          <h3>A number on the Dock</h3>
+          <p>The Dock icon shows the same number as Decisions in Paperclip’s sidebar, so you can see what is waiting without opening the window.</p>
+        </div>
+        <figure class="row-media media-dock" data-ui role="img" aria-label="The app icon with a sample count on its Dock badge">
+          <span class="dock">
+            <img src="images/icon.png" width="512" height="512" loading="lazy" alt="">
+            <span class="badge" aria-hidden="true">3</span>
+          </span>
+        </figure>
+      </article>
+
+      <article class="row row-glass">
+        <div class="row-text">
+          <h3>Liquid Glass, if you want it</h3>
+          <p>Paperclip fills the whole window, with no title bar. The app adds the Mac’s menus, shortcuts for back, forward, home and copy link, two-finger swipes, and an optional Liquid Glass sidebar.</p>
+        </div>
+        <figure class="row-media media-glass">
+          <img src="images/window-glass.png" width="2560" height="1600" loading="lazy" alt="The Paperclip sidebar in Liquid Glass">
+        </figure>
+      </article>
+    </section>
+  </main>
+
+  <script src="copy.js" defer></script>
+</body>
+</html>
