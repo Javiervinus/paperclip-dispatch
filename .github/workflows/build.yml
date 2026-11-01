@@ -1,0 +1,44 @@
+# Compila la app en cada pull request y en cada push a main, para ver si un cambio compila.
+# No firma, no publica y no usa secretos: las versiones las publica macos/release.sh.
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Una corrida por rama: un push nuevo cancela la anterior.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: swift build (macOS 26)
+    # macOS 26 en Apple silicon, con el SDK de macOS 26:
+    # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      # El mismo Xcode con el que se publica (Swift 6.3, SDK de macOS 26.5). Si la imagen deja de traerlo,
+      # elige otro de la tabla «Xcode» del enlace de arriba.
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          xcrun --show-sdk-version
+
+      # Lo mismo que hace macos/build.sh antes de armar el .app.
+      - name: Build
+        working-directory: macos
+        run: swift build -c release --disable-keychain
