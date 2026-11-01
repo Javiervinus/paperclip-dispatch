@@ -108,8 +108,11 @@ plist NSHighResolutionCapable bool true
 # Los textos de los permisos, en inglés, de InfoPlist.xcstrings (cada .lproj trae los suyos en InfoPlist.strings).
 # Micrófono y cámara, por si Paperclip los pide: sin estos textos, macOS cierra la app. La Red local la pide
 # macOS al hablar con Paperclip en otra computadora de la red.
+# Si falta uno, se para aquí: un texto vacío haría que macOS cierre la app al pedir el permiso.
 for key in NSMicrophoneUsageDescription NSCameraUsageDescription NSLocalNetworkUsageDescription; do
-  plist $key string "$(plutil -extract $key raw "$APP/Contents/Resources/en.lproj/InfoPlist.strings")"
+  text=$(plutil -extract $key raw "$APP/Contents/Resources/en.lproj/InfoPlist.strings")
+  [[ -n $text ]] || { print -u2 "Falta $key en InfoPlist.xcstrings."; exit 1; }
+  plist $key string "$text"
 done
 [[ -n $PAPERCLIP_SERVER_URL ]] && plist PaperclipServerURL string "$PAPERCLIP_SERVER_URL"
 [[ -n $PAPERCLIP_UPDATE_SCRIPT ]] && plist PaperclipUpdateScript string "$PAPERCLIP_UPDATE_SCRIPT"
