@@ -1,8 +1,8 @@
 # Images
 
 Images used by `README.md`, `README.es.md` and the landing (`site/build.sh` makes its WebP versions from
-them). The landing's hero notifications are HTML and CSS drawn with the measurements of `notification.png`
-(`site/styles.css`, `.strip`), so check them if that capture's layout changes. They are taken with
+them). The landing's notifications are HTML and CSS drawn with the measurements of `notification.png`
+(`site/styles.css`, `.notice`), so check them if that capture's layout changes. They are taken with
 `macos/snapshot.zsh` from a test copy of the app (another `APP_ID`, in English with `APP_LANGUAGE=en`)
 connected to a separate Paperclip instance with a made-up company. No personal information is on screen (company names, tasks, addresses).
 
@@ -15,7 +15,7 @@ connected to a separate Paperclip instance with a made-up company. No personal i
 | `welcome.png` | The connection step of the welcome | `macos/snapshot.zsh welcome` (`found-light.png`) |
 | `settings.png` | Settings, General tab | `macos/snapshot.zsh settings` (`general-light.png`) |
 | `notification.png` | The stuck-task notification with its Wake up button, light | `macos/snapshot.zsh notifications` (`mac-agent-light.png`) |
-| `notification-dark.png` | The same, dark (used by the landing in dark mode) | `macos/snapshot.zsh notifications` (`mac-agent-dark.png`) |
+| `notification-dark.png` | The same, dark | `macos/snapshot.zsh notifications` (`mac-agent-dark.png`) |
 
 There is no dark version of `window-glass.png` yet: the sample Paperclip instance it was taken from no
 longer exists, and a new one would not match the light capture. The landing uses the light one in both themes.
