@@ -134,7 +134,11 @@ SPARKLE=$APP/Contents/Frameworks/Sparkle.framework
 # Para notarizar (release.sh), Apple pide la hora firmada por su servidor.
 TIMESTAMP=()
 [[ $NOTARIZE == 1 ]] && TIMESTAMP=(--timestamp)
-sign() { codesign --force --options runtime "${TIMESTAMP[@]}" --sign "$SIGN_IDENTITY" "$@"; }
+# El runtime endurecido (lo pide la notarización) solo carga librerías del mismo equipo de desarrollador. Firmada
+# sin identidad («-») no hay equipo: con el runtime, dyld rechaza Sparkle y la app se cae al abrir.
+RUNTIME=(--options runtime)
+[[ $SIGN_IDENTITY == - ]] && RUNTIME=()
+sign() { codesign --force "${RUNTIME[@]}" "${TIMESTAMP[@]}" --sign "$SIGN_IDENTITY" "$@"; }
 sign "$SPARKLE/Versions/B/Autoupdate"
 sign "$SPARKLE/Versions/B/Updater.app"
 sign "$SPARKLE"
