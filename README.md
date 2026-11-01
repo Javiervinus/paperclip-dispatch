@@ -79,14 +79,12 @@ macos/build.sh
   `/usr/bin` no exporta): `ictool macos/AppIcon.icon --export-image --output-file x.png --platform macOS
   --rendition Dark --width 512 --height 512 --scale 1`. Las otras son `Default`, `ClearLight`,
   `ClearDark`, `TintedLight` y `TintedDark`.
-- **Color de acento** (`macos/Assets.xcassets/AccentColor`): la tinta de Paperclip, la de su `--primary`.
-  Es negro (`#171717`) en modo claro y casi blanco (`#E5E5E5`) en modo oscuro, así que los botones
-  principales y los puntos se ven como en la web, en blanco y negro. Va en el mismo `Assets.car`
-  (`actool --accent-color`) y en `NSAccentColorName`. macOS lo usa cuando el acento del sistema es
-  «Multicolor»; si la persona eligió otro color, manda el suyo. El color solo aparece donde dice algo: verde
-  para lo encendido, permitido o al día, naranja para lo que falta y rojo para lo que borra. Por eso los
-  interruptores se encienden en verde (`GreenSwitchToggleStyle`): con la tinta, en modo oscuro la pista
-  quedaba casi blanca bajo la perilla blanca y parecían bloqueados. Los enlaces siguen en el azul de macOS.
+- **Color de acento** (`macos/Assets.xcassets/AccentColor`): el `--primary` de Paperclip, negro en modo
+  claro y casi blanco en modo oscuro. Lo usan los botones principales y los indicadores de paso. Se compila
+  en `Assets.car` (`actool --accent-color`) y se declara en `NSAccentColorName`. Si la persona eligió un
+  color de acento en Ajustes del Sistema, macOS usa ese. Los demás colores tienen significado: verde para lo
+  encendido o al día (también los interruptores, `GreenSwitchToggleStyle`), naranja para lo que falta y
+  rojo para lo que borra.
 - **Abrir al iniciar sesión** guarda la ruta de la app. Si se mueve o se renombra, al abrirla vuelve a
   registrar el ítem con la ruta nueva (`LoginItem.swift`): macOS no lo hace solo y el ítem quedaría
   apuntando a la vieja.
@@ -99,20 +97,18 @@ macos/build.sh
 - **No trae ninguna dirección escrita.** La dirección se guarda en los ajustes de la app (`serverURL`). Si
   un build trae `PAPERCLIP_SERVER_URL`, la app la adopta la primera vez.
 - **Bienvenida** (`WelcomeView.swift`, `WelcomeIntroStep.swift`, `WelcomeNotificationsStep.swift`,
-  `PaperclipLocator.swift`). La primera vez son tres pasos, con puntos abajo que dicen en cuál va y los
-  botones a 28 pt del borde:
-  1. **Qué es:** el nombre de la app, para qué sirve en una línea y tres cosas que gana, cada una con su
-     símbolo en el color de acento. Abajo, discreto, «no es una app oficial».
-  2. **Conectar** con Paperclip (lo de abajo). Ya busca mientras se lee el primer paso.
-  3. **Avisos:** primero un aviso de ejemplo y el ícono del Dock con su número, y recién después «Permitir
-     avisos», que muestra el aviso de permiso de macOS. Si se niega o quedan a medias (sin banner o sin el
-     número), lo dice y ofrece Ajustes del Sistema; se actualiza al volver de ahí. No obliga: «Abrir
-     Paperclip» funciona igual. Debajo, «Abrir al iniciar sesión», encendido por defecto.
-  La app ya no pide el permiso al abrirse: lo pide este paso, el recordatorio o Ajustes → Avisos. Desde
-  Ajustes → Paperclip → «Cambiar…» la bienvenida es solo el paso de conectar. Busca Paperclip donde lo deja
-  su CLI: `~/.paperclip/instances/<id>/`, o
-  `PAPERCLIP_HOME` y `PAPERCLIP_INSTANCE_ID` (`config.json`, `runtime-info.json`, y el LaunchAgent
-  `ing.paperclip.paperclipai`). Lo comprueba con `GET /api/health`, que no pide sesión.
+  `PaperclipLocator.swift`). La primera vez tiene tres pasos:
+  1. **Presentación:** qué es la app y qué ofrece. Aclara que no es una app oficial de Paperclip.
+  2. **Conexión** con Paperclip (detalle abajo). La búsqueda empieza mientras se lee el primer paso.
+  3. **Avisos:** muestra un aviso de ejemplo y el número en el Dock antes de pedir el permiso. Si el permiso
+     se niega o queda incompleto (sin banners o sin número), lo indica y ofrece abrir Ajustes del Sistema.
+     El paso no es obligatorio. Incluye «Abrir al iniciar sesión», encendido por defecto.
+
+  El permiso de avisos se pide en este paso, en el recordatorio o en Ajustes → Avisos, nunca al abrir la
+  app. Desde Ajustes → Paperclip → «Cambiar…» solo aparece el paso de conexión. Para encontrar Paperclip,
+  mira donde lo deja su CLI: `~/.paperclip/instances/<id>/`, o `PAPERCLIP_HOME` y `PAPERCLIP_INSTANCE_ID`
+  (`config.json`, `runtime-info.json` y el LaunchAgent `ing.paperclip.paperclipai`). Lo comprueba con
+  `GET /api/health`, que no pide sesión.
   - Si responde, ofrece abrirlo con la dirección que da Paperclip (`dashboardUrl`; aquí, la de Tailscale).
   - Si está instalado pero apagado, lo enciende con su servicio (`launchctl kickstart` o `bootstrap`) o, sin
     servicio, con `paperclipai run` en la Terminal. Sigue buscando hasta que responde.
@@ -122,44 +118,37 @@ macos/build.sh
   - Una dirección escrita se guarda solo si responde un Paperclip.
   - La primera vez, cerrar la bienvenida cierra la app. Al cambiar de Paperclip, la app se vuelve a abrir:
     la ventana, los avisos y el bot quedan atados a la dirección con que arrancaron.
-- **Sugerencias** (`Tip.swift`, `TipCenter.swift`, `TipSheetView.swift`). Lo que no va en la bienvenida
-  porque la alargaría, como conectar Telegram, sale después en una hoja de la ventana, con un dibujo de lo
-  que se gana. Hoy hay una (Telegram, si no hay bot); las que vengan se agregan en `Tip`.
-  - Sale unos 4 s después de una revisión de Decisions con la sesión iniciada (nunca a media carga ni en la
-    pantalla de inicio), solo con la ventana al frente y sin hojas ni la vista sin conexión. Si no se puede
-    en ese momento, se intenta en la revisión siguiente. Al iniciar sesión, la app revisa enseguida (la
-    página cambia de dirección), sin esperar el minuto.
-  - Cada una sale una vez («Ahora no» tampoco la hace volver) y como mucho una al día (`tipsShown`,
-    `tipLastShownAt`). «Configurar Telegram» abre Ajustes directo en la pestaña Telegram.
-- **Recordatorio de avisos** (`NotificationNudge.swift`, `NotificationNudgeView.swift`). Si los avisos
-  están apagados o a medias (sin banner o sin el número en el Dock) y en Ajustes → Avisos se quiere lo que
-  falta, una píldora de vidrio abajo, sobre la página, lo dice. No tapa Paperclip ni bloquea nada.
-  - «Activar» pide el permiso si nunca se pidió; si se negó o está a medias, «Ajustar» abre Ajustes del
-    Sistema en la página de la app. Al arreglarse, dice «Avisos activados» un momento y se va.
-  - Sale unos 8 s después de entrar a Paperclip, o enseguida al cerrar una sugerencia; nunca con una hoja
-    abierta. Una vez por apertura de la app. La × la esconde una semana; después de tres veces, no vuelve
-    (`notificationNudgeSnoozedUntil`, `notificationNudgeDismissals`).
+- **Sugerencias** (`Tip.swift`, `TipCenter.swift`, `TipSheetView.swift`). Lo opcional que no entra en la
+  bienvenida, como conectar Telegram, se sugiere después en una hoja sobre la ventana. Cada sugerencia es un
+  caso de `Tip`.
+  - Aparece unos segundos después de iniciar sesión en Paperclip, solo con la ventana al frente y sin otra
+    hoja abierta ni la vista sin conexión.
+  - Cada una aparece una sola vez, y como mucho una por día (`tipsShown`, `tipLastShownAt`). «Configurar
+    Telegram» abre Ajustes en la pestaña Telegram.
+- **Recordatorio de avisos** (`NotificationNudge.swift`, `NotificationNudgeView.swift`). Si los avisos están
+  apagados o incompletos y Ajustes → Avisos los necesita, aparece una píldora abajo, sobre la página, sin
+  bloquear nada.
+  - «Activar» pide el permiso. Si ya se negó o está incompleto, «Ajustar» abre Ajustes del Sistema en la
+    página de la app. Cuando se resuelve, lo confirma y desaparece.
+  - Aparece unos segundos después de iniciar sesión, como mucho una vez cada vez que se abre la app. La ×
+    lo oculta una semana y, después de tres veces, deja de aparecer (`notificationNudgeSnoozedUntil`,
+    `notificationNudgeDismissals`).
 - **Sin conexión** (`OfflineView.swift`). Si Paperclip no responde (o un proxy como `tailscale serve`
   contesta 502, 503 o 504), la ventana lo dice en vez de quedar en blanco. Vuelve a probar cada 3 s y
   regresa sola a la página. Ofrece «Reintentar», «Cambiar dirección…» y, si es el de esta Mac y está
   apagado, «Encender Paperclip». Los errores de conexión van traducidos, porque el proceso de red de WebKit
   no usa el idioma de la app.
 - **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
-  debajo de una barra de macOS compacta (`.unifiedCompact`) con solo los semáforos y el botón de
-  actualizaciones. La barra es transparente y la ventana toma el color de fondo de la página
-  (`underPageBackgroundColor` de WebKit, que se observa), así que la barra y Paperclip son una sola
-  superficie, sin el tinte del fondo de pantalla. El título de la página no se muestra, pero lo usan el
-  menú Ventana, Mission Control y VoiceOver. No depende de cómo esté hecho el HTML de Paperclip. Solo se
-  inyecta `web/bridge.js`, que no cambia cómo se ve (tema, avisos y el gesto de atrás).
-- **Atrás y adelante con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicator.swift`,
-  `SwipeIndicatorView.swift`), en los dos modos. El gesto de WebKit desliza la página entera sobre una
-  captura de la anterior: la barra lateral de Paperclip, que nunca cambia, se iba con ella, y con Liquid
-  Glass (página transparente) además se veían las dos páginas encimadas. Lo hace la app con
-  `NSEvent.trackSwipeEvent`: la página no se mueve, entra una flecha de vidrio desde el borde siguiendo a
-  los dedos y, al completarse el gesto, navega al momento y la flecha se va en 0,2 s (sin esperar la
-  animación de macOS, que con un gesto rápido iba detrás de la página). Como con el de WebKit, si lo que
-  hay bajo el puntero todavía se desplaza a lo ancho (un tablero, una tabla), el gesto es de la página: lo
-  informa `web/bridge.js`.
+  bajo una barra compacta (`.unifiedCompact`) con los botones de la ventana y el de actualizaciones. La
+  barra es transparente y toma el color de fondo de la página (`underPageBackgroundColor`), así que se
+  integra con Paperclip. El título de la página no se muestra en la barra, pero sí en el menú Ventana,
+  Mission Control y VoiceOver. Este modo no depende del HTML de Paperclip: solo se inyecta `web/bridge.js`
+  (tema, avisos y navegación con dos dedos).
+- **Navegación con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicator.swift`,
+  `SwipeIndicatorView.swift`). Deslizar dos dedos en el trackpad va atrás o adelante, en los dos modos. La
+  página se queda en su lugar y una flecha entra desde el borde siguiendo el gesto; al completarlo, la app
+  navega. Usa `NSEvent.trackSwipeEvent`. Si el puntero está sobre algo que se desplaza a lo ancho, como un
+  tablero, el gesto desplaza ese contenido (lo informa `web/bridge.js`).
 - **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
   Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
   momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo, el mismo
@@ -181,9 +170,9 @@ macos/build.sh
   (`DecisionsMonitor.swift`), con la sesión de la página y la misma API que la barra lateral. No los revisa
   la página, porque macOS frena las páginas que no se ven: así sigue avisando con la ventana cerrada.
   - Decisions incluye las preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto.
-  - El Dock lleva el mismo número que la burbuja de Decisions de la barra lateral (`deskBadgeCount`): lo
-    que llegó hoy o vence hoy, con el día en UTC (en UTC−5 cambia a las 19:00). Lo de antes sigue en la
-    página Decisions, pero ya no suma. Sin ese campo (versiones viejas de Paperclip), todo lo pendiente.
+  - El número del Dock es el mismo que muestra Decisions en la barra lateral de Paperclip
+    (`deskBadgeCount`: lo que llegó o vence hoy, en UTC). Con versiones de Paperclip que no lo envían,
+    cuenta todo lo pendiente (`totalCount`).
   - La primera vez avisa de lo que ya estaba pendiente (si son más de 3, en un solo aviso). Después, de
     cada decisión nueva, salvo que se esté mirando la ventana. Tocar el aviso abre esa decisión.
 - **Decisions en Telegram** (`TelegramChannel.swift`). Cada decisión nueva llega como mensaje, con el
@@ -247,8 +236,8 @@ macos/build.sh
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
     adopta como ajuste.
   - **Avisos:** de decisiones, también con la ventana al frente, número del Dock, permiso de macOS y un
-    aviso de prueba. El permiso muestra lo que de verdad deja macOS: «Permitir avisos» si nunca se pidió,
-    «Permitidos», o «Ajustar» / «Abrir Ajustes del Sistema» si faltan los banners o el número, o se negó.
+    aviso de prueba. El estado del permiso refleja lo que permite macOS: «Permitir avisos» si nunca se
+    pidió, «Permitidos», o «Ajustar» / «Abrir Ajustes del Sistema» si falta algo o se negó.
   - **Telegram:** conectar el bot en dos pasos, vincular el chat con el QR (con el avión de Telegram al
     centro, por eso va con corrección alta), y ya conectado: envío, prueba, «Explicar decisiones» y quitar
     el bot (pide confirmación). Al vincular, la pestaña pasa sola a lo de conectado.
@@ -259,10 +248,10 @@ macos/build.sh
   - Ensayo visual, para revisar el diseño sin tapar nada en pantalla: `macos/snapshot.zsh settings
     [carpeta]` (`Snapshot.swift`). Abre una segunda copia de la app, sin ícono ni foco, que pone cada
     pestaña en una ventana fuera de la pantalla, en claro y en oscuro (Telegram también sin bot y sin
-    vincular; Avisos también sin pedir y a medias). El script las captura con `screencapture -l`, que dibuja el vidrio de verdad (la terminal
-    necesita permiso de Grabación de pantalla), y la copia se cierra. Solo lee el estado; no atiende el bot
-    ni avisa. En las capturas los interruptores y el vidrio salen más apagados, porque la ventana no está
-    activa.
+    vincular; Avisos también sin pedir y a medias). El script las captura con `screencapture -l`, que
+    dibuja el vidrio de verdad (la terminal necesita permiso de Grabación de pantalla), y la copia se
+    cierra. Solo lee el estado; no atiende el bot ni avisa. En las capturas los interruptores y el vidrio
+    salen más apagados, porque la ventana no está activa.
     - macOS solo captura ventanas que tocan una pantalla: cada una queda con un punto adentro, en el borde
       izquierdo (`SnapshotableWindow` evita que macOS la acomode). Con la pantalla bloqueada no captura.
     - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos, y en dos casos con el
@@ -272,10 +261,6 @@ macos/build.sh
     - `SHADOW=1` deja la sombra de la ventana también en `settings`, `window` y `welcome`.
     - `APP_PATH=<ruta a un .app>` ensaya otra copia, como una de prueba fuera de Aplicaciones (`open -a`
       no encuentra apps por nombre en `/tmp`).
-  - Una copia de prueba (otro `APP_ID`) que tenga que mostrar avisos va en una carpeta de apps
-    (`INSTALL_DIR=~/Applications` sirve). macOS rechaza los avisos de una que corre desde `/tmp`: no pide
-    el permiso y en el registro de `usernoted` sale «Failed to find or validate client». Si eso pasa, la
-    app lo dice y ofrece Ajustes del Sistema.
     - Fuera de la pantalla las ventanas salen inactivas (botones e interruptores grises). `ACTIVE=1` las
       muestra de a una en el centro de la pantalla, al frente (el script la pone al frente con System
       Events), para capturas de muestra. Tapa la pantalla unos segundos por ventana: solo cuando nadie usa
@@ -286,11 +271,13 @@ macos/build.sh
       desplazada hasta ese texto (vacía = arriba de todo). Ejemplo, la página del plugin de consumo:
       `SIZE=1512x982 ANCHORS="|En qué se fue la semana|Cada semana de" macos/snapshot.zsh page
       /VIN/agent-usage`.
+  - Una copia de prueba (otro `APP_ID`) que necesite avisos tiene que estar en una carpeta de aplicaciones
+    (por ejemplo, `INSTALL_DIR=~/Applications`). macOS no muestra avisos de apps que corren desde `/tmp`.
 - **Un solo botón de actualizaciones, arriba a la derecha** (`UpdatesButton.swift`, `UpdatesPanel.swift`),
   para las dos cosas que se actualizan: esta app (Dispatch) y Paperclip (el servidor). Va en la barra de la
-  ventana. Con Liquid Glass flota sobre la barra de la ruta de Paperclip y solo sale en el Dashboard, la
-  única página sin nada arriba a la derecha: en las otras ahí van botones de Paperclip o el panel de
-  propiedades de una tarea, que llega hasta arriba. En la vista angosta (menos de 768 px) no se muestra.
+  ventana. Con Liquid Glass flota sobre la barra de la ruta de Paperclip y solo aparece en el Dashboard,
+  para no tapar los controles que otras páginas tienen arriba a la derecha. En la vista angosta (menos de
+  768 px) no se muestra.
   - Al día dice «Paperclip 2026.1023.0 · Dispatch 0.1.0», discreto, y al pasar el mouse explica cuál es
     cuál. Con algo nuevo se pinta del color de acento y dice de quién es: «Actualizar Dispatch» (con el
     ícono de la app), «Actualizar Paperclip» (con el clip) o «2 actualizaciones». Después de actualizar la
