@@ -172,6 +172,9 @@ macos/build.sh
   (`DecisionsMonitor.swift`), con la sesión de la página y la misma API que la barra lateral. No los revisa
   la página, porque macOS frena las páginas que no se ven: así sigue avisando con la ventana cerrada.
   - Decisions incluye las preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto.
+  - El Dock lleva el mismo número que la burbuja de Decisions de la barra lateral (`deskBadgeCount`): lo
+    que llegó hoy o vence hoy, con el día en UTC (en UTC−5 cambia a las 19:00). Lo de antes sigue en la
+    página Decisions, pero ya no suma. Sin ese campo (versiones viejas de Paperclip), todo lo pendiente.
   - La primera vez avisa de lo que ya estaba pendiente (si son más de 3, en un solo aviso). Después, de
     cada decisión nueva, salvo que se esté mirando la ventana. Tocar el aviso abre esa decisión.
 - **Decisions en Telegram** (`TelegramChannel.swift`). Cada decisión nueva llega como mensaje, con el
