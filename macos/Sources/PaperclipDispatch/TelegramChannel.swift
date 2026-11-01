@@ -17,16 +17,28 @@ import Observation
 @Observable
 final class TelegramChannel {
     private static let tokenAccount = "telegram-bot-token"
+    /// Lo que Telegram deja abierta la conexión de `getUpdates` esperando mensajes.
     private static let pollSeconds = 50
-    /// Si llegan más de una vez (p. ej. al vincular con muchas pendientes), el resto se resume en un mensaje.
+    /// Margen sobre `pollSeconds` para que el pedido no se corte antes de que Telegram conteste.
+    private static let pollGrace = 15
+    /// Sin conexión con Telegram, la espera antes de reintentar empieza aquí y se duplica hasta `maxRetryDelay`.
+    private static let retryDelay: Double = 5
+    private static let maxRetryDelay: Double = 60
+    /// Si otro programa atiende el mismo bot (409), cuánto esperar antes de volver a intentarlo.
+    private static let conflictDelay: Double = 30
+    /// Si llegan más que esto a la vez (p. ej. al vincular con muchas pendientes), el resto se resume en un mensaje.
     private static let batchLimit = 5
     /// Lo que ya se contestó aquí puede seguir unos segundos en Decisions; no se vuelve a mandar.
     private static let reopenAfter: TimeInterval = 5 * 60
+    /// Cuánto se recuerda una decisión cerrada (y un texto pedido sin contestar) antes de olvidarla.
     private static let keepClosed: TimeInterval = 7 * 24 * 60 * 60
     /// A un mensaje suelto se le contesta cómo se usa el bot como mucho una vez en este tiempo; si no, silencio.
     private static let helpInterval: TimeInterval = 24 * 60 * 60
     /// Un mensaje suelto cuenta como el último texto que pidió un botón si se pidió hace menos que esto.
     private static let replyWindow: TimeInterval = 10 * 60
+    /// «Escribiendo…» dura 5 s en Telegram: se renueva un poco antes mientras se arma una explicación.
+    private static let typingRenewal: Double = 4
+    private static let pairingCodeLength = 8
 
     /// Lo que se recuerda entre aperturas, en Application Support. El token va aparte, en el llavero.
     struct State: Codable {
@@ -70,7 +82,6 @@ final class TelegramChannel {
         /// Si ya tiene el botón «Explícamela».
         var explainable: Bool?
     }
-
 
     struct PendingReply: Codable {
         var itemId: String
@@ -264,7 +275,7 @@ final class TelegramChannel {
             await close(id)
         }
 
-        // Las que se mandaron antes del botón «Explícamela» lo reciben una vez.
+        // Un mensaje guardado sin «Explícamela» (de un archivo de estado anterior al botón) lo recibe una vez.
         for item in items {
             guard let sent = state.messages[item.id], sent.closedAt == nil, sent.explainable != true,
                   let messageId = sent.messageId
@@ -282,17 +293,22 @@ final class TelegramChannel {
             // Volvió a estar pendiente un rato después de cerrarse.
             return sent.closedAt.map { now.timeIntervalSince($0) > Self.reopenAfter } ?? false
         }
-        for item in fresh.prefix(Self.batchLimit) {
-            await send(item, companyId: companyId)
-        }
+        let batch = fresh.prefix(Self.batchLimit)
         let rest = fresh.dropFirst(Self.batchLimit)
+        // Todo se reserva antes del primer envío: otra vuelta que llegue mientras tanto (p. ej. al contestar
+        // desde aquí) no manda de nuevo lo que todavía está en cola.
+        for item in rest {
+            state.messages[item.id] = SentDecision(
+                key: 0, companyId: companyId, messageId: nil, html: "", choices: [],
+                issueId: item.issueId, issueIdentifier: item.relatedIssue?.identifier
+            )
+        }
+        sending.formUnion(batch.map(\.id))
+        for item in batch {
+            await send(item, companyId: companyId)
+            sending.remove(item.id)
+        }
         if !rest.isEmpty {
-            for item in rest {
-                state.messages[item.id] = SentDecision(
-                    key: 0, companyId: companyId, messageId: nil, html: "", choices: [],
-                    issueId: item.issueId, issueIdentifier: item.relatedIssue?.identifier
-                )
-            }
             try? await sendText("Y \(rest.count) decisiones más pendientes: están en Paperclip.", link: decisionsURL())
         }
 
@@ -312,11 +328,9 @@ final class TelegramChannel {
         }
     }
 
+    /// Quien llama la marca en `sending` mientras tanto, para que otra vuelta no la mande dos veces.
     private func send(_ item: AttentionItem, companyId: String) async {
         guard let bot, let chatId = state.chatId else { return }
-        sending.insert(item.id)
-        defer { sending.remove(item.id) }
-
         let prompt = await resolver.prompt(for: item)
         var sent = SentDecision(
             key: state.nextKey,
@@ -374,7 +388,7 @@ final class TelegramChannel {
     // MARK: - Telegram → Paperclip
 
     private func run() async {
-        var delay: Double = 5
+        var delay = Self.retryDelay
         while !Task.isCancelled, let bot {
             do {
                 let updates: [TelegramBotAPI.Update] = try await bot.call(
@@ -384,10 +398,10 @@ final class TelegramChannel {
                         "timeout": Self.pollSeconds,
                         "allowed_updates": ["message", "callback_query"],
                     ],
-                    timeout: TimeInterval(Self.pollSeconds + 15)
+                    timeout: TimeInterval(Self.pollSeconds + Self.pollGrace)
                 )
                 problem = nil
-                delay = 5
+                delay = Self.retryDelay
                 for update in updates {
                     state.offset = update.updateId + 1
                     if let callback = update.callbackQuery {
@@ -397,18 +411,20 @@ final class TelegramChannel {
                     }
                 }
                 if !updates.isEmpty { save() }
+            } catch _ where Task.isCancelled {
+                // Se quitó o cambió el bot (`stop`): esta vuelta ya no es la vigente y no toca nada.
+                return
             } catch let failure as TelegramBotAPI.Failure where failure.code == 401 {
                 problem = "Telegram ya no acepta el token del bot. Quítalo y vuelve a conectarlo."
                 loop = nil
                 return
             } catch let failure as TelegramBotAPI.Failure where failure.code == 409 {
                 problem = "Otro programa está atendiendo este bot. Usa un bot solo para Paperclip."
-                try? await Task.sleep(for: .seconds(30))
+                try? await Task.sleep(for: .seconds(Self.conflictDelay))
             } catch {
-                if Task.isCancelled { return }
                 problem = "Sin conexión con Telegram; se reintenta sola."
                 try? await Task.sleep(for: .seconds(delay))
-                delay = min(delay * 2, 60)
+                delay = min(delay * 2, Self.maxRetryDelay)
             }
         }
     }
@@ -597,7 +613,7 @@ final class TelegramChannel {
         let outcome = await resolver.wake(target)
         let status = TelegramFormat.wakeResult(outcome, target: target, agentName: agentName)
         if outcome.allowsRetry {
-            _ = try? await sendHTML(status, replyTo: sent.messageId)
+            try? await sendHTML(status, replyTo: sent.messageId)
         } else {
             state.messages[itemId]?.closedAt = Date()
             save()
@@ -634,11 +650,10 @@ final class TelegramChannel {
         guard !explaining.contains(itemId) else { return }
         explaining.insert(itemId)
         defer { explaining.remove(itemId) }
-        // «Escribiendo…» dura 5 s en Telegram: se renueva mientras piensa.
         let typing = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.sendTyping()
-                try? await Task.sleep(for: .seconds(4))
+                try? await Task.sleep(for: .seconds(Self.typingRenewal))
             }
         }
         defer { typing.cancel() }
@@ -660,16 +675,18 @@ final class TelegramChannel {
 
         let html = "💡 \(TelegramFormat.markdown(answer))\n\n" +
             "<i>Para preguntarle algo al agente, responde a la decisión.</i>"
-        // Si Telegram no acepta el formato, va como texto simple.
-        if (try? await sendHTML(html, replyTo: replyTo)) == nil {
-            _ = try? await sendHTML(TelegramFormat.escape(answer), replyTo: replyTo)
+        do {
+            try await sendHTML(html, replyTo: replyTo)
+        } catch {
+            // Si Telegram no acepta el formato, va como texto simple.
+            try? await sendHTML(TelegramFormat.escape(answer), replyTo: replyTo)
         }
     }
 
     // MARK: - Mensajes
 
-    private func sendHTML(_ html: String, replyTo: Int?) async throws -> TelegramBotAPI.MessageReference? {
-        guard let bot, let chatId = state.chatId else { return nil }
+    private func sendHTML(_ html: String, replyTo: Int?) async throws {
+        guard let bot, let chatId = state.chatId else { return }
         var params: [String: Any] = [
             "chat_id": chatId,
             "text": html,
@@ -677,8 +694,7 @@ final class TelegramChannel {
             "link_preview_options": ["is_disabled": true],
         ]
         if let replyTo { params["reply_parameters"] = ["message_id": replyTo, "allow_sending_without_reply": true] }
-        let message: TelegramBotAPI.MessageReference = try await bot.call("sendMessage", params)
-        return message
+        try await bot.send("sendMessage", params)
     }
 
     private func sendTyping() async {
@@ -778,7 +794,7 @@ final class TelegramChannel {
 
     static func makePairingCode() -> String {
         let alphabet = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
-        return String((0..<8).map { _ in alphabet[Int.random(in: 0..<alphabet.count)] })
+        return String((0..<pairingCodeLength).map { _ in alphabet[Int.random(in: 0..<alphabet.count)] })
     }
 }
 
