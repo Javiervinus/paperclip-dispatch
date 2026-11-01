@@ -48,11 +48,13 @@ enum PaperclipLocator {
     static let defaultPort = 3100
     static let serviceLabel = "ing.paperclip.paperclipai"
     static let installCommand = "npx paperclipai@latest onboard --yes"
-    static let websiteURL = URL(string: "https://paperclip.ing")
+    static let websiteURL = AppInfo.paperclipURL
     static let nodeDownloadURL = URL(string: "https://nodejs.org/es/download")
     /// Node.js que pide Paperclip (campo `engines` de su paquete).
     static let minimumNode = (major: 24, minor: 11)
     private static let probeTimeout: TimeInterval = 3
+    /// `node -v` contesta al instante; si el shell de inicio se cuelga, mejor decir que no está.
+    private static let nodeCheckTimeout: TimeInterval = 10
 
     // MARK: Buscar
 
@@ -130,6 +132,11 @@ enum PaperclipLocator {
               let scheme = components.scheme?.lowercased(), ["http", "https"].contains(scheme),
               let host = components.host, !host.isEmpty
         else { return nil }
+        // Como la escribe WebKit (esquema y servidor en minúsculas, sin el puerto por defecto), para que
+        // `AppConfig.isInternal` reconozca las páginas de Paperclip aunque se haya escrito «Mi-Mac.local».
+        components.scheme = scheme
+        components.host = host.lowercased()
+        if components.port == (scheme == "https" ? 443 : 80) { components.port = nil }
         // Solo el servidor: Paperclip abre su propia página de inicio.
         components.path = ""
         components.query = nil
@@ -143,11 +150,12 @@ enum PaperclipLocator {
     /// error para mostrar, o nil si lo pidió (arranca en unos segundos).
     static func start(_ local: LocalPaperclip) async -> String? {
         guard local.hasService else {
+            let instance = shellQuoted(local.instanceId)
             openInTerminal(
                 named: "start-paperclip",
                 title: "Encendiendo Paperclip. Deja esta ventana abierta: aquí corre.",
-                command: "if command -v paperclipai >/dev/null; then paperclipai run --instance \(local.instanceId); "
-                    + "else npx paperclipai@latest run --instance \(local.instanceId); fi"
+                command: "if command -v paperclipai >/dev/null; then paperclipai run --instance \(instance); "
+                    + "else npx paperclipai@latest run --instance \(instance); fi"
             )
             return nil
         }
@@ -155,8 +163,7 @@ enum PaperclipLocator {
         let kickstart = await Shell.run(["-c", "launchctl kickstart \(domain)/\(serviceLabel)"])
         if kickstart.status == 0 { return nil }
         // Si el servicio no está cargado, se carga (y arranca solo: RunAtLoad).
-        let plist = servicePlist.path.replacingOccurrences(of: "'", with: "'\\''")
-        let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) '\(plist)'"])
+        let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) \(shellQuoted(servicePlist.path))"])
         return bootstrap.status == 0 ? nil : "macOS no pudo encender el servicio de Paperclip: \(bootstrap.tail(2))"
     }
 
@@ -171,7 +178,7 @@ enum PaperclipLocator {
 
     /// La versión de Node.js del shell de inicio, o nil si no está.
     static func nodeVersion() async -> (major: Int, minor: Int, text: String)? {
-        let result = await Shell.run(["-c", "node -v"], timeout: 10)
+        let result = await Shell.run(["-c", "node -v"], timeout: nodeCheckTimeout)
         guard result.status == 0,
               let match = result.output.firstMatch(of: #/v(\d+)\.(\d+)\.\d+/#),
               let major = Int(match.1), let minor = Int(match.2)
@@ -226,6 +233,12 @@ enum PaperclipLocator {
 
     private static func loopbackURL(port: Int) -> URL {
         URL(string: "http://127.0.0.1:\(port)")!
+    }
+
+    /// Entre comillas simples para zsh: el id de la instancia es el nombre de una carpeta y puede traer
+    /// espacios o comillas.
+    private static func shellQuoted(_ text: String) -> String {
+        "'" + text.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     private static func readJSON(_ url: URL) -> [String: Any]? {

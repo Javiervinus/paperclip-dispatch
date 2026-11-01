@@ -4,12 +4,15 @@ import SwiftUI
 enum UpdatesDesign {
     static let width: CGFloat = 392
     static let iconSize: CGFloat = 38
+    /// Entre el ícono y el texto de cada fila.
+    static let iconSpacing: CGFloat = 11
     /// Las novedades que se muestran antes de mandar a GitHub por el resto.
     static let maxNoteItems = 5
     /// Líneas por novedad: las largas se cortan y siguen en GitHub.
     static let noteLineLimit = 3
     static let rowPadding: CGFloat = 12
-    static let textInset: CGFloat = iconSize + 11
+    /// Lo de debajo de cada fila empieza alineado con su texto, no con el ícono.
+    static let textInset: CGFloat = iconSize + iconSpacing
 }
 
 /// Lo que el panel puede pedir.
@@ -76,7 +79,7 @@ private struct DispatchUpdateRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 11) {
+            HStack(spacing: UpdatesDesign.iconSpacing) {
                 AppIconImage(size: UpdatesDesign.iconSize)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Dispatch \(app.phase.release?.version ?? AppUpdater.currentVersion)")
@@ -189,7 +192,7 @@ private struct PaperclipUpdateRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 11) {
+            HStack(spacing: UpdatesDesign.iconSpacing) {
                 PaperclipGlyph(size: UpdatesDesign.iconSize)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).font(.body.weight(.semibold))

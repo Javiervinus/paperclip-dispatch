@@ -3,8 +3,8 @@ import WebKit
 
 /// El WKWebView de la ventana, con el gesto de atrás y adelante (dos dedos a lo ancho en el trackpad) hecho
 /// por la app en vez de WebKit. El de WebKit desliza la página entera sobre una captura de la anterior:
-/// la barra lateral de Paperclip, que nunca cambia, se iba con ella, y con Liquid Glass (página
-/// transparente) además se veían las dos páginas encimadas. Este no mueve la página: informa el gesto
+/// la barra lateral de Paperclip, que nunca cambia, se iría con ella, y con Liquid Glass (página
+/// transparente) además se verían las dos páginas encimadas. Este no mueve la página: informa el gesto
 /// (`onSwipe`, para la flecha que entra desde el borde) y, si se completa, navega.
 final class PaperclipWebView: WKWebView {
     enum SwipeUpdate {

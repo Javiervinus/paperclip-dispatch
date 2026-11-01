@@ -72,7 +72,8 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         } else if let content = host.window?.contentView {
             // Sin botón a la vista (la vista angosta de Paperclip): desde la esquina de arriba a la derecha.
-            let corner = NSRect(x: content.bounds.maxX - 40, y: content.bounds.maxY - 40, width: 1, height: 1)
+            let inset = Self.cornerInset
+            let corner = NSRect(x: content.bounds.maxX - inset, y: content.bounds.maxY - inset, width: 1, height: 1)
             popover.show(relativeTo: corner, of: content, preferredEdge: .minY)
         }
         showedWhatsNew = app.whatsNew != nil && app.phase.release == nil
@@ -116,7 +117,6 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         case .available(let release), .ready(let release): release
         default: nil
         }
-        button.isEnabled = true
         button.tintProminence = .none
 
         if let progress = status.updateProgress {
@@ -172,7 +172,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             show(versions.compactMap(\.self).joined(separator: " · "), symbol: "checkmark.circle.fill", color: .systemGreen)
             button.toolTip = upToDateTip(dispatch: dispatch)
         }
-        host.setUpdateButton(button, visible: true)
+        host.setUpdateButton(button)
     }
 
     private func upToDateTip(dispatch: String) -> String {
@@ -206,4 +206,6 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
 
     /// El ícono de la app en «Actualizar Dispatch», del alto de la letra del botón.
     private static let iconSize: CGFloat = 17
+    /// Sin botón a la vista, el panel cuelga de este punto, cerca de la esquina de arriba a la derecha.
+    private static let cornerInset: CGFloat = 40
 }

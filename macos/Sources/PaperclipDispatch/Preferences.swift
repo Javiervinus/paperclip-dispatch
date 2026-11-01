@@ -95,7 +95,6 @@ final class AppStatus {
     /// La versión nueva, si hay.
     var latestVersion: String?
     var checkingUpdate = false
-    var updateCheckFailed = false
     /// Por qué falló la última revisión, para mostrarlo en Ajustes.
     var updateCheckError: String?
     var lastCheckedAt: Date?

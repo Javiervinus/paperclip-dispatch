@@ -220,6 +220,8 @@ private struct StepLabel: View {
 private struct PairingCode: View {
     private static let side: CGFloat = 136
     private static let badgeSide: CGFloat = 30
+    /// El borde blanco alrededor del avión, para separarlo de los módulos del QR.
+    private static let badgeBorder: CGFloat = 3
 
     let url: URL
 
@@ -239,8 +241,11 @@ private struct PairingCode: View {
                                     .font(.callout)
                                     .foregroundStyle(.white)
                             }
-                            .padding(3)
-                            .background(.white, in: .rect(cornerRadius: (Self.badgeSide + 6) * SettingsDesign.iconCornerRatio))
+                            .padding(Self.badgeBorder)
+                            .background(
+                                .white,
+                                in: .rect(cornerRadius: (Self.badgeSide + 2 * Self.badgeBorder) * SettingsDesign.iconCornerRatio)
+                            )
                     }
             }
         }

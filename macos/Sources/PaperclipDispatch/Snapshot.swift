@@ -35,6 +35,7 @@ enum Snapshot {
     private static let kindKey = "PaperclipSnapshot"
     private static let directoryKey = "PaperclipSnapshotDirectory"
     private static let activeKey = "PaperclipSnapshotActive"
+    /// Segundos que espera a que el script capture; el script espera lo mismo a que la app anote sus ventanas.
     private static let captureTimeout = 90
     /// Lo que tarda una ventana recién puesta al frente en dibujarse como activa.
     private static let activeSettleTime: Duration = .seconds(1.5)
@@ -42,6 +43,9 @@ enum Snapshot {
     /// Para ensayar sin dirección elegida: no responde nada ahí. No sirve un puerto de los que WebKit bloquea
     /// (como el 9): con esos no avisa que la carga falló.
     static let placeholderServerURL = URL(string: "http://127.0.0.1:65535")!
+
+    /// La versión de Paperclip que muestran los ensayos cuando no hay una instalada.
+    static let sampleVersion = "2026.1023.0"
 
     static var active: Bool { UserDefaults.standard.bool(forKey: activeKey) }
 
@@ -62,7 +66,7 @@ enum Snapshot {
     /// El botón de actualizaciones de verdad, al día con la versión de Paperclip dada (para los ensayos).
     static func upToDateButton(paperclip version: String?, host: MainWindowController) -> UpdatesButton {
         let status = AppStatus()
-        status.paperclipVersion = version ?? "2026.1023.0"
+        status.paperclipVersion = version ?? sampleVersion
         status.lastCheckedAt = .now
         return UpdatesButton(
             app: AppUpdater(previewing: .idle),
@@ -132,7 +136,7 @@ enum WelcomeSnapshot {
     private static let settleTime: Duration = .seconds(4)
 
     static func run(to directory: URL) async {
-        let version = await Snapshot.installedVersion()?.currentVersion ?? "2026.1023.0"
+        let version = await Snapshot.installedVersion()?.currentVersion ?? Snapshot.sampleVersion
         let local = LocalPaperclip(
             instanceId: "default",
             url: URL(string: "http://127.0.0.1:\(PaperclipLocator.defaultPort)")!,
@@ -274,7 +278,7 @@ enum MainWindowSnapshot {
             let controller = MainWindowController(config: config, liquidGlass: item.startsWithGlass, rehearsal: true)
             guard let window = controller.window else { continue }
             let status = AppStatus()
-            status.paperclipVersion = paperclip ?? "2026.1023.0"
+            status.paperclipVersion = paperclip ?? Snapshot.sampleVersion
             status.lastCheckedAt = .now
             let app: AppUpdater
             switch item.updates {
@@ -345,7 +349,7 @@ enum PageSnapshot {
         try? await Task.sleep(for: loadTime)
         for shot in shots where !shot.anchor.isEmpty {
             if await !shot.controller.scrollPage(toText: shot.anchor) {
-                NSLog("Paperclip: el ensayo no encontró «%@» en la página", shot.anchor)
+                NSLog("Paperclip Dispatch: el ensayo no encontró «%@» en la página", shot.anchor)
             }
         }
         try? await Task.sleep(for: scrollTime)

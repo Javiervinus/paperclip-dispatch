@@ -17,7 +17,7 @@ struct NotificationAccess: Equatable {
     /// Todo lo que la app usa: el permiso, los banners y el número.
     var isComplete: Bool { permission == .granted && banners && badge }
 
-    /// Con los nombres de la API web, que usan la página y Ajustes.
+    /// Con los nombres de la API web de avisos, que usa Ajustes.
     var webPermission: String {
         switch permission {
         case .granted: "granted"

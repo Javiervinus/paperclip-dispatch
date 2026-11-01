@@ -42,15 +42,16 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         return access
     }
 
-    /// `tag` reemplaza el aviso anterior con la misma etiqueta. Con `wake`, el aviso lleva el botón para
-    /// despertar al agente; sin `sound`, llega callado (p. ej. la respuesta a ese botón).
+    /// `tag` reemplaza el aviso anterior con la misma etiqueta; sin ella, el aviso se identifica con `id`. Con
+    /// `wake`, el aviso lleva el botón para despertar al agente; sin `sound`, llega callado (p. ej. la respuesta
+    /// a ese botón).
     func show(id: String, tag: String?, title: String, body: String, href: String?, wake: WakeButton? = nil,
               sound: Bool = true) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         if sound { content.sound = .default }
-        var info: [String: Any] = ["id": id, "href": href ?? ""]
+        var info: [String: Any] = ["href": href ?? ""]
         if let wake { info.merge(wake.userInfo) { _, new in new } }
         content.userInfo = info
         let identifier = tag.flatMap { $0.isEmpty ? nil : $0 } ?? id

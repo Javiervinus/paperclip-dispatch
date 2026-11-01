@@ -1,8 +1,9 @@
 import AppKit
 
 /// Revisa Decisions de Paperclip cada minuto, pone en el Dock el mismo número que la burbuja de Decisions de
-/// la barra lateral (`Attention.deskBadgeCount`) y avisa con un aviso de macOS cuando llega una decisión nueva. Lo hace la app y no la página, porque macOS frena las páginas
-/// que no se ven: así sigue avisando con la ventana cerrada (Cmd+W).
+/// la barra lateral (`Attention.deskBadgeCount`) y avisa con un aviso de macOS cuando llega una decisión
+/// nueva. Lo hace la app y no la página, porque macOS frena las páginas que no se ven: así sigue avisando
+/// con la ventana cerrada (Cmd+W).
 ///
 /// Usa la misma API que la barra lateral de Paperclip (`GET /api/companies/{id}/attention`), con la sesión
 /// iniciada en la página. Decisions incluye también los fallos de los agentes y las alertas de presupuesto.
@@ -16,6 +17,7 @@ final class DecisionsMonitor {
     private static let individualLimit = 3
     /// Lo ya avisado, por company, para no repetir avisos al reabrir la app.
     private static let seenKey = "seenDecisions"
+    /// Tope de ids recordados por company (una página de Decisions trae hasta `Attention.pageLimit`).
     private static let seenLimit = 500
 
     /// Lo pendiente de una company en cada revisión que salió bien. `complete` es falso si no entró todo
@@ -87,25 +89,23 @@ final class DecisionsMonitor {
     private func pollOnce() async {
         do {
             let companies: [PaperclipCompany] = try await api.get("api/companies")
-            let active = companies.filter { $0.status == "active" }
             var seen = UserDefaults.standard.dictionary(forKey: Self.seenKey) as? [String: [String]] ?? [:]
             var total = 0
-            for company in active.isEmpty ? companies : active {
+            for company in PaperclipCompany.watched(companies) {
                 let attention: Attention = try await api.get(
                     "api/companies/\(company.id)/attention",
                     query: [URLQueryItem(name: "limit", value: String(Attention.pageLimit))]
                 )
                 total += attention.deskBadgeCount ?? attention.totalCount ?? attention.items.count
-                let previous = seen[company.id]
-                let known = Set(previous ?? [])
-                await announce(attention.items.filter { !known.contains($0.id) }, in: company, firstTime: previous == nil)
-                let current = attention.items.map(\.id)
-                let currentSet = Set(current)
-                let older = (previous ?? []).filter { !currentSet.contains($0) }
-                seen[company.id] = Array((current + older).prefix(Self.seenLimit))
+                let review = Self.review(attention, previous: seen[company.id])
+                await announce(review.fresh, in: company, firstTime: review.firstTime)
+                if review.seen != seen[company.id] {
+                    seen[company.id] = review.seen
+                    // Se guarda por company: si falla la siguiente, lo que ya se avisó de esta no se repite.
+                    UserDefaults.standard.set(seen, forKey: Self.seenKey)
+                }
                 onAttention?(company.id, attention.items, attention.nextCursor == nil)
             }
-            UserDefaults.standard.set(seen, forKey: Self.seenKey)
             pendingCount = total
             signedOut = false
             onSignedIn?()
@@ -117,6 +117,23 @@ final class DecisionsMonitor {
             // Sin red o con Paperclip reiniciándose: queda lo último que se supo.
         }
         applyBadge()
+    }
+
+    /// Una company en una revisión que salió bien (`previous`: lo ya avisado; nil si es la primera vez que la
+    /// app la ve). Queda como avisado lo pendiente ahora y, si la lista no vino entera, también lo anterior que
+    /// no vino, que puede estar en otra página. Lo que falta en una lista entera ya no está pendiente y se
+    /// olvida: si vuelve (p. ej. una tarea que se destraba y se vuelve a trabar), se avisa otra vez. Una
+    /// revisión que falla no llega aquí, así que no cuenta como que algo dejó de estar pendiente.
+    static func review(
+        _ attention: Attention,
+        previous: [String]?
+    ) -> (fresh: [AttentionItem], firstTime: Bool, seen: [String]) {
+        let known = Set(previous ?? [])
+        let fresh = attention.items.filter { !known.contains($0.id) }
+        let current = attention.items.map(\.id)
+        let currentSet = Set(current)
+        let otherPages = attention.nextCursor == nil ? [] : (previous ?? []).filter { !currentSet.contains($0) }
+        return (fresh, previous == nil, Array((current + otherPages).prefix(seenLimit)))
     }
 
     /// Lo que llega mientras se mira la ventana no se avisa (salvo que se pida en Ajustes): la barra

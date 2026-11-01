@@ -12,7 +12,7 @@ final class WelcomeModel {
         case change(current: URL)
     }
 
-    enum Phase: Int, Comparable {
+    enum Phase: Int, CaseIterable, Comparable {
         case intro, connect, notifications
 
         static func < (lhs: Phase, rhs: Phase) -> Bool { lhs.rawValue < rhs.rawValue }
@@ -61,6 +61,8 @@ final class WelcomeModel {
     @ObservationIgnored var onConnect: ((URL) -> Void)?
     @ObservationIgnored var onCancel: (() -> Void)?
     @ObservationIgnored private var watch: Task<Void, Never>?
+    /// El pedido de encender Paperclip en curso; se cancela si se deja el paso antes de que termine.
+    @ObservationIgnored private var starter: Task<Void, Never>?
     /// En el ensayo los avisos quedan como se pidieron, sin leer los de verdad.
     @ObservationIgnored private let fixedNotifications: Bool
 
@@ -93,14 +95,19 @@ final class WelcomeModel {
 
     func searchAgain() {
         stopWatching()
+        // Sin vigilar, «Encendiendo…» quedaría para siempre si vuelve a salir apagado.
+        stopStarting()
         Task { await detect() }
     }
 
     func startPaperclip(_ local: LocalPaperclip) {
         starting = true
         startError = nil
-        Task {
-            if let error = await PaperclipLocator.start(local) {
+        starter = Task {
+            let error = await PaperclipLocator.start(local)
+            // Se dejó el paso mientras se encendía (otra dirección, buscar de nuevo): no se vuelve a vigilar.
+            guard !Task.isCancelled else { return }
+            if let error {
                 startError = error
                 starting = false
             } else {
@@ -111,12 +118,15 @@ final class WelcomeModel {
 
     func showAddress() {
         stopWatching()
+        stopStarting()
         addressError = nil
         step = .address
     }
 
     func showInstall() {
         step = .install
+        // Si ya se abrió el instalador, el paso dice «Esperando a que Paperclip arranque…»: se vuelve a vigilar.
+        if installerOpened { watchUntilRunning() }
         Task { await checkNode() }
     }
 
@@ -166,7 +176,14 @@ final class WelcomeModel {
     /// «Abrir Paperclip», al final de la primera vez.
     func finish() {
         guard let chosenURL else { return }
-        if launchAtLogin, LoginItem.status != .enabled { try? LoginItem.setEnabled(true) }
+        if launchAtLogin, LoginItem.status != .enabled {
+            // No frena la bienvenida: se puede volver a activar en Ajustes → General.
+            do {
+                try LoginItem.setEnabled(true)
+            } catch {
+                NSLog("Paperclip Dispatch: no pude activar el inicio de sesión: %@", error.localizedDescription)
+            }
+        }
         onConnect?(chosenURL)
     }
 
@@ -208,6 +225,13 @@ final class WelcomeModel {
     private func stopWatching() {
         watch?.cancel()
         watch = nil
+    }
+
+    /// Al dejar el paso de Paperclip apagado: ni se vigila ni queda «Encendiendo…».
+    private func stopStarting() {
+        starter?.cancel()
+        starter = nil
+        starting = false
     }
 }
 
@@ -337,9 +361,7 @@ struct WelcomeView: View {
         case .notFound:
             HStack(spacing: 18) {
                 Button("Buscar de nuevo", action: model.searchAgain).buttonStyle(.link)
-                if let url = PaperclipLocator.websiteURL {
-                    Link("¿Qué es Paperclip?", destination: url)
-                }
+                Link("¿Qué es Paperclip?", destination: PaperclipLocator.websiteURL)
             }
             .font(.callout)
         case .searching, .address, .install:
@@ -520,7 +542,7 @@ struct WelcomeView: View {
         }
         .overlay {
             if model.mode == .firstRun {
-                StepDots(current: model.phase.rawValue, count: 3)
+                StepDots(current: model.phase.rawValue, count: WelcomeModel.Phase.allCases.count)
             }
         }
         .padding(.horizontal, WelcomeDesign.footerInset)

@@ -1,13 +1,19 @@
 import Foundation
 
-// Lo que se lee de Decisions (`GET /api/companies/{id}/attention`). Todo es opcional y se lee a la
-// defensiva: un campo nuevo o con otra forma en una versión de Paperclip no tapa al resto.
+// Lo que se lee de Decisions (`GET /api/companies/{id}/attention`). Se lee a la defensiva: un campo nuevo o
+// con otra forma en una versión de Paperclip no tapa al resto. Lo único obligatorio es la lista `items`.
 
 struct PaperclipCompany: Decodable, Sendable {
     let id: String
     let name: String?
     let status: String?
     let issuePrefix: String?
+
+    /// Las companies que revisa la app: las activas o, si ninguna dice que lo está, todas.
+    static func watched(_ companies: [PaperclipCompany]) -> [PaperclipCompany] {
+        let active = companies.filter { $0.status == "active" }
+        return active.isEmpty ? companies : active
+    }
 }
 
 struct Attention: Decodable, Sendable {
@@ -30,8 +36,10 @@ struct Attention: Decodable, Sendable {
         totalCount = try? container.decodeIfPresent(Int.self, forKey: .totalCount)
         deskBadgeCount = try? container.decodeIfPresent(Int.self, forKey: .deskBadgeCount)
         nextCursor = try? container.decodeIfPresent(String.self, forKey: .nextCursor)
-        // Un elemento de un tipo nuevo que no se entienda no tapa a los demás.
-        items = (try? container.decodeIfPresent([Lossy<AttentionItem>].self, forKey: .items))?.compactMap(\.value) ?? []
+        // Sin la lista, la respuesta no es de Decisions (p. ej. `{"error": …}`): falla la revisión y queda lo
+        // último que se supo, en vez de leerse como «nada pendiente» y cerrar o volver a avisar todo. Un elemento
+        // de un tipo nuevo que no se entienda no tapa a los demás.
+        items = try container.decode([Lossy<AttentionItem>].self, forKey: .items).compactMap(\.value)
     }
 }
 
