@@ -46,15 +46,17 @@
     background: transparent !important;
   }
 
-  /* El panel de propiedades de una tarea (el SidePanelFrame al costado) también, sin el borde que lo
-     separa del contenido. El margen va adentro de su ancho, que Paperclip fija. */
-  aside:has(section[data-presentation="docked"]) {
+  /* El panel de propiedades de una tarea o el de tareas del chat (un SidePanelFrame al costado) también,
+     sin el borde que lo separa del contenido. El margen va adentro de su ancho, que Paperclip fija.
+     Maximizado (data-maximized) o mientras se agranda o se achica (.fixed), Paperclip lo pone encima del
+     contenido: ahí conserva su fondo, porque sin él se vería lo de abajo. */
+  aside:not(.fixed):has(section[data-presentation="docked"][data-maximized="false"]) {
     --side-panel-bg: transparent;
     background: transparent !important;
     border-left-color: transparent !important;
   }
 
-  aside > div:has(> section[data-presentation="docked"]) {
+  aside:not(.fixed) > div:has(> section[data-presentation="docked"][data-maximized="false"]) {
     padding: var(--paperclip-app-sidebar-inset);
   }
 
@@ -64,19 +66,23 @@
      (una clase bg-) lo conserva. */
   [class*="pt-(--sz-safe-top)"]:has(.primary-sidebar-surface)
     > .flex-1
-    > .flex-col.min-w-0:has(aside section[data-presentation="docked"]),
-  div:has(> aside section[data-presentation="docked"]) {
+    > .flex-col.min-w-0:has(aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"]),
+  div:has(> aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"]) {
     background-color: transparent;
   }
 
-  .flex-col.min-w-0:has(aside section[data-presentation="docked"]) > :not(:has(aside), [class*="bg-"]),
-  div:has(> aside section[data-presentation="docked"]) > :not(aside, .contents, [class*="bg-"]),
-  div:has(> aside section[data-presentation="docked"]) > .contents > :not([class*="bg-"]) {
+  .flex-col.min-w-0:has(aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"])
+    > :not(:has(aside), [class*="bg-"]),
+  div:has(> aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"])
+    > :not(aside, .contents, [class*="bg-"]),
+  div:has(> aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"])
+    > .contents
+    > :not([class*="bg-"]) {
     background-color: var(--background);
   }
 
   /* En la página de una tarea, la fila (streamlined-task-detail-surface) tiene su propio color. */
-  .streamlined-task-detail-surface:has(> aside section[data-presentation="docked"])
+  .streamlined-task-detail-surface:has(> aside:not(.fixed) section[data-presentation="docked"][data-maximized="false"])
     > :not(aside, .contents, [class*="bg-"]) {
     background-color: var(--streamlined-task-detail-bg);
   }

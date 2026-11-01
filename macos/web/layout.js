@@ -62,9 +62,18 @@
   // sobre el contenido, ese panel flota con fondo propio y el vidrio se queda en lo reservado.
   const sidebarArea = () =>
     document.querySelector(".primary-sidebar-surface")?.parentElement?.parentElement?.parentElement ?? null;
-  // El panel de propiedades de una tarea (SidePanelFrame de Paperclip, abierto y al costado): su <aside>.
-  const inspectorArea = () =>
-    document.querySelector('section[data-presentation="docked"][data-open="true"]')?.closest("aside") ?? null;
+  // El panel de propiedades de una tarea o el de tareas del chat (SidePanelFrame de Paperclip): su <aside>,
+  // solo al costado. Maximizado (o mientras se agranda o se achica) Paperclip lo pone fijo encima del
+  // contenido, y ahí el vidrio, que va detrás de toda la página, dejaría ver lo de abajo.
+  const inspectorArea = () => {
+    for (const section of document.querySelectorAll(
+      'section[data-presentation="docked"][data-maximized="false"]',
+    )) {
+      const aside = section.closest("aside");
+      if (aside && !aside.classList.contains("fixed") && aside.getBoundingClientRect().width > 0) return aside;
+    }
+    return null;
+  };
 
   let titlebar = 0;
   let lastLayout = "";
