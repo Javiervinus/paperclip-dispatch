@@ -87,3 +87,15 @@
     background-color: var(--streamlined-task-detail-bg);
   }
 }
+
+/* Menús, ventanas emergentes y listas desplegables (los data-slot de los componentes de shadcn que usa
+   Paperclip): translúcidos y esmerilados, como los menús de macOS. No es el Liquid Glass de la app, que va
+   detrás de toda la página y no puede ponerse encima de ella: es el mismo efecto hecho por la página. */
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"],
+[data-slot="popover-content"],
+[data-slot="select-content"] {
+  background-color: color-mix(in oklab, var(--popover) 60%, transparent) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(1.8);
+}
