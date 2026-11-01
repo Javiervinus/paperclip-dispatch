@@ -5,19 +5,21 @@
 #   1. Sube la versión en macos/VERSION y convierte «## Unreleased» de CHANGELOG.md y CHANGELOG.es.md en
 #      la sección de esa versión («## 1.2.0 — 2026-11-01»). Commit y push.
 #   2. macos/release.sh             arma todo en macos/dist/<versión>, sin publicar (para revisar o probar)
-#      macos/release.sh --publish   además notariza, crea el release en GitHub y marca el commit
+#      macos/release.sh --publish   además notariza, crea el release en GitHub, marca el commit y pone la
+#                                   versión en el cask de Homebrew (update-cask.sh), que commitea y sube al tap
 #
 # Lo que deja: el DMG para instalar por primera vez, el .zip que baja el actualizador (firmado con la llave
 # de Sparkle) y appcast.xml, con las novedades de esa versión en inglés y en español (la app muestra las de
 # su idioma).
 #
 # Variables (con su valor por defecto):
-#   RELEASES_REPO=<dueño/repo del remoto origin>  dónde se publica y adónde enlazan las novedades
+#   RELEASES_REPO=<el de release.env; vacía = el del remoto origin>  dónde se publica y adónde enlazan las novedades
 #   BASE_URL=https://github.com/$RELEASES_REPO/releases/download/v<versión>  de dónde se baja el .zip
 #   NOTARY_PROFILE=<obligatorio con --publish>  perfil de notarytool en el llavero
 #       (se crea una vez con: xcrun notarytool store-credentials <nombre>)
 #   DIST=macos/dist/<versión>  APP_VERSION=<la de macos/VERSION>
 #   CHANGELOG_EN=CHANGELOG.md  CHANGELOG_ES=CHANGELOG.es.md  (otros, para probar)
+#   HOMEBREW_TAP_DIR=<la carpeta homebrew-tap junto a la del repo>  el tap con el cask (ver update-cask.sh)
 # La llave privada de Sparkle está en el llavero (generate_keys --account $SPARKLE_KEY_ACCOUNT, ver
 # release.env). Lo demás de la app (nombre, identificador, appcast) sale de build.sh y release.env.
 # Sin `set -u`: el gancho de cuentas de ~/.zshenv corre en cada `cd` y lee variables que pueden no existir.
@@ -80,6 +82,8 @@ if $PUBLISH; then
   [[ $SHA == $(git -C "$REPO" rev-parse '@{upstream}') ]] || fail "HEAD no está en el remoto: haz push primero"
   ! git -C "$REPO" rev-parse -q --verify "refs/tags/$TAG" >/dev/null || fail "$TAG ya existe: sube la versión"
   ! gh release view "$TAG" -R "$RELEASES_REPO" >/dev/null 2>&1 || fail "$TAG ya está publicada en $RELEASES_REPO"
+  # El cask se actualiza al final: que no falle recién después de publicar.
+  "$ROOT/update-cask.sh" --check --push "$VERSION" "$FILE_BASE.dmg" || fail "el tap de Homebrew no está listo (ver arriba)"
 fi
 
 rm -rf "$DIST"
@@ -172,9 +176,14 @@ RELEASE_NOTES="$NOTES_EN
 ---
 
 $NOTES_ES"
-gh release create "$TAG" -R "$RELEASES_REPO" --title "$APP_NAME $VERSION" --notes "$RELEASE_NOTES" \
-  "$DMG" "$ZIP" "$DIST/appcast.xml"
-# La versión de una queja lleva al código del que salió.
+# La versión de una queja lleva al código del que salió. La etiqueta sube antes que el release: sin ella,
+# gh crearía otra en la punta de la rama principal y el push de esta sería rechazado.
 git -C "$REPO" tag -a "$TAG" -m "$APP_NAME $VERSION" "$SHA"
-git -C "$REPO" push --quiet origin "$TAG" || fail "publicada, pero no pude subir la etiqueta: git push origin $TAG"
+git -C "$REPO" push --quiet origin "$TAG" || fail "no pude subir la etiqueta $TAG: nada se publicó (git push origin $TAG)"
+gh release create "$TAG" -R "$RELEASES_REPO" --verify-tag --title "$APP_NAME $VERSION" --notes "$RELEASE_NOTES" \
+  "$DMG" "$ZIP" "$DIST/appcast.xml" \
+  || fail "la etiqueta $TAG ya está en GitHub, pero no pude crear el release: gh release create $TAG --verify-tag …"
+# brew install baja este mismo DMG: el cask lleva su versión y su sha256.
+"$ROOT/update-cask.sh" --push "$VERSION" "$DMG" \
+  || fail "publicada, pero no pude actualizar el cask: macos/update-cask.sh --push $VERSION $DMG"
 print "Publicada: https://github.com/$RELEASES_REPO/releases/tag/$TAG"
