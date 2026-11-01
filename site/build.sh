@@ -99,9 +99,11 @@ mkdir -p "$OUTPUT_DIR/images"
 # que son nada más que un comentario). Es una limpieza simple, sin entender cada lenguaje, y vale mientras las
 # páginas no usen <pre> ni <textarea>, los estilos no lleven «/*» dentro de un texto o un url() y los scripts no
 # tengan textos de varias líneas (`…`): si eso cambia, hay que cambiar esto.
-find "$OUTPUT_DIR" -name '*.css' -exec perl -0pi -e 's{/\*.*?\*/}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
-find "$OUTPUT_DIR" -name '*.js' -exec perl -0pi -e 's{^[ \t]*//.*\n}{}gm; s{^[ \t]+}{}gm' {} +
-find "$OUTPUT_DIR" -name '*.html' -exec perl -0pi -e 's{<!--.*?-->}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
+# Va con xargs y no con find -exec … {} +: el find de GNU (el del workflow) no acepta otro «{}» en los
+# argumentos, y el código Perl lleva varios.
+find "$OUTPUT_DIR" -name '*.css' -print0 | xargs -0 -r perl -0pi -e 's{/\*.*?\*/}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g'
+find "$OUTPUT_DIR" -name '*.js' -print0 | xargs -0 -r perl -0pi -e 's{^[ \t]*//.*\n}{}gm; s{^[ \t]+}{}gm'
+find "$OUTPUT_DIR" -name '*.html' -print0 | xargs -0 -r perl -0pi -e 's{<!--.*?-->}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g'
 
 # Las imágenes que nombran las páginas, en el ancho que pide cada una
 # (las rutas a docs/images que nombran los comentarios no cuentan; una ruta desde la raíz del dominio, sí falla:
