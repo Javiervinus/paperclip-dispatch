@@ -53,6 +53,8 @@ final class WelcomeModel {
     private(set) var chosenURL: URL?
     private(set) var notificationAccess: NotificationAccess?
     private(set) var requestingNotifications = false
+    /// macOS rechazó el pedido sin mostrar su aviso: queda activarlos en Ajustes del Sistema.
+    private(set) var notificationRequestFailed = false
     /// Viene encendido: sin la app abierta no llegan avisos.
     var launchAtLogin = true
 
@@ -176,7 +178,9 @@ final class WelcomeModel {
     /// macOS muestra su aviso de permiso; si ya se negó, no vuelve a preguntar (queda Ajustes del Sistema).
     func requestNotifications() async {
         requestingNotifications = true
-        notificationAccess = await NotificationAccess.request()
+        let (access, failed) = await NotificationAccess.request()
+        notificationAccess = access
+        notificationRequestFailed = failed && access.permission == .notDetermined
         requestingNotifications = false
     }
 

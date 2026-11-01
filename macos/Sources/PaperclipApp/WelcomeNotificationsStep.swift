@@ -60,6 +60,9 @@ struct WelcomeNotificationsStep: View {
         case let access? where access.permission == .denied:
             Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
                 .buttonStyle(.glass)
+        case _ where model.notificationRequestFailed:
+            Button("Abrir Ajustes del Sistema", action: NotificationAccess.openSystemSettings)
+                .buttonStyle(.glass)
         default:
             Button("Permitir avisos") { Task { await model.requestNotifications() } }
                 .buttonStyle(.glassProminent)
@@ -70,6 +73,8 @@ struct WelcomeNotificationsStep: View {
     private var permissionDetail: String {
         guard let access = model.notificationAccess else { return "Banners, sonido y el número en el Dock." }
         switch access.permission {
+        case .notDetermined where model.notificationRequestFailed:
+            return "macOS no dejó pedir el permiso desde aquí. Actívalos en Ajustes del Sistema → Notificaciones."
         case .notDetermined:
             return "Banners, sonido y el número en el Dock."
         case .denied:

@@ -24,10 +24,12 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         Task { update(await NotificationAccess.current()) }
     }
 
-    /// Pide el permiso (si nunca se pidió) y avisa cómo quedó.
+    /// Pide el permiso (si nunca se pidió) y avisa cómo quedó. Si macOS rechaza el pedido, abre Ajustes del
+    /// Sistema: es lo único que queda, y un botón que no hace nada parece roto.
     func request() async -> NotificationAccess {
-        let access = await NotificationAccess.request()
+        let (access, failed) = await NotificationAccess.request()
         update(access)
+        if failed { NotificationAccess.openSystemSettings() }
         return access
     }
 

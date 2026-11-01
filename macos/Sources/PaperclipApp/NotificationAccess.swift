@@ -41,13 +41,19 @@ struct NotificationAccess: Equatable {
     }
 
     /// Pide el permiso si nunca se pidió (macOS muestra su aviso) y devuelve cómo quedó. Si ya se negó, macOS
-    /// no vuelve a preguntar: queda Ajustes del Sistema (`openSystemSettings()`).
-    static func request() async -> NotificationAccess {
+    /// no vuelve a preguntar: queda Ajustes del Sistema (`openSystemSettings()`). `failed`: macOS rechazó el
+    /// pedido sin preguntar (le pasa, por ejemplo, a una copia que corre desde una carpeta temporal).
+    static func request() async -> (access: NotificationAccess, failed: Bool) {
         let center = UNUserNotificationCenter.current()
+        var failed = false
         if await center.notificationSettings().authorizationStatus == .notDetermined {
-            _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+            do {
+                _ = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+            } catch {
+                failed = true
+            }
         }
-        return await current()
+        return (await current(), failed)
     }
 
     /// Ajustes del Sistema → Notificaciones, en la página de esta app.
