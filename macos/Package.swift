@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "PaperclipApp",
+    name: "PaperclipDispatch",
     platforms: [.macOS(.v26)],
     dependencies: [
         // Las actualizaciones de la propia app: descarga, verifica la firma y reemplaza el .app.
@@ -12,9 +12,9 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "PaperclipApp",
+            name: "PaperclipDispatch",
             dependencies: [.product(name: "Sparkle", package: "Sparkle")],
-            path: "Sources/PaperclipApp",
+            path: "Sources/PaperclipDispatch",
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("WebKit"),
