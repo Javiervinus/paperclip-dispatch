@@ -32,6 +32,9 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   without saying so: a Mac notification and a Telegram message say which agent, its limit and at what time the
   count resets, with a button to its page to raise it. Once a day per agent, and Settings → Notifications can
   turn it off.
+- **If Paperclip changes what it answers, the new features step aside instead of guessing.** A card, button
+  or notice the app can't read properly goes back to “Open in Paperclip”, and if Paperclip rejects an answer,
+  the message says it couldn't be done and offers to open it there.
 
 ### Fixed
 

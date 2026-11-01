@@ -34,6 +34,9 @@ manda aquí.
   lo despertaría, sin decirlo: un aviso en la Mac y un mensaje en Telegram dicen qué agente es, su tope y a qué
   hora se reinicia la cuenta, con un botón a su página para subirlo. Una vez al día por agente, y se apaga en
   Ajustes → Avisos.
+- **Si Paperclip cambia lo que contesta, lo nuevo se aparta en vez de adivinar.** Una tarjeta, un botón o un
+  aviso que la app no sabe leer bien vuelve a «Abrir en Paperclip», y si Paperclip rechaza una respuesta, el
+  mensaje dice que no se pudo y ofrece abrirla ahí.
 
 ### Arreglado
 
