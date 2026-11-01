@@ -68,6 +68,8 @@ macos/build.sh
 
 - Pide Xcode 26 (SDK de macOS 26). Compila con `swift build`, arma el .app, lo firma con la identidad
   «Developer ID Application» del llavero y lo instala en `/Applications`. Tarda segundos.
+- SwiftPM corre con `--disable-keychain`: sin eso, al bajar Sparkle pide al llavero las credenciales de
+  github.com y, con la pantalla bloqueada, se queda esperando para siempre.
 - **Ícono** (`macos/AppIcon.icon`): un documento de Icon Composer con el clip oficial de Paperclip
   (`paperclip-icon-black.svg` de paperclip.ing/brand) tal cual, en un solo color y sin efectos, como pide su
   marca. Tiene variante clara (clip negro sobre blanco), oscura (blanco sobre negro), transparente y
@@ -80,8 +82,10 @@ macos/build.sh
 - **Abrir al iniciar sesión** guarda la ruta de la app. Si se mueve o se renombra, al abrirla vuelve a
   registrar el ítem con la ruta nueva (`LoginItem.swift`): macOS no lo hace solo y el ítem quedaría
   apuntando a la vieja.
-- Variables: `APP_NAME`, `APP_ID`, `INSTALL_DIR` (por defecto `/Applications`), `PAPERCLIP_SERVER_URL`,
-  `PAPERCLIP_UPDATE_SCRIPT` y `SIGN_IDENTITY`. Las de una Mac en particular van en `macos/build.local.env`,
+- Variables (explicadas al principio de `build.sh`): `APP_NAME`, `APP_ID`, `APP_VERSION` (por defecto
+  la de `macos/VERSION`), `INSTALL_DIR` (por defecto `/Applications`), `OUTPUT_DIR`, `UNIVERSAL`,
+  `NOTARIZE`, `PAPERCLIP_SERVER_URL`, `PAPERCLIP_UPDATE_SCRIPT` y `SIGN_IDENTITY`. Las de las versiones
+  nuevas de la app van en `macos/release.env`. Las de una Mac en particular van en `macos/build.local.env`,
   que no se sube. En esta Mac lleva `PAPERCLIP_UPDATE_SCRIPT` con el `update.sh` de
   `Personal/paperclip/scripts`; con `PAPERCLIP_UPDATE_SCRIPT=` (vacía) se arma como para cualquiera.
 - **No trae ninguna dirección escrita.** La dirección se guarda en los ajustes de la app (`serverURL`). Si
@@ -105,8 +109,8 @@ macos/build.sh
   apagado, «Encender Paperclip». Los errores de conexión van traducidos, porque el proceso de red de WebKit
   no usa el idioma de la app.
 - **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
-  debajo de una barra de ventana de macOS con el título de la página y el botón de la versión: no depende
-  de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
+  debajo de una barra de ventana de macOS con el título de la página y el botón de actualizaciones: no
+  depende de cómo esté hecho el HTML de Paperclip. Solo se inyecta `web/bridge.js`, que no cambia cómo se ve
   (tema y avisos).
 - **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
   Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
@@ -180,11 +184,12 @@ macos/build.sh
     Cada pestaña tiñe la parte de arriba de la ventana con su color y el vidrio lo refleja. Al cambiar de
     pestaña, el color y el contenido se funden en una sola animación; la ventana no cambia de tamaño.
   - Las pestañas empiezan directo con su contenido: un encabezado con ícono repetiría el nombre que ya dice
-    el selector. Solo Paperclip lleva uno, con el ícono de la app, la versión y su estado, como un «Acerca
+    el selector. Solo Paperclip lleva uno, con el clip de Paperclip, la versión y su estado, como un «Acerca
     de». Los estados van en su fila, en una cápsula de vidrio («Permitidos», «Al día»). Abre en la última
     pestaña usada.
-  - **General:** el tema con miniaturas (Sistema, Claro, Oscuro), abrir al iniciar sesión (`SMAppService`)
-    y, en Experimental, Liquid Glass en la página.
+  - **General:** el tema con miniaturas (Sistema, Claro, Oscuro), abrir al iniciar sesión (`SMAppService`),
+    **Versiones de esta app** (la versión, «Buscar ahora» o «Reiniciar», las novedades en GitHub y
+    «Descargar versiones nuevas solas») y, en Experimental, Liquid Glass en la página.
     «Sistema» sigue a la Mac aunque cambie por horario; `web/bridge.js` borra el tema que guarda Paperclip
     (`paperclip.theme`) para que la página siga a la app, y si se elige en el menú de Paperclip, la app lo
     adopta como ajuste.
@@ -209,6 +214,8 @@ macos/build.sh
     - `window` en vez de `settings` captura la ventana de Paperclip en sus dos modos.
     - `welcome` captura cada paso de la bienvenida, con datos de muestra, y la ventana sin conexión.
     - `SHADOW=1` deja la sombra de la ventana también en `settings`, `window` y `welcome`.
+    - `APP_PATH=<ruta a un .app>` ensaya otra copia, como una de prueba fuera de Aplicaciones (`open -a`
+      no encuentra apps por nombre en `/tmp`).
     - Fuera de la pantalla las ventanas salen inactivas (botones e interruptores grises). `ACTIVE=1` las
       muestra de a una en el centro de la pantalla, al frente (el script la pone al frente con System
       Events), para capturas de muestra. Tapa la pantalla unos segundos por ventana: solo cuando nadie usa
@@ -219,12 +226,55 @@ macos/build.sh
       desplazada hasta ese texto (vacía = arriba de todo). Ejemplo, la página del plugin de consumo:
       `SIZE=1512x982 ANCHORS="|En qué se fue la semana|Cada semana de" macos/snapshot.zsh page
       /VIN/agent-usage`.
-- **La versión de Paperclip, arriba a la derecha** (en la barra de la ventana; con Liquid Glass, sobre la
-  barra de la ruta de Paperclip). Si es la última dice «Al día · 2026.1023.0», discreto;
-  con un clic vuelve a revisar. Si sale una nueva, cambia a «Actualizar a …», en el color de acento. La app
-  revisa con `paperclipai update --check --latest --json` cada 6 h y desde el menú «Buscar actualización de
-  Paperclip…». Con Liquid Glass, en la vista angosta de Paperclip (menos de 768 px) no se muestra.
-  - Al apretarlo pide confirmación y actualiza con el comando oficial (`paperclipai update --latest`) o,
+- **Un solo botón de actualizaciones, arriba a la derecha** (`UpdatesButton.swift`, `UpdatesPanel.swift`),
+  para las dos cosas que se actualizan: esta app (Dispatch) y Paperclip (el servidor). Va en la barra de la
+  ventana; con Liquid Glass, sobre la barra de la ruta de Paperclip, y en la vista angosta (menos de
+  768 px) no se muestra.
+  - Al día dice «Paperclip 2026.1023.0 · Dispatch 0.1.0», discreto, y al pasar el mouse explica cuál es
+    cuál. Con algo nuevo se pinta del color de acento y dice de quién es: «Actualizar Dispatch» (con el
+    ícono de la app), «Actualizar Paperclip» (con el clip) o «2 actualizaciones». Después de actualizar la
+    app ofrece «Novedades de Dispatch …» unos días.
+  - Un clic abre un panel con las dos en filas separadas. Cada una dice qué hace al actualizarse:
+    reiniciar la app no corta nada, porque Paperclip y los agentes corren aparte; actualizar Paperclip lo
+    reinicia y pausa a los agentes. Abajo, «Buscar ahora» revisa las dos. El menú «Buscar
+    actualizaciones…» abre el mismo panel.
+- **Versiones nuevas de la app** (`AppUpdater.swift`, con [Sparkle](https://sparkle-project.org) 2 por
+  SwiftPM y una interfaz propia en vez de sus ventanas).
+  - Busca sola cada 6 h (`UPDATE_CHECK_INTERVAL`) y, por defecto, descarga en silencio. Se apaga en
+    Ajustes → General → «Descargar versiones nuevas solas».
+  - **Nunca se reinicia sin permiso.** La versión descargada se instala cuando se aprieta «Reiniciar»
+    (vuelve a abrirse en unos segundos, en la misma página) o cuando se cierra la app (Cmd+Q, apagar la
+    Mac). Así le llega también a quien nunca la cierra, sin cortarle nada. Con las descargas apagadas, el
+    botón es «Descargar y reiniciar».
+  - Las novedades salen en el panel, en el idioma de la app: el appcast las trae en inglés y en español
+    (`<description xml:lang>`) y Sparkle elige. Se muestran 5 como mucho; el resto, en GitHub.
+  - Un build sin `UPDATE_FEED_URL` no busca versiones (Ajustes dice «Esta copia no busca versiones
+    nuevas»). Así se arma hoy, hasta publicar el repo.
+  - Sparkle verifica cada descarga con una firma EdDSA. La llave pública va en `release.env`
+    (`UPDATE_PUBLIC_KEY`); la privada, solo en el llavero de esta Mac (`generate_keys --account
+    paperclip-dispatch`, en `macos/.build/artifacts/sparkle/Sparkle/bin`). Sin ella no se pueden publicar
+    versiones que las copias instaladas acepten: hay que respaldarla antes de publicar (`generate_keys
+    --account paperclip-dispatch -x <archivo>`, guardado fuera del repo).
+- **Publicar una versión de la app** (`macos/release.sh`, al estilo del de Nib).
+  1. Subir el número en `macos/VERSION` y convertir «## Unreleased» de `CHANGELOG.md` y `CHANGELOG.es.md`
+     en la sección de esa versión. Las dos son lo que se ve en el panel: frases para quien usa la app, una
+     por cambio, con la primera parte en negrita. Commit y push.
+  2. `macos/release.sh` arma todo en `macos/dist/<versión>` sin publicar: el DMG para instalar por primera
+     vez, el `.zip` firmado que baja el actualizador y `appcast.xml` con las novedades en los dos idiomas.
+     Se niega si falta la sección en alguno de los CHANGELOG.
+  3. `macos/release.sh --publish` además compila para Apple Silicon e Intel, notariza (pide
+     `NOTARY_PROFILE`, de `xcrun notarytool store-credentials`), crea el release en GitHub con los tres
+     archivos y marca el commit con `v<versión>`. Pide el árbol limpio, el commit en el remoto y una
+     versión que no exista.
+  - Para probar el ciclo sin publicar: armar con `UPDATE_FEED_URL=http://127.0.0.1:8765/appcast.xml`,
+    `APP_ID` y `APP_NAME` de prueba (otro identificador no toca los ajustes ni el bot de la app de verdad)
+    e `INSTALL_DIR` en `/tmp`; armar una versión mayor con `release.sh` (`DIST`, `BASE_URL` igual al
+    servidor, `CHANGELOG_EN`/`CHANGELOG_ES` de prueba) y servir esa carpeta con `python3 -m http.server
+    8765 --bind 127.0.0.1`. A una app ya armada se le puede cambiar el appcast con `defaults write <id>
+    DispatchFeedURL <url>`.
+- **Paperclip, en el mismo botón** (`UpdateController.swift`). La app revisa con `paperclipai update
+  --check --latest --json` cada 6 h.
+  - «Actualizar…» pide confirmación y actualiza con el comando oficial (`paperclipai update --latest`) o,
     si el build trae `PAPERCLIP_UPDATE_SCRIPT`, con ese script, con sus pasos en el botón. El oficial
     respalda la base antes; en modo autenticado con el servicio encendido se revierte solo (bug #13697),
     por eso esta Mac usa `update.sh`.
