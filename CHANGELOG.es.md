@@ -34,3 +34,5 @@ cambios.
 - **Las actualizaciones de los dos, en un solo lugar.** El botón de arriba a la derecha muestra la versión
   de Paperclip y la de esta app. Paperclip se actualiza solo cuando tú dices; la app baja sus versiones
   sola y las instala cuando la reinicias o la cierras.
+- **En inglés o en español.** La app sigue el idioma de la Mac, y el bot de Telegram y sus respuestas a
+  «explícamela» también.
