@@ -96,7 +96,9 @@ mkdir -p "$OUTPUT_DIR/images"
   done)
 
 # Los comentarios y la sangría se quedan en el repo: lo publicado no los lleva (en los scripts, solo las líneas
-# que son nada más que un comentario; las páginas no usan <pre> ni <textarea>, donde la sangría contaría)
+# que son nada más que un comentario). Es una limpieza simple, sin entender cada lenguaje, y vale mientras las
+# páginas no usen <pre> ni <textarea>, los estilos no lleven «/*» dentro de un texto o un url() y los scripts no
+# tengan textos de varias líneas (`…`): si eso cambia, hay que cambiar esto.
 find "$OUTPUT_DIR" -name '*.css' -exec perl -0pi -e 's{/\*.*?\*/}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
 find "$OUTPUT_DIR" -name '*.js' -exec perl -0pi -e 's{^[ \t]*//.*\n}{}gm; s{^[ \t]+}{}gm' {} +
 find "$OUTPUT_DIR" -name '*.html' -exec perl -0pi -e 's{<!--.*?-->}{}gs; s{^[ \t]+|[ \t]+$}{}gm; s{\n{2,}}{\n}g' {} +
