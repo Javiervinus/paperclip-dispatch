@@ -1,6 +1,5 @@
 <div align="center">
 
-<!-- Ícono: docs/images/icon.png (ver docs/images/README.md) -->
 <img src="docs/images/icon.png" width="96" alt="">
 
 # Paperclip Dispatch
@@ -18,7 +17,6 @@ avisos de decisiones, número en el Dock y respuestas desde Telegram.**
 ![macOS 26 Tahoe](https://img.shields.io/badge/macOS-26%20Tahoe-black)
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 
-<!-- Captura: docs/images/window-light.png y docs/images/window-dark.png (ver docs/images/README.md) -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-dark.png">
   <img src="docs/images/window-light.png" width="860" alt="Paperclip Dispatch con el Dashboard de Paperclip en una ventana nativa de la Mac">
@@ -50,6 +48,9 @@ corriendo por su cuenta, y cerrar la app no detiene nada.
 - **Avisos de decisiones.** Cuando un agente hace una pregunta, pide una aprobación, falla o llega a una
   alerta de presupuesto, recibes un aviso de macOS. Al tocarlo se abre esa decisión. La app revisa cada
   minuto por su cuenta, así que sigue avisando con la ventana cerrada.
+- **Despertar una tarea trabada.** Cuando una tarea queda a nombre de un agente que no está trabajando en
+  ella, el aviso y el mensaje de Telegram traen el botón **Despertar a &lt;agente&gt;** y después te dicen si
+  Paperclip despertó al agente o lo saltó.
 - **Número en el Dock.** El ícono del Dock muestra el mismo número que Decisions en la barra lateral de
   Paperclip.
 - **Responder desde Telegram.** Conecta tu propio bot de Telegram y cada decisión te llega al teléfono con
@@ -66,12 +67,16 @@ corriendo por su cuenta, y cerrar la app no detiene nada.
   Paperclip se actualiza solo cuando lo pides.
 - **Sin conexión, sin pantalla en blanco.** Si Paperclip deja de responder, la ventana lo dice, sigue
   probando y vuelve sola.
+- **En inglés y en español.** La app sigue el idioma de la Mac, y el bot de Telegram y sus resúmenes de
+  «Explícamela» también.
 
-<!-- Capturas: docs/images/window-glass.png, docs/images/welcome.png, docs/images/settings.png -->
 <p align="center">
   <img src="docs/images/window-glass.png" width="32%" alt="Barra lateral con Liquid Glass">
   <img src="docs/images/welcome.png" width="32%" alt="Configuración del primer arranque">
   <img src="docs/images/settings.png" width="32%" alt="Ajustes">
+</p>
+<p align="center">
+  <img src="docs/images/notification.png" width="440" alt="Aviso de una tarea trabada con el botón para despertar al agente">
 </p>
 
 ## Requisitos
@@ -205,10 +210,13 @@ macos/snapshot.zsh window   [carpeta]   # la ventana principal, normal y con Liq
 macos/snapshot.zsh welcome  [carpeta]   # cada paso de la bienvenida y la vista sin conexión
 macos/snapshot.zsh settings [carpeta]   # cada pestaña de Ajustes, en claro y en oscuro
 macos/snapshot.zsh about    [carpeta]   # el panel «Acerca de»
+macos/snapshot.zsh notifications [carpeta]   # el aviso y el mensaje de Telegram de una tarea trabada, con «Despertar a…»
 macos/snapshot.zsh page /<PREFIJO>/dashboard [carpeta]   # cualquier página de Paperclip dentro de la app
 ```
 
-`APP_PATH`, `SIZE`, `ANCHORS`, `SHADOW` y `ACTIVE` se explican al principio del script.
+`APP_LANGUAGE=en` o `APP_LANGUAGE=es` abre la copia en ese idioma sin cambiar el de tu Mac. `APP_PATH`,
+`SIZE`, `ANCHORS`, `SHADOW` y `ACTIVE` se explican al principio del script. Cómo se hacen las imágenes de
+este README está en [`docs/images/README.md`](docs/images/README.md).
 
 ### Skills de agentes
 
@@ -223,16 +231,22 @@ la app (Sparkle) y el cask de Homebrew.
 1. Sube la versión en `macos/VERSION`. Convierte `## Unreleased` de `CHANGELOG.md` y `CHANGELOG.es.md` en
    la sección de esa versión (`## 1.2.0 — 2026-11-01`). Esas notas son lo que se ve en el panel de
    actualizaciones de la app: cada punto es una frase en negrita para quien la usa. Commit y push.
-2. `macos/release.sh` arma todo en `macos/dist/<versión>` sin publicar: el DMG, el `.zip` que baja el
-   actualizador (firmado con la llave de Sparkle) y `appcast.xml` con las notas en inglés y en español.
-   Sirve para revisar una versión antes de publicarla.
-3. `macos/release.sh --publish` además compila para Apple silicon e Intel, notariza la app y el DMG, crea
-   el release en GitHub con los tres archivos, marca el commit con `v<versión>` y actualiza el cask de
-   Homebrew en [Javiervinus/homebrew-tap](https://github.com/Javiervinus/homebrew-tap) (`version` y
-   `sha256`), que commitea y sube.
+2. `macos/release.sh` arma todo en `macos/dist/<versión>` sin notarizar ni publicar: el DMG, el `.zip` que
+   baja el actualizador (firmado con la llave de Sparkle) y `appcast.xml` con las notas en inglés y en
+   español. Sirve para revisar una versión antes de publicarla.
+3. `macos/release.sh --notarize` la arma tal como se va a publicar: para Apple silicon e Intel, con la app y
+   el DMG notarizados y grapados. No toca git, GitHub ni el tap, así que sirve para comprobar la
+   notarización antes de publicar.
+4. `macos/release.sh --publish` hace lo mismo que `--notarize` y además crea el release en GitHub con los
+   tres archivos, marca el commit con `v<versión>` y actualiza el cask de Homebrew en
+   [Javiervinus/homebrew-tap](https://github.com/Javiervinus/homebrew-tap) (`version` y `sha256`), que
+   commitea y sube.
 
-`--publish` comprueba todo antes de compilar: el árbol limpio, `HEAD` subido, una versión nueva, el tap
-listo para subir y `NOTARY_PROFILE`. Lo que necesita una sola vez, en la Mac que publica:
+Lo que arma `release.sh` nunca lleva los ajustes de esta Mac: la compila sin leer `macos/build.local.env` y
+deja fuera `PAPERCLIP_SERVER_URL` y `PAPERCLIP_UPDATE_SCRIPT` aunque estén en el entorno. De ese archivo solo
+toma lo que hace falta para publicar, como `NOTARY_PROFILE`. `--publish` comprueba
+todo antes de compilar: el árbol limpio, `HEAD` subido, una versión nueva, el tap listo para subir y
+`NOTARY_PROFILE`. Lo que necesita una sola vez, en la Mac que publica:
 
 - **Un perfil de notarización:** `xcrun notarytool store-credentials <perfil>`, y luego
   `NOTARY_PROFILE=<perfil>`.
@@ -256,11 +270,12 @@ con `defaults write <identificador> DispatchFeedURL <url>`.
 ## Contribuir
 
 Los issues y pull requests son bienvenidos. En un error, incluye la versión de la app y la de Paperclip
-(las dos están en Ajustes). Mantén los cambios enfocados, compila con `macos/build.sh` y revisa con
+(las dos están en Ajustes). Si trabajas con un agente de programación, [`AGENTS.md`](AGENTS.md) tiene las
+convenciones del proyecto para él (y para ti). Mantén los cambios enfocados, compila con `macos/build.sh` y revisa con
 `macos/snapshot.zsh` las ventanas que tocaste. Cada pull request se compila automáticamente en GitHub Actions
 ([`build.yml`](.github/workflows/build.yml)): corre `macos/build.sh` para Apple silicon e Intel, sin firma de
 desarrollador y sin instalar, así que ahí ves si compila. Lo que cambie para quien usa la app lleva una línea
-en los dos CHANGELOG, bajo `## Unreleased`.
+en los dos CHANGELOG, bajo `## Unreleased` (si ese título no está, agrégalo arriba).
 
 ## Agradecimientos
 
