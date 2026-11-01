@@ -43,6 +43,7 @@ enum Shell {
                     DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { running.terminate() }
                 }
             } catch {
+                pipe.fileHandleForReading.readabilityHandler = nil
                 continuation.resume(returning: Result(status: -1, output: error.localizedDescription))
             }
         }

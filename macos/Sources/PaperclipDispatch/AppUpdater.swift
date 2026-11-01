@@ -45,10 +45,6 @@ final class AppUpdater: NSObject {
     }
 
     static let currentVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    /// Cada cuánto busca sola, si Info.plist no dice otra cosa (`SUScheduledCheckInterval`).
-    static var checkInterval: TimeInterval {
-        Bundle.main.object(forInfoDictionaryKey: "SUScheduledCheckInterval") as? TimeInterval ?? 24 * 60 * 60
-    }
     /// Cuántos días se ofrecen las novedades de la versión recién instalada, si no se abren antes.
     private static let whatsNewDays = 3
     private static let whatsNewKey = "dispatchWhatsNew"
@@ -118,7 +114,7 @@ final class AppUpdater: NSObject {
         do {
             try updater.start()
         } catch {
-            NSLog("Paperclip Dispatch: no pude iniciar las actualizaciones: \(error.localizedDescription)")
+            NSLog("Paperclip Dispatch: no pude iniciar las actualizaciones: %@", error.localizedDescription)
             return
         }
         self.updater = updater
