@@ -9,6 +9,13 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+- **You hear about the tasks an agent assigns you.** A Mac notification and a Telegram message say which
+  task, who assigned it, its project and how it starts; reply to the message to comment on the task. When
+  it’s closed or reassigned, the message says so. The ones you assign yourself don’t notify, and Settings →
+  Notifications can turn it off.
+
 ## 0.1.0 — 2026-11-01
 
 The first release. Everything below is new, so this entry describes the app rather than listing changes.

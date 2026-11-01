@@ -10,6 +10,13 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+- **Te enteras de las tareas que un agente te asigna.** Un aviso en la Mac y un mensaje en Telegram dicen
+  qué tarea es, quién te la asignó, su proyecto y cómo empieza; responde al mensaje para comentar en la
+  tarea. Cuando se cierra o se reasigna, el mensaje lo dice. Las que te asignas tú no avisan, y se apaga en
+  Ajustes → Avisos.
+
 ## 0.1.0 — 2026-11-01
 
 La primera versión. Todo lo de abajo es nuevo, así que esta entrada describe la app en vez de listar
