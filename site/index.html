@@ -31,6 +31,26 @@
   <meta name="twitter:image:alt" content="The Paperclip Dispatch icon, a stuck-task notification with its Wake up button and the app window">
   <link rel="icon" href="images/icon-64.png" sizes="64x64" type="image/png">
   <link rel="apple-touch-icon" href="images/icon-180.png">
+  <!-- Datos estructurados (schema.org) para los buscadores: la app, gratis, para macOS, y dónde bajarla -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Paperclip Dispatch",
+    "description": "Your Paperclip in its own Mac window, with a notification when an agent needs you, a Dock badge and answers from Telegram. Free, MIT.",
+    "url": "%%SITE_URL%%",
+    "inLanguage": "en",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS 26 Tahoe or later",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "downloadUrl": "%%DMG_URL%%",
+    "image": "%%SITE_URL%%social/card.jpg",
+    "license": "%%REPO_URL%%/blob/main/LICENSE",
+    "sameAs": "%%REPO_URL%%",
+    "author": { "@type": "Person", "name": "%%AUTHOR%%", "url": "%%AUTHOR_URL%%" }
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500&amp;display=swap" rel="stylesheet">

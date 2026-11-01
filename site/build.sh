@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Arma la landing en una carpeta lista para servir o publicar (GitHub Pages): copia las páginas (inglés en
-# index.html, español en es/index.html), estilos, scripts, sitemap.xml, robots.txt y la imagen para compartir
-# (social/card.jpg) de site/, sin los comentarios ni la sangría de páginas, estilos y scripts; hace desde
+# index.html, español en es/index.html), estilos, scripts, sitemap.xml, robots.txt, llms.txt y la imagen para
+# compartir (social/card.jpg) de site/, sin los comentarios ni la sangría de páginas, estilos y scripts; hace desde
 # docs/images las imágenes que nombran las páginas (docs/images es su única fuente: no se copian al repo) y llena
 # los datos que no se escriben a mano.
 # Es lo mismo que corre .github/workflows/pages.yml antes de publicar.
@@ -12,7 +12,8 @@
 # Los datos salen de:
 #   %%SITE_URL%%    la dirección pública de la landing, con «/» al final: SITE_URL si está (el workflow le pasa
 #                   la que da GitHub Pages); si no, https://<dueño en minúsculas>.github.io/<repo>/ de RELEASES_REPO.
-#                   Es la única fuente de la URL base: canonical, hreflang, og:, sitemap.xml y robots.txt la usan.
+#                   Es la única fuente de la URL base: canonical, hreflang, og:, los datos estructurados,
+#                   sitemap.xml, robots.txt y llms.txt la usan.
 #   %%REPO_URL%%    REPOSITORY_URL de macos/release.env (vacío: el remoto origin, si está en GitHub)
 #   %%AUTHOR%% y %%AUTHOR_URL%%   APP_AUTHOR y APP_AUTHOR_URL de macos/release.env
 #   %%VERSION%%     el último release publicado en GitHub (tag_name, sin la «v»)
@@ -86,8 +87,8 @@ find "$OUTPUT_DIR" -mindepth 1 -delete
 touch "$OUTPUT_DIR/$MARKER"
 mkdir -p "$OUTPUT_DIR/images"
 
-# Solo lo que se publica: páginas, estilos, scripts, sitemap.xml, robots.txt y la imagen para compartir, sin
-# archivos ocultos, este script ni la página que compone esa imagen (site/social/card.html)
+# Solo lo que se publica: páginas, estilos, scripts, sitemap.xml, robots.txt, llms.txt y la imagen para compartir,
+# sin archivos ocultos, este script ni la página que compone esa imagen (site/social/card.html)
 (cd "$SITE" && find . -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.xml' -o -name '*.txt' \
     -o -path './social/card.jpg' \) ! -path '*/.*' ! -path './social/*.html' -print0 |
   while IFS= read -r -d '' file; do
@@ -140,7 +141,7 @@ for image in $images; do
   fi
 done
 
-# Los datos, en las páginas, sitemap.xml y robots.txt
+# Los datos, en las páginas, sitemap.xml, robots.txt y llms.txt
 escape() { sed -e 's/[\/&|]/\\&/g' <<<"$1"; }
 pages=0
 while IFS= read -r -d '' page; do

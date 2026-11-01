@@ -1,0 +1,31 @@
+# Paperclip Dispatch
+
+> A free and open-source (MIT) macOS app for Paperclip, the platform that runs a company of AI agents. It shows your Paperclip in its own Mac window and sends a macOS notification when an agent needs you, even with the window closed. It is an independent project, not made, endorsed or supported by the Paperclip team.
+
+Paperclip runs as a local server that you use from a browser tab. Paperclip Dispatch turns that tab into a native Mac app that keeps watching after you close the window:
+
+- Notifications when an agent asks a question, needs an approval, fails or hits a budget alert. Clicking one opens that decision. The app checks Paperclip every minute on its own.
+- If a task sits with an agent that isn't working on it, the notification offers "Wake up ‹agent›" and then says whether Paperclip woke the agent or skipped it.
+- A Dock badge with the same count as Decisions in Paperclip's sidebar.
+- Paperclip fills the whole window with no title bar; the app adds the Mac's menus, shortcuts, two-finger swipes and an optional Liquid Glass sidebar.
+- An optional Telegram bot of your own: each decision reaches your phone with its buttons (approve, reject, answer, comment), without Tailscale or a public address. "Explain it to me" sums up a decision using a coding CLI already on your Mac (Claude Code, Codex, OpenCode or a command you choose).
+- On first launch it finds Paperclip on this Mac, starts it if it is off, or helps install it. The app updates itself in the background; Paperclip updates only when you ask.
+- It collects nothing and has no servers. It talks to your Paperclip, to GitHub for new versions, and to Telegram and the chosen CLI only if you use them.
+
+Requirements: macOS 26 Tahoe or later, on Apple silicon or Intel, with Paperclip running on the same Mac or at an address it can reach. Paperclip's official installer needs Node.js 24.11 or later.
+
+Install with Homebrew: `brew install --cask %%BREW_CASK%%`, or download the signed and notarized DMG: %%DMG_URL%%
+
+## Docs
+
+- [Landing page](%%SITE_URL%%): what the app does, how to install it and questions, in English
+- [Página en español](%%SITE_URL%%es/): the same page in Spanish
+- [README](%%REPO_URL%%/blob/main/README.md): features, install, uninstall and how to build it from source
+- [Changelog](%%REPO_URL%%/blob/main/CHANGELOG.md): what changed in each version
+- [Releases](%%REPO_URL%%/releases): every version with its DMG
+
+## Optional
+
+- [Source code](%%REPO_URL%%): the Swift package and the landing
+- [License](%%REPO_URL%%/blob/main/LICENSE): MIT
+- [Paperclip](https://paperclip.ing): the platform this app is for
