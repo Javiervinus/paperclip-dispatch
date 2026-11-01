@@ -364,15 +364,24 @@ struct ReleaseNotes {
     }
 }
 
-/// El ícono de la app a un tamaño dado, el mismo que muestran el Dock y los avisos.
+/// El ícono de la app a un tamaño dado, el mismo que muestran el Dock y los avisos. Se vuelve a pedir a macOS
+/// cuando cambia la apariencia (con el estilo «Automático» cambia el ícono) y al volver a la app, que es
+/// cuando se pudo cambiar el estilo de íconos en Ajustes del Sistema.
 struct AppIconImage: View {
     let size: CGFloat
 
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var icon = AppIcon.image()
+
     var body: some View {
-        Image(nsImage: AppIcon.image())
+        Image(nsImage: icon)
             .resizable()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
+            .onChange(of: colorScheme) { icon = AppIcon.image() }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                icon = AppIcon.image()
+            }
     }
 }
 
