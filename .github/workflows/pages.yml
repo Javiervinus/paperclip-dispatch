@@ -1,0 +1,76 @@
+# Publica la landing (site/) en GitHub Pages: la arma site/build.sh, igual que en local, y la suben las acciones
+# oficiales de Pages. Corre cuando cambian la página, sus capturas o este archivo en main, cuando se publica una
+# versión (el botón de descarga apunta al DMG de la última) y a mano.
+# Necesita Pages activado en el repo con la fuente «GitHub Actions» (Settings → Pages).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "docs/images/**"
+      - ".github/workflows/pages.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Una publicación a la vez. La que está en curso termina: cancelarla a medias puede dejar el sitio a medio subir.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the landing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # base_url es la dirección real del sitio (también con un dominio propio); build.sh la usa como SITE_URL
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      # jq y file ya vienen en la imagen de Ubuntu; webp trae cwebp y dwebp
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends jq webp file
+
+      # GITHUB_TOKEN evita el límite de pedidos al leer el último release
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          OUTPUT_DIR: ${{ runner.temp }}/site
+        run: site/build.sh
+
+      # Sube la carpeta que dejó build.sh, sin sus archivos ocultos (la marca .landing-build)
+      - name: Upload
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
