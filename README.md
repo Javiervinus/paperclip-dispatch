@@ -138,32 +138,33 @@ macos/build.sh
   regresa sola a la página. Ofrece «Reintentar», «Cambiar dirección…» y, si es el de esta Mac y está
   apagado, «Encender Paperclip». Los errores de conexión van traducidos, porque el proceso de red de WebKit
   no usa el idioma de la app.
-- **La ventana tiene dos modos** (`MainWindowController.swift`). Por defecto muestra Paperclip tal cual,
-  bajo una barra compacta (`.unifiedCompact`) con los botones de la ventana y el de actualizaciones. La
-  barra es transparente y toma el color de fondo de la página (`underPageBackgroundColor`), así que se
-  integra con Paperclip. El título de la página no se muestra en la barra, pero sí en el menú Ventana,
-  Mission Control y VoiceOver. Este modo no depende del HTML de Paperclip: solo se inyecta `web/bridge.js`
-  (tema, avisos y navegación con dos dedos).
+- **La ventana no tiene barra de título** (`MainWindowController.swift`). Paperclip ocupa la ventana
+  entera y los botones de la ventana quedan sobre su barra lateral. El título de la página no se ve, pero
+  sí está en el menú Ventana, Mission Control y VoiceOver.
+  - `web/layout.css` le hace lugar a los botones: baja la fila del selector de company y, en la vista
+    angosta (menos de 768 px), deja una franja arriba.
+  - `web/layout.js` le avisa a la app el alto de las barras de arriba de Paperclip y si el puntero está
+    sobre una parte vacía de ellas: desde ahí se arrastra la ventana, y el doble clic hace lo que diga
+    Ajustes del Sistema. El arrastre solo actúa sobre la página: los botones de la ventana reciben sus
+    clics.
+  - La ventana lleva una barra de herramientas vacía (`NSToolbar` con estilo `.unified`). No dibuja nada,
+    pero hace que macOS 26 redondee más las esquinas (26 pt) y baje los botones de la ventana a la altura
+    de la barra de Paperclip. En pantalla completa se esconde y aparece con la barra de menús, como en
+    Safari.
+  - Como retoca la página por dentro, una versión nueva de Paperclip puede descuadrarlo.
 - **Navegación con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicator.swift`,
   `SwipeIndicatorView.swift`). Deslizar dos dedos en el trackpad va atrás o adelante, en los dos modos. La
   página se queda en su lugar y una flecha entra desde el borde siguiendo el gesto; al completarlo, la app
   navega. Usa `NSEvent.trackSwipeEvent`. Si el puntero está sobre algo que se desplaza a lo ancho, como un
   tablero, el gesto desplaza ese contenido (lo informa `web/bridge.js`).
-- **Liquid Glass en la página, experimental** (Ajustes → General → Experimental, apagado por defecto).
-  Retoca la página por dentro, así que una versión nueva de Paperclip lo puede descuadrar. Se aplica al
-  momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo, el mismo
-  color de fondo de Paperclip; en medio, un panel translúcido con Liquid Glass (`NSGlassEffectView`) justo
-  detrás de la barra lateral; arriba, la página transparente.
-  - `web/glass.css` le quita el fondo a la barra lateral y fija las medidas: margen del panel, radio
-    concéntrico con la ventana y la franja de los botones.
-  - `web/glass.js` le avisa a la app dónde está la barra lateral, el color de fondo de Paperclip y desde
-    dónde se arrastra la ventana.
-  - La ventana lleva una barra de herramientas vacía (`NSToolbar` con estilo `.unified`). No dibuja nada,
-    pero hace que macOS 26 redondee más las esquinas (26 pt, como WhatsApp) y baje los botones de la
-    ventana dentro del panel, sin moverlos a mano.
-  - El arrastre de la ventana solo actúa sobre la página: los botones de la ventana reciben sus clics.
-  - En pantalla completa esa barra se esconde y aparece con la barra de menús, como en Safari, y el
-    panel toma el color de la ventana en vez del fondo de pantalla.
+- **Liquid Glass en la barra lateral, experimental** (Ajustes → General → Experimental, apagado por
+  defecto). Se aplica al momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres
+  capas: abajo, el mismo color de fondo de Paperclip; en medio, un panel translúcido con Liquid Glass
+  (`NSGlassEffectView`) justo detrás de la barra lateral; arriba, la página transparente.
+  - `web/glass.css` le quita el fondo a la barra lateral y fija el margen del panel y su radio,
+    concéntrico con la ventana.
+  - `web/layout.js` le avisa a la app dónde está la barra lateral y el color de fondo de Paperclip.
+  - En pantalla completa el panel toma el color de la ventana en vez del fondo de pantalla.
   - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
     `macos/snapshot.zsh window [carpeta]` (ver el ensayo de Ajustes, abajo).
 - **Decisions: avisos de macOS y número del Dock.** Los revisa la app misma cada minuto
@@ -274,10 +275,9 @@ macos/build.sh
   - Una copia de prueba (otro `APP_ID`) que necesite avisos tiene que estar en una carpeta de aplicaciones
     (por ejemplo, `INSTALL_DIR=~/Applications`). macOS no muestra avisos de apps que corren desde `/tmp`.
 - **Un solo botón de actualizaciones, arriba a la derecha** (`UpdatesButton.swift`, `UpdatesPanel.swift`),
-  para las dos cosas que se actualizan: esta app (Dispatch) y Paperclip (el servidor). Va en la barra de la
-  ventana. Con Liquid Glass flota sobre la barra de la ruta de Paperclip y solo aparece en el Dashboard,
-  para no tapar los controles que otras páginas tienen arriba a la derecha. En la vista angosta (menos de
-  768 px) no se muestra.
+  para las dos cosas que se actualizan: esta app (Dispatch) y Paperclip (el servidor). Flota sobre la barra
+  de la ruta de Paperclip y solo aparece en el Dashboard, para no tapar los controles que otras páginas
+  tienen arriba a la derecha. En la vista angosta (menos de 768 px) no se muestra.
   - Al día dice «Paperclip 2026.1023.0 · Dispatch 0.1.0», discreto, y al pasar el mouse explica cuál es
     cuál. Con algo nuevo se pinta del color de acento y dice de quién es: «Actualizar Dispatch» (con el
     ícono de la app), «Actualizar Paperclip» (con el clip) o «2 actualizaciones». Después de actualizar la

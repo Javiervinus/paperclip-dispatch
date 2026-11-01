@@ -17,8 +17,9 @@ cambios.
 
 ### Nuevo
 
-- **Paperclip en su propia ventana de Mac.** Una app nativa en vez de una pestaña del navegador, en el
-  blanco y negro de Paperclip, con Liquid Glass y los menús, atajos y ventanas de la Mac.
+- **Paperclip en su propia ventana de Mac.** Una app nativa en vez de una pestaña del navegador:
+  Paperclip ocupa la ventana entera, sin barra de título, en su blanco y negro y con Liquid Glass y los
+  menús, atajos y ventanas de la Mac.
 - **Las decisiones sin tener que mirar.** Un aviso de macOS cuando un agente pregunta algo, pide una
   aprobación o falla, y en el ícono del Dock el mismo número que Decisions en la barra lateral de
   Paperclip.
