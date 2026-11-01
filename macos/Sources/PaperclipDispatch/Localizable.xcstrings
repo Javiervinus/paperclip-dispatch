@@ -211,6 +211,16 @@
         }
       }
     },
+    "<i>Reply to this message to comment on the task.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<i>Responde a este mensaje para comentar en la tarea.</i>"
+          }
+        }
+      }
+    },
     "<i>To ask the agent something, reply to the decision.</i>": {
       "localizations": {
         "es": {
@@ -517,6 +527,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aprobar"
+          }
+        }
+      }
+    },
+    "Assigned by %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asignada por %@"
           }
         }
       }
@@ -2141,6 +2161,16 @@
         }
       }
     },
+    "Notify me when an agent assigns me a task": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisarme cuando un agente me asigne una tarea"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "es": {
@@ -2177,6 +2207,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "En otra computadora de tu red o por Tailscale."
+          }
+        }
+      }
+    },
+    "On this Mac and in Telegram. Not the ones you assign yourself.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En esta Mac y en Telegram. No las que te asignas tú."
           }
         }
       }
@@ -2267,6 +2307,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abrir en Paperclip"
+          }
+        }
+      }
+    },
+    "Open it in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ábrela en Paperclip."
           }
         }
       }
@@ -2803,6 +2853,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quitar…"
+          }
+        }
+      }
+    },
+    "Renew the domain with the company card": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renovar el dominio con la tarjeta de la empresa"
           }
         }
       }
@@ -3383,6 +3443,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "La decisión que le piden ahora:\n"
+          }
+        }
+      }
+    },
+    "The domain expires on Friday and the registrar only takes the company card, which I can’t use. Renew it for two years from the registrar’s dashboard and leave the receipt in this task.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El dominio vence el viernes y el registrador solo acepta la tarjeta de la empresa, que yo no puedo usar. Renuévalo por dos años desde el panel del registrador y deja el recibo en esta tarea."
           }
         }
       }
@@ -4077,6 +4147,16 @@
         }
       }
     },
+    "Website": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sitio web"
+          }
+        }
+      }
+    },
     "Welcome": {
       "localizations": {
         "es": {
@@ -4363,6 +4443,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reducir"
+          }
+        }
+      }
+    },
+    "a task": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "una tarea"
           }
         }
       }
@@ -4658,6 +4748,56 @@
         }
       }
     },
+    "↪️ <i>No longer assigned to you.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↪️ <i>Ya no está a tu nombre.</i>"
+          }
+        }
+      }
+    },
+    "↪️ <i>Reassigned to %@.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↪️ <i>Reasignada a %@.</i>"
+          }
+        }
+      }
+    },
+    "↪️ <i>Reassigned to an agent.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "↪️ <i>Reasignada a un agente.</i>"
+          }
+        }
+      }
+    },
+    "☑️ <i>Closed: it was cancelled.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "☑️ <i>Cerrada: se canceló.</i>"
+          }
+        }
+      }
+    },
+    "☑️ <i>It no longer exists in Paperclip.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "☑️ <i>Ya no existe en Paperclip.</i>"
+          }
+        }
+      }
+    },
     "☑️ <i>No longer pending.</i>": {
       "localizations": {
         "es": {
@@ -4674,6 +4814,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "✅ <b>Respondiste:</b> %@"
+          }
+        }
+      }
+    },
+    "✅ <i>Closed: it’s done.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ <i>Cerrada: está hecha.</i>"
           }
         }
       }
@@ -4698,12 +4848,52 @@
         }
       }
     },
+    "💬 Comment added to %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "💬 Comentario agregado en %@."
+          }
+        }
+      }
+    },
     "💬 Comment added to %@. Paperclip will let the agent know.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "💬 Comentario agregado en %@. Paperclip le avisa al agente."
+          }
+        }
+      }
+    },
+    "📌 You have %lld tasks assigned to you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📌 Tienes %lld tareas a tu nombre."
+          }
+        }
+      }
+    },
+    "📌 You were assigned %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📌 Te asignaron %@"
+          }
+        }
+      }
+    },
+    "📌 You were assigned %@ · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📌 Te asignaron %1$@ · %2$@"
           }
         }
       }

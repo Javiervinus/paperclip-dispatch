@@ -89,12 +89,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             [weak windowController] in windowController?.isInFront ?? false
         }
         self.decisions = decisions
+        let assignedTasks = AssignedTasksMonitor(
+            api: api, resolver: DecisionResolver(api: api), preferences: preferences, notifications: notifications
+        ) { [weak windowController] in windowController?.isInFront ?? false }
+        decisions.assignedTasks = assignedTasks
         let telegram = TelegramChannel(
             resolver: DecisionResolver(api: api),
             explainer: DecisionExplainer(api: api),
             serverURL: config.serverURL
         )
         self.telegram = telegram
+        assignedTasks.telegram = telegram
         telegram.requestRefresh = { [weak decisions] in decisions?.refresh() }
         decisions.onAttention = { [weak telegram] companyId, items, complete in
             telegram?.update(companyId: companyId, items: items, complete: complete)

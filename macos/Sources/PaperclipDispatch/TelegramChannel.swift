@@ -96,10 +96,14 @@ final class TelegramChannel {
 
     /// Para que Decisions se revise ya (después de contestar o de vincular el chat).
     @ObservationIgnored var requestRefresh: (() -> Void)?
+    /// Una respuesta a un mensaje que no es de una decisión (p. ej. el de una tarea asignada, de
+    /// `AssignedTasksMonitor`): `true` si la atendió. Recibe el mensaje respondido, el texto y el mensaje con él.
+    @ObservationIgnored var onReply: ((_ replied: Int, _ text: String, _ messageId: Int) async -> Bool)?
     @ObservationIgnored private let resolver: DecisionResolver
     @ObservationIgnored private let explainer: DecisionExplainer
     @ObservationIgnored private let serverURL: URL
-    @ObservationIgnored private var bot: TelegramBotAPI?
+    /// También lo usan los otros avisos (`TelegramNotices.swift`).
+    @ObservationIgnored private(set) var bot: TelegramBotAPI?
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var sending: Set<String> = []
     @ObservationIgnored private var working: Set<String> = []
@@ -501,6 +505,7 @@ final class TelegramChannel {
                 await comment(text, on: sent, replyTo: message.messageId)
                 return
             }
+            if let onReply, await onReply(replied, text, message.messageId) { return }
         } else if let (key, pending) = state.replies.max(by: { $0.value.createdAt < $1.value.createdAt }),
                   Date().timeIntervalSince(pending.createdAt) < Self.replyWindow {
             // Sin «Responder»: es el texto del último botón que lo pidió (el último que se tocó). La respuesta
@@ -757,7 +762,7 @@ final class TelegramChannel {
     }
 
     /// Solo si el teléfono puede abrirla: una dirección local (127.0.0.1) no le sirve.
-    private func paperclipURL(_ href: String?) -> URL? {
+    func paperclipURL(_ href: String?) -> URL? {
         guard let href, let host = serverURL.host(), !Self.isLoopback(host) else { return nil }
         return URL(string: href, relativeTo: serverURL)?.absoluteURL
     }

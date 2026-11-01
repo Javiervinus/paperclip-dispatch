@@ -26,6 +26,8 @@ final class DecisionsMonitor {
     /// Cada revisión que salió bien: hay sesión iniciada en Paperclip. Lo usan las sugerencias y el
     /// recordatorio de avisos, que esperan a que se esté usando Paperclip de verdad.
     var onSignedIn: (() -> Void)?
+    /// Las tareas a nombre del usuario se revisan en la misma vuelta, company por company (`AssignedTasksMonitor`).
+    var assignedTasks: AssignedTasksMonitor?
     /// La última revisión no tenía sesión: la página está en la pantalla de inicio.
     private(set) var signedOut = false
 
@@ -105,6 +107,9 @@ final class DecisionsMonitor {
                     UserDefaults.standard.set(seen, forKey: Self.seenKey)
                 }
                 onAttention?(company.id, attention.items, attention.nextCursor == nil)
+                await assignedTasks?.review(company, covered: Set(attention.items.flatMap { item in
+                    [item.subject?.metadata?.issueId, item.subject?.id].compactMap { $0 }
+                }))
             }
             pendingCount = total
             signedOut = false
