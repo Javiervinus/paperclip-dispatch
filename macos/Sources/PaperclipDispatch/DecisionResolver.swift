@@ -81,17 +81,23 @@ struct DecisionPrompt: Sendable {
     var details: String?
     /// Vacío: no se puede contestar desde fuera (se abre en Paperclip).
     var choices: [DecisionChoice] = []
+    /// Las de varios pasos (formularios, tareas sugeridas, casillas, veredictos, decisiones con campos): se
+    /// contestan de a poco y se mandan juntas. Van sin `choices`, así que en la Mac abren Paperclip.
+    var card: DecisionCard?
 }
 
 /// Lee lo que hace falta de cada tipo de decisión y aplica la respuesta.
 ///
-/// Solo arma botones para lo que se contesta con un toque o un texto corto: confirmaciones, preguntas de
-/// una sola respuesta, aprobaciones y decisiones sin campos. Lo demás (varias preguntas, casillas, tareas
-/// sugeridas, secretos) se abre en Paperclip.
+/// Arma botones para lo que se contesta con un toque o un texto corto (confirmaciones, preguntas de una sola
+/// respuesta, aprobaciones, decisiones sin campos) y una tarjeta (`DecisionCard`) para lo que se contesta de a
+/// poco: formularios, tareas sugeridas, casillas, veredictos y decisiones con campos. Lo demás (secretos) se
+/// abre en Paperclip.
 @MainActor
 struct DecisionResolver {
     /// Lo que va delante de la clave de idempotencia de cada decisión contestada desde la app.
-    private static let idempotencyPrefix = "paperclip-dispatch"
+    nonisolated static let idempotencyPrefix = "paperclip-dispatch"
+    /// El botón de una pregunta de texto: al contestarla, lo que cuenta es el texto.
+    nonisolated static var writeAnswerLabel: String { String(localized: "✍️ Write your answer") }
     /// Los estados de una tarea cerrada: ahí ya no hay a quién despertar.
     private static let closedStatuses: Set<String> = ["done", "cancelled"]
 
@@ -123,9 +129,19 @@ struct DecisionResolver {
             case "decision":
                 let decision: Decision = try await api.get("api/decisions/\(subjectId)")
                 prompt.details = decision.body
-                // Las que piden llenar campos se contestan en Paperclip.
-                guard decision.status == nil || decision.status == "pending", decision.inputs?.isEmpty ?? true
+                // Paperclip 2026.1023.0 dice `open`; `pending`, versiones anteriores.
+                guard decision.status == nil || decision.status == "open" || decision.status == "pending"
                 else { return prompt }
+                let inputs = decision.inputs ?? []
+                guard inputs.isEmpty else {
+                    // Los campos se piden antes de elegir; uno que no se lea (o no sea de texto) va en Paperclip.
+                    let readable = inputs.compactMap(\.value)
+                    guard readable.count == inputs.count else { return prompt }
+                    prompt.card = DecisionCard.decision(
+                        decisionId: subjectId, inputs: readable, options: decision.options.map { ($0.id, $0.label) }
+                    )
+                    return prompt
+                }
                 prompt.choices = decision.options.map {
                     DecisionChoice(label: $0.label, action: .decide(decisionId: subjectId, optionId: $0.id), asks: nil)
                 }
@@ -174,6 +190,11 @@ struct DecisionResolver {
                 throw WakeError(message: WakeText.result(outcome, target: target, agentName: agentName).body)
             }
         }
+    }
+
+    /// Manda de una vez lo marcado en una tarjeta (o su rechazo).
+    func submit(_ submission: DecisionCard.Submission) async throws {
+        try await api.post(submission.path, submission.body)
     }
 
     static func wakeChoice(_ target: WakeTarget, agentName: String?) -> DecisionChoice {
@@ -277,15 +298,22 @@ struct DecisionResolver {
                 ),
             ]
         case "ask_user_questions":
-            // Una sola pregunta de una sola respuesta; más que eso es un formulario y va en la página.
+            // Una sola pregunta de una sola respuesta va con un toque; más que eso es un formulario.
             guard let questions = payload.questions, questions.count == 1,
                   let question = questions.first, question.selectionMode == "single"
-            else { return prompt }
+            else {
+                prompt.card = interaction.card.flatMap {
+                    DecisionCard.form(issueId: issueId, interactionId: interactionId, payload: $0)
+                }
+                return prompt
+            }
             prompt.question = question.prompt
             prompt.details = question.helpText ?? prompt.details
+            // Una de texto llega como una sola opción para escribir.
+            let isText = question.options.count == 1 && question.options[0].freeText == true
             prompt.choices = question.options.map { option in
                 DecisionChoice(
-                    label: option.label,
+                    label: isText ? Self.writeAnswerLabel : option.label,
                     action: .answer(
                         issueId: issueId,
                         interactionId: interactionId,
@@ -295,12 +323,28 @@ struct DecisionResolver {
                     asks: option.freeText == true ? option.description ?? String(localized: "Type your answer.") : nil
                 )
             }
-            if question.allowOther == true {
+            // «Otra respuesta» solo si no hay ya una opción para escribir (una de texto traía las dos).
+            if question.allowOther == true, !question.options.contains(where: { $0.freeText == true }) {
                 prompt.choices.append(DecisionChoice(
                     label: String(localized: "Other answer…"),
                     action: .answer(issueId: issueId, interactionId: interactionId, questionId: question.id, optionId: nil),
                     asks: String(localized: "Type your answer.")
                 ))
+            }
+        case "suggest_tasks":
+            guard let wire = interaction.card else { return prompt }
+            var names: [String: String] = [:]
+            for agentId in Set((wire.tasks ?? []).compactMap(\.assigneeAgentId)) {
+                names[agentId] = await agentName(agentId)
+            }
+            prompt.card = DecisionCard.tasks(issueId: issueId, interactionId: interactionId, payload: wire, agentNames: names)
+        case "request_checkbox_confirmation":
+            prompt.card = interaction.card.flatMap {
+                DecisionCard.checkboxes(issueId: issueId, interactionId: interactionId, payload: $0)
+            }
+        case "request_item_verdicts":
+            prompt.card = interaction.card.flatMap {
+                DecisionCard.verdicts(issueId: issueId, interactionId: interactionId, payload: $0, result: interaction.result)
             }
         default:
             break
@@ -315,6 +359,21 @@ struct DecisionResolver {
         let kind: String?
         let status: String?
         let payload: Payload?
+        /// `payload` y `result`, leídos para las tarjetas. Si no se entienden, la tarjeta va en Paperclip.
+        let card: DecisionCard.InteractionPayload?
+        let result: DecisionCard.InteractionResult?
+
+        private enum CodingKeys: String, CodingKey { case id, kind, status, payload, result }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(String.self, forKey: .id)
+            kind = try container.decodeIfPresent(String.self, forKey: .kind)
+            status = try container.decodeIfPresent(String.self, forKey: .status)
+            payload = try container.decodeIfPresent(Payload.self, forKey: .payload)
+            card = try? container.decodeIfPresent(DecisionCard.InteractionPayload.self, forKey: .payload)
+            result = try? container.decodeIfPresent(DecisionCard.InteractionResult.self, forKey: .result)
+        }
     }
 
     private struct Payload: Decodable {
@@ -349,7 +408,7 @@ struct DecisionResolver {
         let status: String?
         let body: String?
         let options: [DecisionOption]
-        let inputs: [PresentValue]?
+        let inputs: [Lossy<DecisionCard.DecisionInput>]?
     }
 
     private struct DecisionOption: Decodable {

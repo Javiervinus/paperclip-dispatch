@@ -9,10 +9,14 @@ import Observation
 /// - Solo habla con el chat que se vinculó con el código de Ajustes; a los demás no les contesta.
 /// - Responder con texto a un mensaje de una decisión lo deja como comentario en su tarea.
 /// - «Explícamela» cuenta la decisión con el contexto de su tarea (`DecisionExplainer`).
+/// - Las de varios pasos (formularios, tareas sugeridas, casillas, veredictos, decisiones con campos) son un
+///   solo mensaje que se edita a medida que se avanza (`TelegramCard`). Lo marcado se guarda aquí y a
+///   Paperclip le llega todo junto con el botón final.
 /// - Es un bot de avisos: no conversa. Lo que se escribe cuenta solo en dos casos: como el texto que pidió un
 ///   botón (un motivo, otra respuesta), o como comentario para el agente si se responde a una decisión. Un
 ///   mensaje suelto vale como el último texto pedido, si se pidió hace poco; si no, no se aplica a nada,
-///   porque puede haber varias decisiones abiertas. Preguntar lo que sea queda para un agente con su canal.
+///   porque puede haber varias decisiones abiertas. Mientras se espera un texto de una decisión, responder a
+///   su mensaje también cuenta como ese texto. Preguntar lo que sea queda para un agente con su canal.
 @MainActor
 @Observable
 final class TelegramChannel {
@@ -81,12 +85,18 @@ final class TelegramChannel {
         var href: String?
         /// Si ya tiene el botón «Explícamela».
         var explainable: Bool?
+        /// Las de varios pasos: la tarjeta y lo marcado hasta ahora. `html` es solo el encabezado.
+        var card: DecisionCard? = nil
+        var progress: CardProgress? = nil
     }
 
     struct PendingReply: Codable {
         var itemId: String
+        /// El botón de `choices` que pidió el texto (en una tarjeta no se usa).
         var choice: Int
         var createdAt: Date
+        /// En una tarjeta: para qué es el texto.
+        var card: CardTextRequest? = nil
     }
 
     private(set) var state: State
@@ -333,7 +343,12 @@ final class TelegramChannel {
     /// Quien llama la marca en `sending` mientras tanto, para que otra vuelta no la mande dos veces.
     private func send(_ item: AttentionItem, companyId: String) async {
         guard let bot, let chatId = state.chatId else { return }
-        let prompt = await resolver.prompt(for: item)
+        var prompt = await resolver.prompt(for: item)
+        // Si no cabe en un mensaje de Telegram (botones o caracteres), va con el enlace, como antes.
+        if let card = prompt.card,
+           !TelegramCard.fits(card, base: TelegramFormat.decision(item, prompt: prompt), extraButtons: Self.extraButtons) {
+            prompt.card = nil
+        }
         var sent = SentDecision(
             key: state.nextKey,
             companyId: companyId,
@@ -344,14 +359,16 @@ final class TelegramChannel {
             issueIdentifier: item.relatedIssue?.identifier,
             brief: TelegramFormat.brief(item, prompt: prompt),
             href: item.subject?.href ?? item.relatedIssue?.href,
-            explainable: true
+            explainable: true,
+            card: prompt.card,
+            progress: prompt.card.map(CardProgress.init)
         )
         state.nextKey += 1
 
         func params(link: Bool) -> [String: Any] {
             [
                 "chat_id": chatId,
-                "text": sent.html,
+                "text": messageText(sent),
                 "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
                 "reply_markup": ["inline_keyboard": keyboard(for: sent, link: link)],
@@ -375,10 +392,26 @@ final class TelegramChannel {
         state.messages[item.id] = sent
     }
 
-    /// Una fila por opción (`c:<key>:<n>`), «Explícamela» (`e:<key>`) y el enlace a Paperclip.
+    /// Lo que no es de la decisión: «Explícamela» y el enlace a Paperclip.
+    private static let extraButtons = 2
+
+    /// El texto del mensaje: el encabezado y, en una tarjeta, el paso en que va.
+    func messageText(_ sent: SentDecision) -> String {
+        guard let card = sent.card, let progress = sent.progress else { return sent.html }
+        return sent.html + "\n\n" + TelegramCard.body(card, progress)
+    }
+
+    /// Una fila por opción (`c:<key>:<n>`) o los de la tarjeta (`f:<key>:…`), «Explícamela» (`e:<key>`) y el
+    /// enlace a Paperclip.
     func keyboard(for sent: SentDecision, link: Bool = true) -> [[[String: Any]]] {
-        var rows: [[[String: Any]]] = sent.choices.indices.map { index in
-            [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
+        var rows: [[[String: Any]]] = if let card = sent.card, let progress = sent.progress {
+            TelegramCard.buttons(card, progress, key: sent.key).map { row in
+                row.map { ["text": $0.text, "callback_data": $0.data] }
+            }
+        } else {
+            sent.choices.indices.map { index in
+                [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
+            }
         }
         if explainEnabled { rows.append([["text": String(localized: "💡 Explain it to me"), "callback_data": "e:\(sent.key)"]]) }
         if link, let url = paperclipURL(sent.href) {
@@ -455,6 +488,10 @@ final class TelegramChannel {
             Task { await explain(itemId: itemId, replyTo: sent.messageId) }
             return
         }
+        if parts.count >= 3, parts[0] == "f", let key = Int(parts[1]) {
+            await handleCard(callback, key: key, action: Array(parts.dropFirst(2)))
+            return
+        }
         guard parts.count == 3, parts[0] == "c", let key = Int(parts[1]), let index = Int(parts[2]),
               let (itemId, sent) = state.messages.first(where: { $0.value.key == key }),
               sent.choices.indices.contains(index)
@@ -494,10 +531,18 @@ final class TelegramChannel {
         }
         if let replied = message.replyToMessage?.messageId {
             if let pending = state.replies.removeValue(forKey: String(replied)) {
-                await apply(itemId: pending.itemId, choice: pending.choice, text: text, replyTo: message.messageId)
+                await applyReply(pending, text: text, replyTo: message.messageId)
                 return
             }
-            if let (_, sent) = state.messages.first(where: { $0.value.messageId == replied }) {
+            if let (itemId, sent) = state.messages.first(where: { $0.value.messageId == replied }) {
+                // Si el bot espera un texto de esta decisión, la respuesta es ese texto y no un comentario.
+                if let (key, pending) = state.replies.filter({ $0.value.itemId == itemId })
+                    .max(by: { $0.value.createdAt < $1.value.createdAt }),
+                    Date().timeIntervalSince(pending.createdAt) < Self.replyWindow {
+                    state.replies.removeValue(forKey: key)
+                    await applyReply(pending, text: text, replyTo: message.messageId)
+                    return
+                }
                 await comment(text, on: sent, replyTo: message.messageId)
                 return
             }
@@ -506,7 +551,7 @@ final class TelegramChannel {
             // Sin «Responder»: es el texto del último botón que lo pidió (el último que se tocó). La respuesta
             // dice a qué decisión fue.
             state.replies.removeValue(forKey: key)
-            await apply(itemId: pending.itemId, choice: pending.choice, text: text, replyTo: message.messageId)
+            await applyReply(pending, text: text, replyTo: message.messageId)
             return
         }
         // Es un bot de avisos: no conversa. Preguntar lo que sea es cosa de un agente. Una vez al día dice cómo
@@ -551,10 +596,20 @@ final class TelegramChannel {
     }
 
     private func askText(_ asks: String, for choice: DecisionChoice, itemId: String, index: Int, replyTo: Int?) async {
+        await askText(
+            title: choice.label,
+            asks: asks,
+            pending: PendingReply(itemId: itemId, choice: index, createdAt: Date()),
+            replyTo: replyTo
+        )
+    }
+
+    /// Pide un texto con un mensaje que propone responderle. `pending` dice a qué va.
+    private func askText(title: String, asks: String, pending: PendingReply, replyTo: Int?) async {
         guard let bot, let chatId = state.chatId else { return }
         var params: [String: Any] = [
             "chat_id": chatId,
-            "text": "<b>\(TelegramFormat.escape(choice.label))</b>\n\(TelegramFormat.escape(asks))",
+            "text": "<b>\(TelegramFormat.escape(title))</b>\n\(TelegramFormat.escape(asks))",
             "parse_mode": "HTML",
             "reply_markup": [
                 "force_reply": true,
@@ -564,9 +619,18 @@ final class TelegramChannel {
         if let replyTo { params["reply_parameters"] = ["message_id": replyTo, "allow_sending_without_reply": true] }
         guard let prompt: TelegramBotAPI.MessageReference = try? await bot.call("sendMessage", params) else { return }
         // Si ya se había pedido un texto para esta decisión (se tocó otro botón), vale el último.
-        state.replies = state.replies.filter { $0.value.itemId != itemId }
-        state.replies[String(prompt.messageId)] = PendingReply(itemId: itemId, choice: index, createdAt: Date())
+        state.replies = state.replies.filter { $0.value.itemId != pending.itemId }
+        state.replies[String(prompt.messageId)] = pending
         save()
+    }
+
+    /// El texto que pidió un botón: el de una opción, o el de una tarjeta.
+    private func applyReply(_ pending: PendingReply, text: String, replyTo: Int) async {
+        if let request = pending.card {
+            await applyCardText(text, for: request, itemId: pending.itemId, replyTo: replyTo)
+        } else {
+            await apply(itemId: pending.itemId, choice: pending.choice, text: text, replyTo: replyTo)
+        }
     }
 
     /// `replyTo`: el mensaje con el texto, para confirmar ahí a qué decisión fue.
@@ -600,14 +664,165 @@ final class TelegramChannel {
         }
         state.messages[itemId]?.closedAt = Date()
         save()
-        var status = String(localized: "✅ <b>You answered:</b> \(TelegramFormat.escape(choice.label))")
-        if let text { status += "\n<i>\(TelegramFormat.escape(text))</i>" }
+        // En una pregunta de texto (su único botón es para escribir), la respuesta es lo escrito.
+        let written: String? = if case .answer = choice.action, sent.choices.count == 1 { text } else { nil }
+        var status = String(localized: "✅ <b>You answered:</b> \(TelegramFormat.escape(written ?? choice.label))")
+        if let text, written == nil { status += "\n<i>\(TelegramFormat.escape(text))</i>" }
         if let messageId = sent.messageId { await edit(messageId, html: sent.html + "\n\n" + status) }
         if let replyTo {
             try? await sendText(
-                String(localized: "✅ Sent to \(sent.issueIdentifier ?? "Paperclip"): “\(choice.label)”, with your text."),
+                written == nil
+                    ? String(localized: "✅ Sent to \(sent.issueIdentifier ?? "Paperclip"): “\(choice.label)”, with your text.")
+                    : String(localized: "✅ Sent to \(sent.issueIdentifier ?? "Paperclip")."),
                 replyTo: replyTo
             )
+        }
+        requestRefresh?()
+    }
+
+    // MARK: - Tarjetas de varios pasos
+
+    /// Un botón de una tarjeta: cambia lo marcado y edita el mensaje, pide un texto o manda todo.
+    private func handleCard(_ callback: TelegramBotAPI.CallbackQuery, key: Int, action: [Substring]) async {
+        guard let (itemId, sent) = state.messages.first(where: { $0.value.key == key }),
+              let card = sent.card, var progress = sent.progress
+        else {
+            await answer(callback, String(localized: "This decision is gone."))
+            return
+        }
+        // Un botón viejo de una que ya se resolvió no manda nada.
+        guard sent.closedAt == nil else {
+            await answer(callback, String(localized: "No longer pending."))
+            return
+        }
+        guard !working.contains(itemId) else {
+            await answer(callback, String(localized: "Sending to Paperclip…"))
+            return
+        }
+        switch TelegramCard.tap(action, card: card, progress: &progress) {
+        case let .unchanged(text):
+            await answer(callback, text)
+        case let .alert(text):
+            await answer(callback, text, alert: true)
+            // P. ej. «Enviar» con una pregunta sin contestar lleva a esa pregunta.
+            if progress != sent.progress { await updateCard(itemId, progress: progress) }
+        case .updated:
+            // Otro botón deja sin efecto el texto que se había pedido.
+            state.replies = state.replies.filter { !($0.value.itemId == itemId && $0.value.card != nil) }
+            await answer(callback, nil)
+            await updateCard(itemId, progress: progress)
+        case let .askText(request, title, asks):
+            await answer(callback, nil)
+            await askText(
+                title: title,
+                asks: asks,
+                pending: PendingReply(itemId: itemId, choice: -1, createdAt: Date(), card: request),
+                replyTo: sent.messageId
+            )
+        case .submit:
+            await answer(callback, String(localized: "Sending to Paperclip…"))
+            await submitCard(itemId, rejecting: false, reason: nil, replyTo: nil)
+        case let .reject(asks):
+            if let asks {
+                await answer(callback, nil)
+                await askText(
+                    title: card.rejectLabel ?? String(localized: "Reject"),
+                    asks: asks,
+                    pending: PendingReply(itemId: itemId, choice: -1, createdAt: Date(), card: .reject),
+                    replyTo: sent.messageId
+                )
+            } else {
+                await answer(callback, String(localized: "Sending to Paperclip…"))
+                await submitCard(itemId, rejecting: true, reason: nil, replyTo: nil)
+            }
+        }
+    }
+
+    /// Lo escrito para una tarjeta: se guarda y el mensaje sigue donde iba.
+    private func applyCardText(_ text: String, for request: CardTextRequest, itemId: String, replyTo: Int) async {
+        guard let sent = state.messages[itemId], let card = sent.card, var progress = sent.progress else { return }
+        guard sent.closedAt == nil else {
+            try? await sendText(String(localized: "That decision is no longer pending: I didn’t change anything."), replyTo: sent.messageId)
+            return
+        }
+        // Mientras se manda a Paperclip, lo marcado no cambia (se perdería al terminar).
+        guard !working.contains(itemId) else {
+            try? await sendText(String(localized: "I’m sending that one to Paperclip: send your text again in a moment."), replyTo: replyTo)
+            return
+        }
+        switch TelegramCard.text(text, for: request, card: card, progress: &progress) {
+        case .updated:
+            await updateCard(itemId, progress: progress)
+            // Debajo de la tarjeta, para que se vea dónde quedó (tocar la cita lleva a ella).
+            try? await sendText(
+                String(localized: "✍️ Saved. Continue in the card for \(sent.issueIdentifier ?? String(localized: "the task")).")
+                , replyTo: sent.messageId ?? replyTo
+            )
+        case let .invalid(problem):
+            // Se vuelve a pedir, con el motivo.
+            await askText(
+                title: String(localized: "Write it again"),
+                asks: problem,
+                pending: PendingReply(itemId: itemId, choice: -1, createdAt: Date(), card: request),
+                replyTo: sent.messageId
+            )
+        case let .reject(reason):
+            await submitCard(itemId, rejecting: true, reason: reason, replyTo: replyTo)
+        }
+    }
+
+    /// Guarda lo marcado y edita el mensaje con el paso en que va.
+    private func updateCard(_ itemId: String, progress: CardProgress) async {
+        state.messages[itemId]?.progress = progress
+        save()
+        guard let sent = state.messages[itemId], let messageId = sent.messageId else { return }
+        await editCard(messageId, for: sent)
+    }
+
+    /// Manda todo lo marcado (o el rechazo) en un solo pedido. Si Paperclip no lo acepta, la tarjeta queda
+    /// como estaba para corregirla; si ya no estaba pendiente, se cierra.
+    private func submitCard(_ itemId: String, rejecting: Bool, reason: String?, replyTo: Int?) async {
+        guard let sent = state.messages[itemId], let card = sent.card, var progress = sent.progress,
+              !working.contains(itemId)
+        else { return }
+        guard sent.closedAt == nil else {
+            try? await sendText(String(localized: "That decision is no longer pending: I didn’t change anything."), replyTo: sent.messageId)
+            return
+        }
+        guard let submission = rejecting ? card.rejection(reason: reason) : card.submission(progress) else { return }
+        working.insert(itemId)
+        defer { working.remove(itemId) }
+        do {
+            try await resolver.submit(submission)
+        } catch {
+            if await resolver.isPending(itemId: itemId, companyId: sent.companyId) == false {
+                await close(itemId)
+                try? await sendText(String(localized: "It was no longer pending in Paperclip: I didn’t change anything."), replyTo: sent.messageId)
+            } else {
+                try? await sendText(String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId)
+            }
+            requestRefresh?()
+            return
+        }
+        var finished = card
+        if card.kind == .verdicts, !rejecting {
+            // Paperclip acepta veredictos sueltos: lo que quedó sin veredicto sigue pendiente aquí.
+            finished = card.settlingPicks(&progress)
+            state.messages[itemId]?.card = finished
+            if !finished.allResolved {
+                await updateCard(itemId, progress: progress)
+                try? await sendText(String(localized: "✅ Verdicts sent. The rest are still pending."), replyTo: sent.messageId)
+                requestRefresh?()
+                return
+            }
+        }
+        state.messages[itemId]?.progress = progress
+        state.messages[itemId]?.closedAt = Date()
+        save()
+        let status = rejecting ? TelegramCard.rejected(card, reason: reason) : TelegramCard.receipt(finished, progress)
+        if let messageId = sent.messageId { await edit(messageId, html: sent.html + "\n\n" + status) }
+        if let replyTo {
+            try? await sendText(String(localized: "✅ Sent to \(sent.issueIdentifier ?? "Paperclip")."), replyTo: replyTo)
         }
         requestRefresh?()
     }
@@ -708,6 +923,28 @@ final class TelegramChannel {
         try? await bot.send("sendChatAction", ["chat_id": chatId, "action": "typing"])
     }
 
+    /// Cambia el texto y los botones de una tarjeta. Si no cambió nada o el mensaje ya no está, no pasa nada.
+    private func editCard(_ messageId: Int, for sent: SentDecision) async {
+        guard let bot, let chatId = state.chatId else { return }
+        func params(link: Bool) -> [String: Any] {
+            [
+                "chat_id": chatId,
+                "message_id": messageId,
+                "text": messageText(sent),
+                "parse_mode": "HTML",
+                "link_preview_options": ["is_disabled": true],
+                "reply_markup": ["inline_keyboard": keyboard(for: sent, link: link)],
+            ]
+        }
+        do {
+            try await bot.send("editMessageText", params(link: true))
+        } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("BUTTON_URL_INVALID") {
+            try? await bot.send("editMessageText", params(link: false))
+        } catch {
+            // «message is not modified» o un mensaje borrado: queda como estaba.
+        }
+    }
+
     /// Cambia solo los botones de un mensaje.
     private func setKeyboard(_ messageId: Int, for sent: SentDecision) async {
         guard let bot, let chatId = state.chatId else { return }
@@ -750,9 +987,11 @@ final class TelegramChannel {
         ])
     }
 
-    private func answer(_ callback: TelegramBotAPI.CallbackQuery, _ text: String?) async {
+    /// `alert`: en una ventana que hay que cerrar, para lo que no se puede hacer (y por qué).
+    private func answer(_ callback: TelegramBotAPI.CallbackQuery, _ text: String?, alert: Bool = false) async {
         var params: [String: Any] = ["callback_query_id": callback.id]
         if let text { params["text"] = text }
+        if alert { params["show_alert"] = true }
         try? await bot?.send("answerCallbackQuery", params)
     }
 
@@ -823,7 +1062,7 @@ enum TelegramFormat {
 
         let origin = [item.originAgentName, issueLine(item)].compactMap { $0 }.joined(separator: " · ")
         if !origin.isEmpty { lines.append("<i>\(escape(origin))</i>") }
-        if prompt.choices.isEmpty { lines.append(String(localized: "Answer it in Paperclip.")) }
+        if prompt.choices.isEmpty, prompt.card == nil { lines.append(String(localized: "Answer it in Paperclip.")) }
         return lines.joined(separator: "\n")
     }
 
@@ -847,7 +1086,10 @@ enum TelegramFormat {
         if let title = item.subject?.title { lines.append(String(localized: "Title: \(title)")) }
         if let question = prompt.question { lines.append(String(localized: "Question: \(question)")) }
         if let details = prompt.details, !details.isEmpty { lines.append(String(localized: "Details:\n\(truncated(details))")) }
-        if prompt.choices.isEmpty {
+        if let card = prompt.card {
+            lines.append(String(localized: "It’s answered step by step in Telegram, and everything is sent together at the end:"))
+            lines.append(card.brief)
+        } else if prompt.choices.isEmpty {
             lines.append(String(localized: "It’s answered on the Paperclip page."))
         } else {
             let options = prompt.choices.map { choice in
