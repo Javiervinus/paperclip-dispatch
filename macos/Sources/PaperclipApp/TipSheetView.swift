@@ -85,7 +85,7 @@ private struct TelegramPreview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 9) {
-                Image(nsImage: AppIcon.image(dark: false))
+                Image(nsImage: AppIcon.variant(dark: false))
                     .resizable()
                     .frame(width: 26, height: 26)
                     .background(.white, in: .circle)

@@ -364,13 +364,12 @@ struct ReleaseNotes {
     }
 }
 
-/// El ícono de la app a un tamaño dado, en la variante clara u oscura según la apariencia.
+/// El ícono de la app a un tamaño dado, el mismo que muestran el Dock y los avisos.
 struct AppIconImage: View {
     let size: CGFloat
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Image(nsImage: AppIcon.image(dark: colorScheme == .dark))
+        Image(nsImage: AppIcon.image())
             .resizable()
             .frame(width: size, height: size)
             .accessibilityHidden(true)

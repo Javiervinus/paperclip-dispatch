@@ -67,8 +67,8 @@ touch "$APP/Contents/Resources/es.lproj/Localizable.strings"
 xcrun actool "$ROOT/AppIcon.icon" --compile "$APP/Contents/Resources" --platform macosx \
   --minimum-deployment-target 26.0 --app-icon AppIcon --output-partial-info-plist "$WORK/icon.plist" \
   --errors --warnings >/dev/null
-# Las variantes clara y oscura en PNG, para el ícono dentro de la app (panel, bienvenida, Ajustes): el que da
-# macOS a la app es siempre el claro. Las exporta el ictool de Icon Composer, que viene con Xcode.
+# Las variantes clara y oscura en PNG, para dibujos de ejemplo dentro de la app (el ícono de la app en sí se le
+# pide a macOS, que lo dibuja según el estilo de íconos elegido). Las exporta el ictool de Icon Composer.
 ICTOOL="$(xcode-select -p)/../Applications/Icon Composer.app/Contents/Executables/ictool"
 for rendition in Default:AppIconLight Dark:AppIconDark; do
   "$ICTOOL" "$ROOT/AppIcon.icon" --export-image --output-file "$APP/Contents/Resources/${rendition#*:}.png" \

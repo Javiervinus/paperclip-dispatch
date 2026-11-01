@@ -130,7 +130,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
                 (\(paperclipLatest)). Clic para ver qué hace cada una.
                 """
         } else if let appRelease {
-            show("Actualizar Dispatch", image: AppIcon.adaptive(size: Self.iconSize))
+            show("Actualizar Dispatch", image: AppIcon.image(size: Self.iconSize))
             button.tintProminence = .primary
             // Descargada, se instala sola al cerrar la app; sin descargar (descargas automáticas apagadas), no.
             let when = if case .ready = app.phase {
