@@ -100,6 +100,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.telegram = telegram
         assignedTasks.telegram = telegram
+        // Una sola lectura de «Ver en vivo» por tarea para el aviso de la Mac y el mensaje de Telegram.
+        let previews = LivePreviews(api: api)
+        decisions.previews = previews
+        assignedTasks.previews = previews
+        telegram.previews = previews
+        let runLimits = RunLimitMonitor(api: api, preferences: preferences, notifications: notifications)
+        runLimits.telegram = telegram
+        decisions.runLimits = runLimits
         telegram.requestRefresh = { [weak decisions] in decisions?.refresh() }
         decisions.onAttention = { [weak telegram] companyId, items, complete in
             telegram?.update(companyId: companyId, items: items, complete: complete)
@@ -123,8 +131,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onClick = { [weak windowController] href in
             windowController?.openNotification(href: href)
         }
-        notifications.onWake = { [weak decisions] id, wake, href in
-            decisions?.wake(wake, notificationId: id, href: href)
+        notifications.onWake = { [weak decisions] id, wake, href, preview in
+            decisions?.wake(wake, notificationId: id, href: href, preview: preview)
         }
         notifications.onPermissionChange = { [weak self] permission in
             self?.status.notificationPermission = permission

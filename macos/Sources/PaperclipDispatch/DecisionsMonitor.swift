@@ -28,6 +28,10 @@ final class DecisionsMonitor {
     var onSignedIn: (() -> Void)?
     /// Las tareas a nombre del usuario se revisan en la misma vuelta, company por company (`AssignedTasksMonitor`).
     var assignedTasks: AssignedTasksMonitor?
+    /// Los agentes que llegan a su tope diario de corridas, en la misma vuelta (`RunLimitMonitor`).
+    var runLimits: RunLimitMonitor?
+    /// «Ver en vivo» de la tarea de cada decisión nueva, solo al avisarla.
+    var previews: LivePreviews?
     /// La última revisión no tenía sesión: la página está en la pantalla de inicio.
     private(set) var signedOut = false
 
@@ -110,6 +114,8 @@ final class DecisionsMonitor {
                 await assignedTasks?.review(company, covered: Set(attention.items.flatMap { item in
                     [item.subject?.metadata?.issueId, item.subject?.id].compactMap { $0 }
                 }))
+                // Aparte: sus lecturas de corridas no retrasan la próxima company ni el número del Dock.
+                if let runLimits { Task { await runLimits.review(company) } }
             }
             pendingCount = total
             signedOut = false
@@ -157,6 +163,8 @@ final class DecisionsMonitor {
             )
             return
         }
+        // La tarea de cada decisión puede tener algo servido para verlo («Ver en vivo»): todas a la vez.
+        let previewURLs = await previews?.urls(issueIds: fresh.compactMap(\.taskId)) ?? [:]
         for item in fresh {
             let notice = Self.notice(for: item)
             var body = notice.body
@@ -167,7 +175,10 @@ final class DecisionsMonitor {
                 let agentName = await resolver.agentName(target.agentId)
                 (body, wake) = Self.wakeNotice(body: body, target: target, agentName: agentName, progress: await progress)
             }
-            notifications.show(id: item.id, tag: item.id, title: notice.title, body: body, href: notice.href, wake: wake)
+            notifications.show(
+                id: item.id, tag: item.id, title: notice.title, body: body, href: notice.href, wake: wake,
+                preview: item.taskId.flatMap { previewURLs[$0] }
+            )
         }
     }
 
@@ -194,8 +205,9 @@ final class DecisionsMonitor {
     }
 
     /// Se apretó «Despertar a …» en un aviso: despierta al agente (solo esta vez, sin reintentos) y cambia el
-    /// aviso por lo que respondió Paperclip. Si Paperclip lo saltó o falló, el aviso nuevo trae el botón otra vez.
-    func wake(_ button: WakeButton, notificationId: String, href: String?) {
+    /// aviso por lo que respondió Paperclip. Si Paperclip lo saltó o falló, el aviso nuevo trae el botón otra vez,
+    /// y «Ver en vivo» si lo tenía.
+    func wake(_ button: WakeButton, notificationId: String, href: String?, preview: URL?) {
         let target = button.target
         guard !waking.contains(target.issueId) else { return }
         waking.insert(target.issueId)
@@ -210,6 +222,7 @@ final class DecisionsMonitor {
                 body: text.body,
                 href: href,
                 wake: outcome.allowsRetry ? button : nil,
+                preview: outcome.allowsRetry ? preview : nil,
                 sound: false
             )
             refresh()

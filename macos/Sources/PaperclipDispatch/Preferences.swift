@@ -33,6 +33,7 @@ final class Preferences {
         static let decisionNotifications = "decisionNotifications"
         static let notifyWhileLooking = "notifyWhileLooking"
         static let taskNotifications = "taskNotifications"
+        static let runLimitNotifications = "runLimitNotifications"
         static let dockBadge = "dockBadge"
         static let liquidGlassPage = "liquidGlassPage"
     }
@@ -49,6 +50,11 @@ final class Preferences {
     /// Un aviso de macOS y un mensaje de Telegram cuando un agente le asigna una tarea al usuario.
     var taskNotifications: Bool {
         didSet { save(taskNotifications, Key.taskNotifications) }
+    }
+
+    /// Un aviso de macOS y un mensaje de Telegram cuando un agente llega a su tope diario de corridas.
+    var runLimitNotifications: Bool {
+        didSet { save(runLimitNotifications, Key.runLimitNotifications) }
     }
 
     /// Avisar también con la ventana de Paperclip al frente, donde la barra lateral ya lo muestra.
@@ -78,6 +84,7 @@ final class Preferences {
             Key.decisionNotifications: true,
             Key.notifyWhileLooking: false,
             Key.taskNotifications: true,
+            Key.runLimitNotifications: true,
             Key.dockBadge: true,
             Key.liquidGlassPage: false,
         ])
@@ -85,6 +92,7 @@ final class Preferences {
         decisionNotifications = defaults.bool(forKey: Key.decisionNotifications)
         notifyWhileLooking = defaults.bool(forKey: Key.notifyWhileLooking)
         taskNotifications = defaults.bool(forKey: Key.taskNotifications)
+        runLimitNotifications = defaults.bool(forKey: Key.runLimitNotifications)
         dockBadge = defaults.bool(forKey: Key.dockBadge)
         liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
     }

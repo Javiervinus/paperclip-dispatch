@@ -187,6 +187,46 @@
         }
       }
     },
+    "%lld runs a day": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld run a day"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld runs a day"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld corrida al día"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld corridas al día"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld%%": {
       "localizations": {
         "es": {
@@ -303,6 +343,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "<i>Puedes volver a apretar el botón.</i>"
+          }
+        }
+      }
+    },
+    "<i>You can raise the limit on its page in Paperclip.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<i>Puedes subir el tope en su página de Paperclip.</i>"
           }
         }
       }
@@ -613,6 +663,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aprobar"
+          }
+        }
+      }
+    },
+    "Approve the new landing page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprobar la landing nueva"
           }
         }
       }
@@ -1937,6 +1997,16 @@
         }
       }
     },
+    "Its limit is %@. The count resets %@, and until then anything you ask of it won’t run.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su tope es de %1$@. La cuenta se reinicia %2$@, y hasta entonces lo que se le pida no va a correr."
+          }
+        }
+      }
+    },
     "Its token is deleted from the Keychain and it stops sending you decisions. To use it again, you’ll have to connect it again.": {
       "localizations": {
         "es": {
@@ -1997,6 +2067,26 @@
         }
       }
     },
+    "It’s served on the studio Mac: check the animations on your phone before approving.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Está servida en la Mac del estudio: mira las animaciones en tu teléfono antes de aprobarla."
+          }
+        }
+      }
+    },
+    "It’s served on the studio Mac: open it on your phone and tell me if the steps feel too long.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Está servida en la Mac del estudio: ábrela en tu teléfono y dime si los pasos se hacen muy largos."
+          }
+        }
+      }
+    },
     "It’s the official command, with Node.js %@. It sets up local mode: only on this Mac and with no password. When it’s done, Paperclip keeps running in that window and this continues on its own.": {
       "localizations": {
         "es": {
@@ -2053,6 +2143,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mantener en pausa"
+          }
+        }
+      }
+    },
+    "Landing page, round 2": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Landing, ronda 2"
           }
         }
       }
@@ -2577,6 +2677,16 @@
         }
       }
     },
+    "Notify when an agent hits its daily run limit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar cuando un agente llega a su tope diario"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "es": {
@@ -2607,12 +2717,32 @@
         }
       }
     },
+    "On Monday": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El lunes"
+          }
+        }
+      }
+    },
     "On another computer on your network or over Tailscale.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "En otra computadora de tu red o por Tailscale."
+          }
+        }
+      }
+    },
+    "On this Mac and in Telegram, once a day per agent: until the count resets, Paperclip skips everything that would wake it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En esta Mac y en Telegram, una vez al día por agente: hasta que se reinicie la cuenta, Paperclip se salta todo lo que lo despertaría."
           }
         }
       }
@@ -2687,6 +2817,16 @@
         }
       }
     },
+    "Open agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir agente"
+          }
+        }
+      }
+    },
     "Open at Login": {
       "localizations": {
         "es": {
@@ -2737,6 +2877,16 @@
         }
       }
     },
+    "Open preview": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver en vivo"
+          }
+        }
+      }
+    },
     "Open source on ": {
       "localizations": {
         "es": {
@@ -2753,6 +2903,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Operaciones"
+          }
+        }
+      }
+    },
+    "Options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones"
           }
         }
       }
@@ -4065,6 +4225,16 @@
         }
       }
     },
+    "The dark one": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La oscura"
+          }
+        }
+      }
+    },
     "The decision they’re asking for now:\n": {
       "localizations": {
         "es": {
@@ -4081,6 +4251,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El dominio vence el viernes y el registrador solo acepta la tarjeta de la empresa, que yo no puedo usar. Renuévalo por dos años desde el panel del registrador y deja el recibo en esta tarea."
+          }
+        }
+      }
+    },
+    "The light one": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La clara"
           }
         }
       }
@@ -4455,6 +4635,16 @@
         }
       }
     },
+    "Today": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoy"
+          }
+        }
+      }
+    },
     "Token": {
       "localizations": {
         "es": {
@@ -4471,6 +4661,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Try the new onboarding on your phone": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba la bienvenida nueva en tu teléfono"
           }
         }
       }
@@ -4855,6 +5055,16 @@
         }
       }
     },
+    "What should change?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué hay que cambiar?"
+          }
+        }
+      }
+    },
     "What’s New": {
       "localizations": {
         "es": {
@@ -4915,12 +5125,32 @@
         }
       }
     },
+    "When do we publish it?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cuándo la publicamos?"
+          }
+        }
+      }
+    },
     "When you restart, this app quits and reopens in a few seconds, on the same page. Paperclip and your agents don’t stop: they run separately.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Al reiniciar, esta app se cierra y vuelve a abrirse en unos segundos, en la misma página. Paperclip y tus agentes no se detienen: corren aparte."
+          }
+        }
+      }
+    },
+    "Which hero do you prefer?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué portada prefieres?"
           }
         }
       }
@@ -5416,6 +5646,26 @@
         }
       }
     },
+    "today at %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hoy, %@"
+          }
+        }
+      }
+    },
+    "tomorrow at %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mañana, %@"
+          }
+        }
+      }
+    },
     "unassigned": {
       "localizations": {
         "es": {
@@ -5624,6 +5874,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "☑️ <i>Ya no está pendiente.</i>"
+          }
+        }
+      }
+    },
+    "⛔ %@ hit its daily run limit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⛔ %@ llegó a su tope diario"
           }
         }
       }

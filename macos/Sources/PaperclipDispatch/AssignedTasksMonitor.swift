@@ -12,6 +12,8 @@ import OSLog
 /// - Si deja de estar a su nombre (se cerró o se reasignó), el mensaje de Telegram se edita para decirlo. El
 ///   aviso de la Mac queda como el de una decisión que dejó de estar pendiente.
 /// - Responder al mensaje de Telegram deja un comentario en la tarea.
+/// - Si la tarea tiene algo servido para verlo, el aviso y el mensaje llevan «Ver en vivo» (`LivePreviews`); al
+///   cerrarse, el mensaje lo pierde.
 @MainActor
 final class AssignedTasksMonitor {
     private static let individualLimit = 3
@@ -56,6 +58,9 @@ final class AssignedTasksMonitor {
             }
         }
     }
+
+    /// «Ver en vivo» de cada tarea nueva, solo al avisarla.
+    var previews: LivePreviews?
 
     private let api: PaperclipAPI
     private let resolver: DecisionResolver
@@ -218,19 +223,23 @@ final class AssignedTasksMonitor {
                 projectName: await projectName(issue.projectId, companyId: company.id),
                 prefix: company.issuePrefix
             )
+            let preview = await previews?.url(issueId: issue.id)
             Self.log.notice("\(issue.identifier ?? issue.id, privacy: .public): notice (mac: \(mac, privacy: .public))")
             if mac {
                 let text = AssignedTaskFormat.mac(notice)
-                notifications.show(id: "task-\(issue.id)", tag: "task-\(issue.id)", title: text.title, body: text.body, href: notice.href)
+                notifications.show(
+                    id: "task-\(issue.id)", tag: "task-\(issue.id)", title: text.title, body: text.body, href: notice.href,
+                    preview: preview
+                )
             }
-            await sendToTelegram(notice, companyId: company.id, userId: issue.assigneeUserId)
+            await sendToTelegram(notice, companyId: company.id, userId: issue.assigneeUserId, preview: preview)
         }
     }
 
-    private func sendToTelegram(_ notice: AssignedTaskNotice, companyId: String, userId: String?) async {
+    private func sendToTelegram(_ notice: AssignedTaskNotice, companyId: String, userId: String?, preview: URL?) async {
         guard let telegram, let chatId = telegram.noticeChatId else { return }
         let html = AssignedTaskFormat.telegram(notice)
-        guard let messageId = await telegram.postNotice(html, href: notice.href) else { return }
+        guard let messageId = await telegram.postNotice(html, href: notice.href, preview: preview) else { return }
         messages[notice.issueId] = SentTask(
             companyId: companyId, chatId: chatId, messageId: messageId, html: html,
             identifier: notice.identifier, href: notice.href, userId: userId

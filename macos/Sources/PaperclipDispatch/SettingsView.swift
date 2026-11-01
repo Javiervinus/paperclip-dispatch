@@ -318,6 +318,10 @@ private struct NotificationsPane: View {
                     Text("Notify me when an agent assigns me a task")
                     Text("On this Mac and in Telegram. Not the ones you assign yourself.")
                 }
+                Toggle(isOn: $preferences.runLimitNotifications) {
+                    Text("Notify when an agent hits its daily run limit")
+                    Text("On this Mac and in Telegram, once a day per agent: until the count resets, Paperclip skips everything that would wake it.")
+                }
                 Toggle(isOn: $preferences.notifyWhileLooking) {
                     Text("Notify me even while I’m looking at Paperclip")
                     Text("With the window in front, the sidebar already shows them.")

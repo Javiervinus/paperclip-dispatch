@@ -84,6 +84,13 @@ struct AttentionItem: Decodable, Sendable {
     /// La tarea donde vive, para comentar en ella.
     var issueId: String? { subject?.metadata?.issueId ?? relatedIssue?.id }
 
+    /// La tarea con la que va la decisión, la que abre «Abrir en Paperclip»: la misma decisión si es una tarea
+    /// (p. ej. la trabada de un `blocker_attention`) o la tarea donde vive. De ella sale «Ver en vivo».
+    var taskId: String? {
+        if subject?.kind == "issue", let id = subject?.id { return id }
+        return issueId
+    }
+
     /// Una tarea trabada a nombre de un agente, para la que Paperclip propone despertarlo («Nudge»). En ese
     /// aviso, `subject` es la tarea trabada. Si está a nombre de una persona, o el aviso no propone despertar,
     /// no hay a quién.
@@ -108,16 +115,19 @@ struct WakeTarget: Codable, Hashable, Sendable {
 }
 
 struct AttentionReference: Decodable, Sendable {
+    /// `issue`, `interaction`, `approval`…
+    let kind: String?
     let id: String?
     let identifier: String?
     let title: String?
     let href: String?
     let metadata: AttentionMetadata?
 
-    private enum CodingKeys: String, CodingKey { case id, identifier, title, href, metadata }
+    private enum CodingKeys: String, CodingKey { case kind, id, identifier, title, href, metadata }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try? container.decodeIfPresent(String.self, forKey: .kind)
         id = try? container.decodeIfPresent(String.self, forKey: .id)
         identifier = try? container.decodeIfPresent(String.self, forKey: .identifier)
         title = try? container.decodeIfPresent(String.self, forKey: .title)
@@ -150,6 +160,24 @@ struct AttentionProject: Decodable, Sendable {
 
 struct AttentionDetail: Decodable, Sendable {
     let promptExcerpt: String?
+}
+
+/// Las fechas de Paperclip (`2026-11-01T21:42:45.752Z`), con o sin fracciones de segundo.
+enum PaperclipDate {
+    static func parse(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        return (try? Date(raw, strategy: .iso8601.year().month().day().time(includingFractionalSeconds: true)))
+            ?? (try? Date(raw, strategy: .iso8601))
+    }
+}
+
+/// Una dirección que solo abre en esta Mac: el teléfono no llega a ella y Telegram no la acepta en un botón.
+enum LocalHost {
+    static func contains(_ host: String) -> Bool {
+        let host = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        return host == "localhost" || host.hasSuffix(".localhost") || host == "::1" || host == "0.0.0.0"
+            || host.hasPrefix("127.")
+    }
 }
 
 /// Un elemento que no se pueda leer queda en `nil` en vez de romper la lista entera.
