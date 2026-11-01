@@ -25,6 +25,9 @@ cambios.
   Paperclip.
 - **Responder desde Telegram.** Vincula un bot de Telegram para recibir cada decisión en el teléfono y
   aprobarla, rechazarla o pedir «explícamela» desde ahí.
+- **Destrabar una tarea con un clic.** Cuando una tarea queda trabada a nombre de un agente (p. ej. un
+  revisor que Paperclip no despertó), el aviso de la Mac y el mensaje de Telegram traen «Despertar a
+  <agente>» y te dicen si Paperclip lo aceptó o lo saltó.
 - **Una bienvenida que te deja listo.** La primera vez la app se presenta, encuentra Paperclip en esta Mac
   (lo enciende, ayuda a instalarlo o toma la dirección de otro) y muestra cómo se ven los avisos antes de
   pedirlos. Si quedan apagados, te lo recuerda, sin estorbar.

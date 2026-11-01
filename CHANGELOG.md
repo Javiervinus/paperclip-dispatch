@@ -22,6 +22,9 @@ The first release. Everything below is new, so this entry describes the app rath
   fails, and on the Dock icon the same number as Decisions in Paperclip's sidebar.
 - **Answer from Telegram.** Link a Telegram bot to get each decision on your phone and approve, reject or
   ask "explain it to me" from there.
+- **Unstick a task in one click.** When a task is stuck with an agent (e.g. a reviewer Paperclip never
+  woke up), the Mac notification and the Telegram message offer "Wake up <agent>" and tell you whether
+  Paperclip accepted or skipped it.
 - **A welcome that gets you set up.** On first launch the app introduces itself, finds Paperclip on this
   Mac (starting it, helping install it, or taking another address) and shows what notifications look like
   before asking for them. If they end up off, it reminds you, without getting in the way.
