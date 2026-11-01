@@ -10,7 +10,7 @@ enum MainMenu {
             item("Acerca de \(appName)", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
             .separator(),
             item("Ajustes…", #selector(AppDelegate.showSettings(_:)), ","),
-            item("Buscar actualización de Paperclip…", #selector(AppDelegate.checkForPaperclipUpdate(_:))),
+            item("Buscar actualizaciones…", #selector(AppDelegate.checkForUpdates(_:))),
             .separator(),
             item("Ocultar \(appName)", #selector(NSApplication.hide(_:)), "h"),
             item("Ocultar otras", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),

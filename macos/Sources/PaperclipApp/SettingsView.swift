@@ -8,9 +8,6 @@ enum SettingsDesign {
     static let windowSize = CGSize(width: 580, height: 620)
     static let glowHeight: CGFloat = 340
     static let iconSize: CGFloat = 54
-    /// El ícono de la app trae un margen transparente (el dibujo ocupa 824 de 1024 px): se dibuja más grande
-    /// y ocupa lo de `iconSize`, para que quede alineado con el texto de las filas.
-    static let appIconSize: CGFloat = iconSize * 1024 / 824
     /// Aire entre el selector de la barra y lo primero de cada pestaña.
     static let contentTopSpacing: CGFloat = 16
     /// El redondeo de los íconos de macOS: un 22,5 % del lado.
@@ -33,7 +30,7 @@ struct SettingsPaneView: View {
 
     var body: some View {
         switch pane {
-        case .general: GeneralPane(preferences: preferences)
+        case .general: GeneralPane(preferences: preferences, updater: actions.appUpdater)
         case .notifications: NotificationsPane(preferences: preferences, status: status, actions: actions)
         case .telegram: TelegramPane(telegram: telegram)
         case .paperclip: PaperclipPane(status: status, actions: actions)
@@ -45,6 +42,7 @@ struct SettingsPaneView: View {
 
 private struct GeneralPane: View {
     @Bindable var preferences: Preferences
+    @Bindable var updater: AppUpdater
 
     @State private var loginItemStatus = LoginItem.status
     @State private var loginItemError: String?
@@ -77,6 +75,7 @@ private struct GeneralPane: View {
                 Text("Cerrar la ventana (Cmd+W) no apaga los avisos: la app sigue revisando. Cmd+Q la cierra del todo.")
                     .settingsFootnote()
             }
+            AppUpdatesSection(updater: updater)
             Section {
                 Toggle(isOn: $preferences.liquidGlassPage) {
                     Text("Liquid Glass en Paperclip")
@@ -105,6 +104,78 @@ private struct GeneralPane: View {
                 loginItemError = error.localizedDescription
             }
             loginItemStatus = LoginItem.status
+        }
+    }
+}
+
+/// Las versiones de esta app: la actual, buscar o instalar la nueva, y si se descargan solas.
+private struct AppUpdatesSection: View {
+    @Bindable var updater: AppUpdater
+
+    var body: some View {
+        Section {
+            LabeledContent {
+                accessory
+            } label: {
+                Text("Paperclip Dispatch \(AppUpdater.currentVersion)")
+                Text(line)
+                    .contentTransition(.opacity)
+                    .animation(SettingsDesign.animation, value: line)
+            }
+            if let link = (updater.phase.release ?? updater.whatsNew)?.notesURL {
+                LabeledContent("Novedades de la \((updater.phase.release ?? updater.whatsNew)?.version ?? "")") {
+                    Link(destination: link) { Label("Ver en GitHub", systemImage: "arrow.up.right") }
+                }
+            }
+            if let error = updater.checkError {
+                WarningRow(text: "No pude buscar versiones nuevas: \(error)")
+            }
+            Toggle(isOn: $updater.automaticallyDownloads) {
+                Text("Descargar versiones nuevas solas")
+                Text("Se instalan cuando reinicias o cierras la app: nunca se reinicia sin preguntarte.")
+            }
+            .disabled(!updater.isConfigured)
+        } header: {
+            Text("Versiones de esta app")
+        } footer: {
+            Text("Las de Paperclip, el servidor donde trabajan los agentes, están en la pestaña Paperclip.")
+                .settingsFootnote()
+        }
+    }
+
+    private var line: String {
+        switch updater.phase {
+        case .idle where !updater.isConfigured: return "Esta copia no busca versiones nuevas."
+        case .idle:
+            if let news = updater.whatsNew { return "Recién actualizada a la \(news.version)." }
+            guard let checked = updater.lastCheckedAt else { return "Se revisa sola cada pocas horas." }
+            return "Al día · última revisión: \(checked.formatted(date: .omitted, time: .shortened))"
+        case .checking: return "Buscando…"
+        case .available(let release): return "Salió la \(release.version). Se descarga cuando aprietas."
+        case .downloading(let release, _): return "Descargando la \(release.version)…"
+        case .ready(let release): return "La \(release.version) está lista: se instala al reiniciar o al cerrar la app."
+        case .installing: return "Reiniciando…"
+        }
+    }
+
+    @ViewBuilder private var accessory: some View {
+        switch updater.phase {
+        case .idle:
+            if updater.isConfigured {
+                Button("Buscar ahora", action: updater.checkNow).buttonStyle(.glass)
+            }
+        case .checking, .installing:
+            ProgressView().controlSize(.small)
+        case .available:
+            Button("Descargar y reiniciar", action: updater.install).buttonStyle(.glassProminent)
+        case .downloading(_, let progress):
+            if let progress {
+                ProgressView(value: progress).frame(width: 90)
+            } else {
+                ProgressView().controlSize(.small)
+            }
+        case .ready:
+            Button("Reiniciar", action: updater.install).buttonStyle(.glassProminent)
         }
     }
 }
@@ -314,11 +385,7 @@ private struct PaperclipPane: View {
         SettingsForm {
             Section {} header: {
                 PaneHero(title: "Paperclip", subtitle: versionLine) {
-                    Image(nsImage: NSApp.applicationIconImage)
-                        .resizable()
-                        .frame(width: SettingsDesign.appIconSize, height: SettingsDesign.appIconSize)
-                        .frame(width: SettingsDesign.iconSize, height: SettingsDesign.iconSize)
-                        .accessibilityHidden(true)
+                    PaperclipGlyph(size: SettingsDesign.iconSize)
                 } accessory: {
                     updateAccessory
                 }
@@ -375,12 +442,6 @@ private struct PaperclipPane: View {
                         .settingsFootnote()
                 }
             }
-            Section {} footer: {
-                Text("\(AppConfig.appName) \(Self.appVersion)")
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity)
-            }
         }
     }
 
@@ -420,10 +481,6 @@ private struct PaperclipPane: View {
             StatusBadge(text: "Sin revisar", symbol: "exclamationmark.triangle.fill", tint: .orange)
         }
     }
-
-    private static var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    }
 }
 
 // MARK: - Piezas comunes
@@ -441,7 +498,7 @@ struct SettingsForm<Content: View>: View {
     }
 }
 
-/// Arriba de la pestaña Paperclip, como en Ajustes del Sistema: el ícono de la app a la izquierda, alineado
+/// Arriba de la pestaña Paperclip, como en Ajustes del Sistema: el clip de Paperclip a la izquierda, alineado
 /// con el texto de las filas de abajo, la versión a su lado y el estado a la derecha. Las otras pestañas no
 /// llevan: repetirían el nombre que ya dice el selector.
 struct PaneHero<Icon: View, Accessory: View>: View {

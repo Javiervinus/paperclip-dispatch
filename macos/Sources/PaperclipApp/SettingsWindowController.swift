@@ -47,6 +47,8 @@ struct SettingsActions {
     let serverURL: URL
     /// Paperclip corre en esta Mac (y se actualiza desde aquí).
     let isLocalServer: Bool
+    /// Las versiones de esta app (Ajustes → General).
+    let appUpdater: AppUpdater
 }
 
 /// La ventana Ajustes (Cmd+,): de tamaño fijo, como Ajustes del Sistema, con un selector de Liquid Glass en
@@ -197,7 +199,8 @@ enum SettingsSnapshot {
             sendTestNotification: {},
             changeServer: {},
             serverURL: config.serverURL,
-            isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL)
+            isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL),
+            appUpdater: AppUpdater(previewing: .ready(MainWindowSnapshot.sampleRelease))
         )
         func channel(_ state: TelegramChannel.State?, hasToken: Bool = true) -> TelegramChannel {
             let resolver = DecisionResolver(api: api)

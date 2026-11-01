@@ -8,6 +8,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var config: AppConfig?
     private var windowController: MainWindowController?
     private var updates: UpdateController?
+    /// Las versiones de esta app. Existe desde el arranque: busca aunque todavía no haya Paperclip elegido.
+    private let appUpdater = AppUpdater()
+    private var updatesButton: UpdatesButton?
     private var decisions: DecisionsMonitor?
     private var telegram: TelegramChannel?
     private var settingsWindow: SettingsWindowController?
@@ -38,6 +41,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.mainMenu = MainMenu.build(appName: AppConfig.appName)
         LoginItem.followMove()
+        appUpdater.willRelaunch = { [weak self] in AppUpdater.rememberPage(self?.windowController?.pageURL) }
+        appUpdater.onShowRequested = { [weak self] in
+            self?.windowController?.showWindow(nil)
+            self?.updatesButton?.showPanel()
+        }
+        appUpdater.start()
         // Antes de crear la ventana, para que la página cargue ya con el tema elegido.
         NSApp.appearance = preferences.appearance.nsAppearance
         if let config = AppConfig.load() {
@@ -50,14 +59,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Arma todo alrededor del Paperclip elegido: la ventana, las versiones, los avisos y el bot.
     private func connect(_ config: AppConfig) {
         self.config = config
-        let windowController = MainWindowController(config: config, liquidGlass: preferences.liquidGlassPage)
+        let windowController = MainWindowController(
+            config: config,
+            liquidGlass: preferences.liquidGlassPage,
+            initialURL: AppUpdater.takeRememberedPage(on: config.serverURL)
+        )
         self.windowController = windowController
-        updates = UpdateController(
+        let updates = UpdateController(
             config: config,
             isLocal: PaperclipLocator.isOnThisMac(config.serverURL),
             host: windowController,
             notifications: notifications,
             status: status
+        )
+        self.updates = updates
+        updatesButton = UpdatesButton(
+            app: appUpdater,
+            status: status,
+            host: windowController,
+            checkPaperclip: { [weak updates] in updates?.checkNow() },
+            updatePaperclip: { [weak updates] in updates?.requestUpdate() }
         )
         let api = PaperclipAPI(serverURL: config.serverURL)
         let decisions = DecisionsMonitor(api: api, preferences: preferences, notifications: notifications) {
@@ -103,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         windowController.showWindow(nil)
         notifications.start()
-        updates?.start()
+        updates.start()
         telegram.start()
         decisions.start()
     }
@@ -196,7 +217,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     sendTestNotification: { [weak self] in self?.sendTestNotification() },
                     changeServer: { [weak self] in self?.changeServer() },
                     serverURL: config.serverURL,
-                    isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL)
+                    isLocalServer: PaperclipLocator.isOnThisMac(config.serverURL),
+                    appUpdater: appUpdater
                 )
             )
         }
@@ -217,7 +239,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowController?.reload()
     }
 
-    @objc func checkForPaperclipUpdate(_ sender: Any?) {
-        updates?.check(userInitiated: true)
+    /// «Buscar actualizaciones…» del menú: la ventana al frente y el panel con las dos, revisando.
+    @objc func checkForUpdates(_ sender: Any?) {
+        guard let windowController else {
+            appUpdater.checkNow()
+            return
+        }
+        windowController.showWindow(nil)
+        NSApp.activate()
+        updatesButton?.showPanelAndCheck()
     }
 }

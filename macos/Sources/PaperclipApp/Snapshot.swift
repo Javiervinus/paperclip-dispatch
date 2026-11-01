@@ -58,22 +58,18 @@ enum Snapshot {
         return result.status == 0 ? UpdateController.decode(result.output) : nil
     }
 
-    /// Como el botón de UpdateController, con la versión dada.
-    static func versionButton(_ check: UpdateController.Check?) -> NSButton {
-        let current = check?.currentVersion ?? "2026.1023.0"
-        let available = check?.updateAvailable == true
-        let button = NSButton(
-            title: available ? "Actualizar a \(check?.targetVersion ?? "")" : "Al día · \(current)",
-            target: nil,
-            action: nil
+    /// El botón de actualizaciones de verdad, al día con la versión de Paperclip dada (para los ensayos).
+    static func upToDateButton(paperclip version: String?, host: MainWindowController) -> UpdatesButton {
+        let status = AppStatus()
+        status.paperclipVersion = version ?? "2026.1023.0"
+        status.lastCheckedAt = .now
+        return UpdatesButton(
+            app: AppUpdater(previewing: .idle),
+            status: status,
+            host: host,
+            checkPaperclip: {},
+            updatePaperclip: {}
         )
-        button.controlSize = .large
-        button.imagePosition = .imageLeading
-        let symbol = NSImage(systemSymbolName: available ? "arrow.down.circle.fill" : "checkmark.circle.fill",
-                             accessibilityDescription: nil)
-        button.image = available ? symbol : symbol?.withSymbolConfiguration(.init(paletteColors: [.white, .systemGreen]))
-        button.tintProminence = available ? .primary : .none
-        return button
     }
 
     /// Fuera de la pantalla salvo un punto del borde, sin llevarse el foco, y del tamaño pedido. macOS solo
@@ -205,19 +201,52 @@ enum MainWindowSnapshot {
     private static let contentSize = NSSize(width: 1280, height: 800)
     private static let loadTime: Duration = .seconds(8)
 
+    /// Lo que muestra el botón de actualizaciones en cada captura.
+    private enum Updates {
+        case upToDate, dispatch, both, whatsNew
+    }
+
+    /// Novedades de muestra para el ensayo del botón y el panel.
+    static let sampleRelease = AppUpdater.Release(
+        version: "0.2.0",
+        notes: """
+            - **Avisos en el teléfono con ntfy.** Elige un tema en Ajustes y las decisiones llegan a cualquier teléfono.
+            - **La ventana recuerda su página.** Después de actualizar, abre donde la dejaste.
+            """,
+        notesURL: nil
+    )
+
     static func run(config: AppConfig, to directory: URL) async {
-        let cases: [(file: String, startsWithGlass: Bool, switches: Bool)] = [
-            ("normal", false, false),
-            ("vidrio", true, false),
-            ("normal-a-vidrio", false, true),
-            ("vidrio-a-normal", true, true),
+        let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates)] = [
+            ("normal", false, false, .upToDate),
+            ("vidrio", true, false, .upToDate),
+            ("normal-a-vidrio", false, true, .upToDate),
+            ("vidrio-a-normal", true, true, .upToDate),
+            ("dispatch-normal", false, false, .dispatch),
+            ("dispatch-vidrio", true, false, .dispatch),
+            ("dos-vidrio", true, false, .both),
+            ("novedades-vidrio", true, false, .whatsNew),
         ]
+        let paperclip = await Snapshot.installedVersion()?.currentVersion
         var controllers: [(controller: MainWindowController, switches: Bool, glass: Bool)] = []
+        var buttons: [UpdatesButton] = []
         var windows: [Snapshot.Window] = []
         for item in cases {
             let controller = MainWindowController(config: config, liquidGlass: item.startsWithGlass, rehearsal: true)
             guard let window = controller.window else { continue }
-            controller.setUpdateButton(Snapshot.versionButton(nil), visible: true)
+            let status = AppStatus()
+            status.paperclipVersion = paperclip ?? "2026.1023.0"
+            status.lastCheckedAt = .now
+            let app: AppUpdater
+            switch item.updates {
+            case .upToDate: app = AppUpdater(previewing: .idle)
+            case .dispatch: app = AppUpdater(previewing: .ready(sampleRelease))
+            case .both:
+                app = AppUpdater(previewing: .ready(sampleRelease))
+                status.latestVersion = "2026.1101.0"
+            case .whatsNew: app = AppUpdater(previewing: .idle, whatsNew: sampleRelease)
+            }
+            buttons.append(UpdatesButton(app: app, status: status, host: controller, checkPaperclip: {}, updatePaperclip: {}))
             Snapshot.hide(window, contentSize: contentSize)
             controllers.append((controller, item.switches, item.startsWithGlass))
             windows.append(Snapshot.Window(window: window, file: "\(item.file).png"))
@@ -228,6 +257,7 @@ enum MainWindowSnapshot {
         }
         try? await Task.sleep(for: loadTime)
         await Snapshot.capture(windows, in: directory)
+        withExtendedLifetime(buttons) {}
     }
 }
 
@@ -254,6 +284,7 @@ enum PageSnapshot {
         let anchors = (defaults.string(forKey: anchorsKey) ?? "").components(separatedBy: "|")
         let version = await Snapshot.installedVersion()
         var shots: [(controller: MainWindowController, anchor: String)] = []
+        var buttons: [UpdatesButton] = []
         var windows: [Snapshot.Window] = []
         for (index, anchor) in anchors.enumerated() {
             let controller = MainWindowController(
@@ -263,7 +294,7 @@ enum PageSnapshot {
             )
             guard let window = controller.window else { continue }
             Snapshot.hide(window, contentSize: size)
-            controller.setUpdateButton(Snapshot.versionButton(version), visible: true)
+            buttons.append(Snapshot.upToDateButton(paperclip: version?.currentVersion, host: controller))
             controller.load(path: path)
             shots.append((controller, anchor))
             windows.append(Snapshot.Window(window: window, file: "pagina-\(index + 1).png"))
@@ -276,6 +307,7 @@ enum PageSnapshot {
         }
         try? await Task.sleep(for: scrollTime)
         await Snapshot.capture(windows, in: directory)
+        withExtendedLifetime(buttons) {}
     }
 
     /// «1512x982» → 1512 × 982 puntos.

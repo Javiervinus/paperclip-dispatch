@@ -1,9 +1,10 @@
 import AppKit
 
-/// El botón de arriba a la derecha con la versión de Paperclip. Si está al día lo dice, discreto; si sale
-/// una versión nueva, se pinta del color de acento y la instala, pero solo cuando se lo piden: actualizar
-/// reinicia Paperclip y corta lo que estén haciendo los agentes. Instala con el comando oficial o, si el
-/// build trae uno (PAPERCLIP_UPDATE_SCRIPT), con ese script. Solo con el Paperclip de esta Mac y su CLI.
+/// Las versiones de Paperclip (el servidor): revisa si salió una nueva y la instala, pero solo cuando se lo
+/// piden, porque actualizar reinicia Paperclip y corta lo que estén haciendo los agentes. Instala con el
+/// comando oficial o, si el build trae uno (PAPERCLIP_UPDATE_SCRIPT), con ese script. Solo con el
+/// Paperclip de esta Mac y su CLI. Lo que sabe lo deja en `AppStatus`, que muestran el botón de arriba a
+/// la derecha (`UpdatesButton`) y Ajustes.
 @MainActor
 final class UpdateController {
     /// Lo que responde `paperclipai update --check --latest --json`.
@@ -35,7 +36,6 @@ final class UpdateController {
     private let notifications: NotificationBridge
     private let status: AppStatus
     private let previewTarget = UserDefaults.standard.string(forKey: previewDefaultsKey)
-    private let button = NSButton()
     private var last: Check?
     private var lastCheckedAt: Date?
     private var checkError: String?
@@ -57,56 +57,43 @@ final class UpdateController {
         self.host = host
         self.notifications = notifications
         self.status = status
-        button.bezelStyle = .glass
-        button.controlSize = .large
-        button.imagePosition = .imageLeading
-        button.target = self
-        button.action = #selector(buttonClicked)
-        refreshButton()
+        publish()
     }
 
     func start() {
         guard isLocal else {
             unavailable = "Este Paperclip corre en otra computadora: se actualiza allá."
-            refreshButton()
+            publish()
             return
         }
-        runCheck(showProgress: false, announce: false)
+        runCheck(showProgress: false)
         timer = Timer.scheduledTimer(withTimeInterval: Self.checkInterval, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.runCheck(showProgress: false, announce: false) }
+            MainActor.assumeIsolated { self?.runCheck(showProgress: false) }
         }
     }
 
-    /// Desde el menú: además avisa con una alerta si no hay nada nuevo o si falló.
-    func check(userInitiated: Bool) {
-        runCheck(showProgress: userInitiated, announce: userInitiated)
-    }
-
-    /// Desde Ajustes: sin alertas, porque el resultado se ve ahí mismo.
+    /// Desde el panel, Ajustes o el menú: el resultado se ve ahí mismo, sin alertas.
     func checkNow() {
-        runCheck(showProgress: true, announce: false)
+        runCheck(showProgress: true)
     }
 
-    private func runCheck(showProgress: Bool, announce: Bool) {
+    private func runCheck(showProgress: Bool) {
         guard progress == nil, !checking, isLocal else { return }
         checking = showProgress
-        refreshButton()
+        publish()
         Task {
             let result = await Shell.run(["-c", Self.checkCommand])
             checking = false
             if result.status == Self.commandNotFound {
                 unavailable = "Para ver versiones nuevas aquí hace falta el comando de Paperclip."
                 checkError = nil
-                refreshButton()
+                publish()
                 return
             }
             unavailable = nil
             guard result.status == 0, var check = Self.decode(result.output) else {
                 checkError = result.tail(Self.errorTailLines)
-                refreshButton()
-                if announce {
-                    await showAlert("No pude revisar si hay versión nueva", checkError ?? "")
-                }
+                publish()
                 return
             }
             if let previewTarget {
@@ -115,15 +102,11 @@ final class UpdateController {
             last = check
             lastCheckedAt = .now
             checkError = nil
-            refreshButton()
-            if announce, !check.updateAvailable {
-                await showAlert("Paperclip está al día", "Tienes la \(check.currentVersion), la última versión estable.")
-            }
+            publish()
         }
     }
 
-    private func refreshButton() {
-        defer { host.setUpdateButton(button, visible: !button.title.isEmpty) }
+    private func publish() {
         status.paperclipVersion = last?.currentVersion
         status.latestVersion = last?.updateAvailable == true ? last?.targetVersion : nil
         status.checkingUpdate = checking
@@ -132,50 +115,18 @@ final class UpdateController {
         status.lastCheckedAt = lastCheckedAt
         status.updateProgress = progress
         status.updatesUnavailable = unavailable
-        button.isEnabled = progress == nil && !checking
-        button.tintProminence = .none
-        if unavailable != nil {
-            button.title = ""
-        } else if let progress {
-            show(progress, symbol: "arrow.down.circle.fill", color: nil)
-            button.tintProminence = .primary
-            button.toolTip = "No cierres la app hasta que termine."
-        } else if checking {
-            show("Revisando…", symbol: "arrow.clockwise", color: nil)
-            button.toolTip = nil
-        } else if let last, last.updateAvailable {
-            show("Actualizar a \(last.targetVersion)", symbol: "arrow.down.circle.fill", color: nil)
-            button.tintProminence = .primary
-            button.toolTip = "Tienes la \(last.currentVersion). Paperclip no se actualiza solo: tú eliges cuándo."
-        } else if let last {
-            show("Al día · \(last.currentVersion)", symbol: "checkmark.circle.fill", color: .systemGreen)
-            let time = (lastCheckedAt ?? .now).formatted(date: .omitted, time: .shortened)
-            button.toolTip = "Es la última versión estable de Paperclip. Revisado a las \(time); clic para revisar de nuevo."
-        } else if let checkError {
-            show("No pude revisar", symbol: "exclamationmark.triangle.fill", color: .systemOrange)
-            button.toolTip = "\(checkError)\n\nClic para reintentar."
-        } else {
-            // Todavía no termina la primera revisión.
-            button.title = ""
-        }
     }
 
-    /// `color` pinta el fondo del símbolo y deja blanco el dibujo de adentro (la palomita, el signo).
-    private func show(_ title: String, symbol: String, color: NSColor?) {
-        button.title = title
-        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-        button.image = color.flatMap { image?.withSymbolConfiguration(.init(paletteColors: [.white, $0])) } ?? image
+    static func releaseNotesURL(for version: String) -> URL {
+        URL(string: releaseNotesBase + version) ?? URL(string: "https://github.com/paperclipai/paperclip/releases")!
     }
 
-    @objc private func buttonClicked() {
-        requestUpdate()
-    }
-
-    /// Lo mismo que el botón: con una versión nueva pide confirmación y actualiza; si no, vuelve a revisar.
+    /// «Actualizar…» del panel y de Ajustes: con una versión nueva pide confirmación y actualiza; si no,
+    /// vuelve a revisar.
     func requestUpdate() {
         guard progress == nil else { return }
         guard let last, last.updateAvailable else {
-            runCheck(showProgress: true, announce: false)
+            runCheck(showProgress: true)
             return
         }
         confirmUpdate(last)
@@ -213,9 +164,7 @@ final class UpdateController {
                     await runUpdate(script.map { [$0.path] } ?? ["-c", Self.updateCommand], target: available.targetVersion)
                 }
             case .alertThirdButtonReturn:
-                if let url = URL(string: Self.releaseNotesBase + available.targetVersion) {
-                    NSWorkspace.shared.open(url)
-                }
+                NSWorkspace.shared.open(Self.releaseNotesURL(for: available.targetVersion))
             default:
                 break
             }
@@ -234,9 +183,9 @@ final class UpdateController {
             finish(target: target)
             host.reload()
         } else {
-            refreshButton()
+            publish()
             await showAlert("La actualización no terminó", result.tail(Self.errorTailLines))
-            runCheck(showProgress: false, announce: false)
+            runCheck(showProgress: false)
         }
     }
 
@@ -260,7 +209,7 @@ final class UpdateController {
     private func finish(target: String) {
         last = Check(currentVersion: target, targetVersion: target, updateAvailable: false)
         lastCheckedAt = .now
-        refreshButton()
+        publish()
         notifications.show(
             id: "paperclip-update",
             tag: "paperclip-update",
@@ -272,7 +221,7 @@ final class UpdateController {
 
     private func setProgress(_ text: String) {
         progress = text
-        refreshButton()
+        publish()
     }
 
     /// «2/5 Deteniendo el servicio…» → «Actualizando 2/5…». Se llama también desde la lectura de la salida.

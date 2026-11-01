@@ -85,8 +85,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     }
 
     /// `rehearsal`: para los ensayos, que la ponen fuera de la pantalla. No lee ni guarda dónde quedó la
-    /// ventana.
-    init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false) {
+    /// ventana. `initialURL`: la página con que abre (la que estaba al reiniciar para actualizar); sin ella,
+    /// el inicio de Paperclip.
+    init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false, initialURL: URL? = nil) {
         self.config = config
         glass = liquidGlass
         let window = SnapshotableWindow(
@@ -104,7 +105,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         titleObservation = webView.observe(\.title) { [weak self] _, _ in
             MainActor.assumeIsolated { self?.updateTitle() }
         }
-        webView.load(URLRequest(url: config.serverURL))
+        webView.load(URLRequest(url: initialURL ?? config.serverURL))
     }
 
     @available(*, unavailable)
@@ -355,6 +356,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         evaluate("window.__paperclipNative?.setTheme(\(WebResources.jsonLiteral(dark ? "dark" : "light")))")
     }
 
+    /// La página abierta, para volver a ella después de reiniciar.
+    var pageURL: URL? { failedURL ?? webView.url }
+
     /// Si se está mirando Paperclip: la ventana al frente y visible.
     var isInFront: Bool {
         guard let window else { return false }
@@ -380,6 +384,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         guard let updateButton else { return }
         guard glass else {
             updateButton.isHidden = false
+            // En la barra de la ventana, el color de acento lo pone el ítem, no el botón.
+            versionItem?.style = updateButton.tintProminence == .primary ? .prominent : .plain
             return
         }
         updateButtonCenterY?.constant = topBarHeight / 2

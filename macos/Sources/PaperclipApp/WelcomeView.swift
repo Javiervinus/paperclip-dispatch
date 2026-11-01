@@ -159,7 +159,8 @@ final class WelcomeModel {
 /// Medidas de la bienvenida.
 enum WelcomeDesign {
     static let windowSize = CGSize(width: 600, height: 540)
-    static let iconSize: CGFloat = 96
+    /// Lo que se veía del ícono del sistema a 96 puntos, sin su margen.
+    static let iconSize: CGFloat = 78
     static let animation: Animation = .smooth(duration: 0.4)
     static let glow = Color.indigo
 }
@@ -202,10 +203,7 @@ struct WelcomeView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage)
-                .resizable()
-                .frame(width: WelcomeDesign.iconSize, height: WelcomeDesign.iconSize)
-                .accessibilityHidden(true)
+            AppIconImage(size: WelcomeDesign.iconSize)
             Text(title)
                 .font(.largeTitle)
                 .bold()
