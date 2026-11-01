@@ -4,18 +4,24 @@
 #
 #   1. Sube la versión en macos/VERSION y convierte «## Unreleased» de CHANGELOG.md y CHANGELOG.es.md en
 #      la sección de esa versión («## 1.2.0 — 2026-11-01»). Commit y push.
-#   2. macos/release.sh             arma todo en macos/dist/<versión>, sin publicar (para revisar o probar)
-#      macos/release.sh --publish   además notariza, crea el release en GitHub, marca el commit y pone la
-#                                   versión en el cask de Homebrew (update-cask.sh), que commitea y sube al tap
+#   2. macos/release.sh             arma todo en macos/dist/<versión>, sin notarizar ni publicar (para revisar
+#                                   o probar)
+#      macos/release.sh --notarize  la arma tal como se publica (Apple silicon e Intel, la app y el DMG
+#                                   notarizados y grapados), sin tocar git, GitHub ni el tap: para revisarla
+#                                   o probar la notarización antes de publicar
+#      macos/release.sh --publish   lo mismo que --notarize y además crea el release en GitHub, marca el
+#                                   commit y pone la versión en el cask de Homebrew (update-cask.sh), que
+#                                   commitea y sube al tap
 #
 # Lo que deja: el DMG para instalar por primera vez, el .zip que baja el actualizador (firmado con la llave
 # de Sparkle) y appcast.xml, con las novedades de esa versión en inglés y en español (la app muestra las de
-# su idioma).
+# su idioma). La app sale sin los ajustes de esta Mac: build.sh la arma sin leer build.local.env (RELEASE=1).
+# De ese archivo, release.sh solo usa lo de publicar (NOTARY_PROFILE, HOMEBREW_TAP_DIR…).
 #
 # Variables (con su valor por defecto):
 #   RELEASES_REPO=<el de release.env; vacía = el del remoto origin>  dónde se publica y adónde enlazan las novedades
 #   BASE_URL=https://github.com/$RELEASES_REPO/releases/download/v<versión>  de dónde se baja el .zip
-#   NOTARY_PROFILE=<obligatorio con --publish>  perfil de notarytool en el llavero
+#   NOTARY_PROFILE=<obligatorio con --notarize y --publish>  perfil de notarytool en el llavero
 #       (se crea una vez con: xcrun notarytool store-credentials <nombre>)
 #   DIST=macos/dist/<versión>  APP_VERSION=<la de macos/VERSION>
 #   CHANGELOG_EN=CHANGELOG.md  CHANGELOG_ES=CHANGELOG.es.md  (otros, para probar)
@@ -32,8 +38,15 @@ source "$ROOT/release.env"
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
 VERSION=${APP_VERSION:-$(<"$ROOT/VERSION")}
 TAG=v$VERSION
+# NOTARIZING: armarla como se publica. PUBLISH: además, publicarla.
+NOTARIZING=false
 PUBLISH=false
-[[ $1 == --publish ]] && PUBLISH=true
+case $1 in
+  "") ;;
+  --notarize) NOTARIZING=true ;;
+  --publish) NOTARIZING=true PUBLISH=true ;;
+  *) print -u2 "Uso: release.sh [--notarize | --publish]"; exit 2 ;;
+esac
 CHANGELOG_EN=${CHANGELOG_EN:-$REPO/CHANGELOG.md}
 CHANGELOG_ES=${CHANGELOG_ES:-$REPO/CHANGELOG.es.md}
 DIST=${DIST:-$ROOT/dist/$VERSION}
@@ -71,10 +84,17 @@ NOTES_ES=$(notes_for "$CHANGELOG_ES")
 [[ -x $SPARKLE_BIN/sign_update ]] || swift package --package-path "$ROOT" resolve --disable-keychain >/dev/null
 [[ -x $SPARKLE_BIN/sign_update ]] || fail "no encuentro las herramientas de Sparkle en $SPARKLE_BIN"
 
-if $PUBLISH; then
+if $NOTARIZING; then
   [[ -n $RELEASES_REPO ]] || fail "no sé en qué repo publicar: define RELEASES_REPO o el remoto origin"
   [[ -n $UPDATE_FEED_URL ]] || fail "release.env no tiene UPDATE_FEED_URL: sin eso, la app publicada no buscaría versiones"
   [[ -n $NOTARY_PROFILE ]] || fail "falta NOTARY_PROFILE (xcrun notarytool store-credentials <nombre>)"
+  # La misma identidad firma la app y el DMG; Apple solo notariza con una Developer ID.
+  SIGN_IDENTITY=${SIGN_IDENTITY:-$(security find-identity -v -p codesigning \
+    | awk -F'"' '/Developer ID Application/ { print $2; exit }')}
+  [[ -n $SIGN_IDENTITY && $SIGN_IDENTITY != - ]] \
+    || fail "hace falta una identidad «Developer ID Application» (la del llavero o SIGN_IDENTITY, que no sea «-»): Apple no notariza otra firma"
+fi
+if $PUBLISH; then
   git -C "$REPO" diff --quiet && git -C "$REPO" diff --cached --quiet \
     || fail "hay cambios sin commitear: se publica lo que está en el commit"
   git -C "$REPO" fetch --quiet origin
@@ -91,10 +111,11 @@ mkdir -p "$DIST"
 
 # ------------------------------------------------------------ armar
 
-if $PUBLISH; then
-  OUTPUT_DIR=$DIST/build APP_VERSION=$VERSION UNIVERSAL=${UNIVERSAL:-1} NOTARIZE=1 "$ROOT/build.sh"
+if $NOTARIZING; then
+  OUTPUT_DIR=$DIST/build APP_VERSION=$VERSION UNIVERSAL=${UNIVERSAL:-1} NOTARIZE=1 RELEASE=1 \
+    SIGN_IDENTITY=$SIGN_IDENTITY "$ROOT/build.sh"
 else
-  OUTPUT_DIR=$DIST/build APP_VERSION=$VERSION UNIVERSAL=${UNIVERSAL:-0} "$ROOT/build.sh"
+  OUTPUT_DIR=$DIST/build APP_VERSION=$VERSION UNIVERSAL=${UNIVERSAL:-0} RELEASE=1 "$ROOT/build.sh"
 fi
 APP=$DIST/build/$APP_NAME.app
 
@@ -102,7 +123,7 @@ notarize() {
   xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait
 }
 
-if $PUBLISH; then
+if $NOTARIZING; then
   print "Notarizando la app…"
   ditto -c -k --keepParent "$APP" "$DIST/notarize.zip"
   notarize "$DIST/notarize.zip"
@@ -126,9 +147,8 @@ ditto "$APP" "$STAGE/$APP_NAME.app"
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -quiet -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG"
 rm -rf "$STAGE"
-if $PUBLISH; then
-  codesign --force --timestamp --sign "$(security find-identity -v -p codesigning \
-    | awk -F'"' '/Developer ID Application/ { print $2; exit }')" "$DMG"
+if $NOTARIZING; then
+  codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG"
   print "Notarizando el DMG…"
   notarize "$DMG"
   xcrun stapler staple "$DMG"

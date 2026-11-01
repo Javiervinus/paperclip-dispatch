@@ -1,15 +1,20 @@
 # Images
 
-Images used by `README.md` and `README.es.md`. They are taken with `macos/snapshot.zsh` from a release
-build, with sample data and no personal information on screen (company names, tasks, addresses).
+Images used by `README.md` and `README.es.md`. They are taken with `macos/snapshot.zsh` from a test copy of
+the app (another `APP_ID`, in English with `APP_LANGUAGE=en`) connected to a separate Paperclip instance
+with a made-up company. No personal information is on screen (company names, tasks, addresses).
 
 | File | What it shows | How |
 | --- | --- | --- |
-| `icon.png` | The app icon, 256 × 256, with its rounded shape | Exported from `macos/AppIcon.icon` |
-| `window-light.png` | The main window on the Paperclip dashboard, light | `macos/snapshot.zsh window` |
-| `window-dark.png` | The same, dark | `macos/snapshot.zsh window` |
-| `window-glass.png` | The main window with the Liquid Glass sidebar | `macos/snapshot.zsh window` |
-| `welcome.png` | The connection step of the welcome | `macos/snapshot.zsh welcome` |
-| `settings.png` | Settings, Notifications or Telegram tab | `macos/snapshot.zsh settings` |
+| `icon.png` | The app icon, 256 × 256 pt, with its rounded shape | Exported from `macos/AppIcon.icon` with Icon Composer's `ictool` (`--width 256 --height 256 --scale 2`) |
+| `window-light.png` | The main window on the Paperclip dashboard, light | `SHADOW=0 SIZE=1280x800 macos/snapshot.zsh page /<PREFIX>/dashboard`, with Appearance set to Light in the copy's Settings |
+| `window-dark.png` | The same, dark | The same, with Appearance set to Dark |
+| `window-glass.png` | The main window with the Liquid Glass sidebar | The same, light, with Liquid Glass in Paperclip turned on |
+| `welcome.png` | The connection step of the welcome | `macos/snapshot.zsh welcome` (`found-light.png`) |
+| `settings.png` | Settings, General tab | `macos/snapshot.zsh settings` (`general-light.png`) |
+| `notification.png` | The stuck-task notification with its Wake up button | `macos/snapshot.zsh notifications` (`mac-agent-light.png`) |
+
+The window images use `page` instead of `window` because `page` follows the copy's own Appearance and Liquid
+Glass settings, so light and dark don't depend on the Mac's.
 
 Keep them as PNG, at 2× and under 1 MB each.

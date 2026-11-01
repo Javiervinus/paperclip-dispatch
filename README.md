@@ -1,6 +1,5 @@
 <div align="center">
 
-<!-- Icon: docs/images/icon.png (see docs/images/README.md) -->
 <img src="docs/images/icon.png" width="96" alt="">
 
 # Paperclip Dispatch
@@ -18,7 +17,6 @@ notifications, a Dock badge and answers from Telegram.**
 ![macOS 26 Tahoe](https://img.shields.io/badge/macOS-26%20Tahoe-black)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-<!-- Screenshot: docs/images/window-light.png and docs/images/window-dark.png (see docs/images/README.md) -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-dark.png">
   <img src="docs/images/window-light.png" width="860" alt="Paperclip Dispatch showing the Paperclip dashboard in a native Mac window">
@@ -49,11 +47,14 @@ their own, and closing the app stops nothing.
 - **Decision notifications.** When an agent asks a question, needs an approval, fails or hits a budget
   alert, you get a macOS notification. Clicking it opens that decision. The app checks every minute on
   its own, so it keeps working with the window closed.
+- **Wake up a stuck task.** When a task sits with an agent that isn't working on it, the notification and
+  the Telegram message offer a **Wake up &lt;agent&gt;** button, and then tell you whether Paperclip woke
+  the agent or skipped it.
 - **Dock badge.** The Dock icon shows the same number as Decisions in Paperclip's sidebar.
 - **Answer from Telegram.** Connect your own Telegram bot and each decision arrives on your phone with
   its buttons: approve, reject, answer a question or reply with a comment. Works without Tailscale or a
   public address.
-- **"Explain it".** In Telegram, one tap summarizes a decision in a few lines (what the task is, what the
+- **"Explain it to me".** In Telegram, one tap summarizes a decision in a few lines (what the task is, what the
   agent did, what it asks and what each option means), using a coding CLI already on your Mac: Claude
   Code, Codex, OpenCode or a command you choose.
 - **Guided setup.** On first launch the app finds Paperclip on this Mac, starts it if it is off, helps you
@@ -64,12 +65,16 @@ their own, and closing the app stops nothing.
   Paperclip updates only when you ask.
 - **Works offline gracefully.** If Paperclip stops answering, the window says so, keeps retrying and comes
   back by itself.
+- **In English and Spanish.** The app follows your Mac's language, and so do the Telegram bot and its
+  "Explain it to me" summaries.
 
-<!-- Screenshots: docs/images/window-glass.png, docs/images/welcome.png, docs/images/settings.png -->
 <p align="center">
   <img src="docs/images/window-glass.png" width="32%" alt="Liquid Glass sidebar">
   <img src="docs/images/welcome.png" width="32%" alt="First-launch setup">
   <img src="docs/images/settings.png" width="32%" alt="Settings">
+</p>
+<p align="center">
+  <img src="docs/images/notification.png" width="440" alt="A stuck-task notification with a Wake up button">
 </p>
 
 ## Requirements
@@ -125,7 +130,7 @@ Paperclip Dispatch has no servers and collects nothing. It talks only to:
 - **GitHub**, to look for new versions of the app (the appcast of the latest release).
 - **Telegram**, only if you connect a bot. The bot token is stored in your keychain, and the bot answers
   only the chat you link.
-- **The CLI you pick for "Explain it"**, only when you tap it. That CLI sends the decision's context to
+- **The CLI you pick for "Explain it to me"**, only when you tap it. That CLI sends the decision's context to
   its own provider, with your account.
 
 ## How it works
@@ -203,10 +208,13 @@ macos/snapshot.zsh window   [folder]   # the main window, normal and with Liquid
 macos/snapshot.zsh welcome  [folder]   # each welcome step and the offline view
 macos/snapshot.zsh settings [folder]   # each Settings tab, light and dark
 macos/snapshot.zsh about    [folder]   # the About panel
+macos/snapshot.zsh notifications [folder]   # the stuck-task notification and Telegram message, with Wake up
 macos/snapshot.zsh page /<PREFIX>/dashboard [folder]   # any Paperclip page inside the app
 ```
 
-`APP_PATH`, `SIZE`, `ANCHORS`, `SHADOW` and `ACTIVE` are explained at the top of the script.
+`APP_LANGUAGE=en` or `APP_LANGUAGE=es` opens the copy in that language without changing your Mac's.
+`APP_PATH`, `SIZE`, `ANCHORS`, `SHADOW` and `ACTIVE` are explained at the top of the script. How the images in
+this README are made is in [`docs/images/README.md`](docs/images/README.md).
 
 ### Agent skills
 
@@ -221,16 +229,22 @@ Homebrew cask find them.
 1. Raise the version in `macos/VERSION`. Turn `## Unreleased` in `CHANGELOG.md` and `CHANGELOG.es.md` into
    that version's section (`## 1.2.0 — 2026-11-01`). These notes are what users see in the app's updates
    panel, so each item is one bold sentence for the person using the app. Commit and push.
-2. `macos/release.sh` builds everything in `macos/dist/<version>` without publishing: the DMG, the `.zip`
-   the updater downloads (signed with the Sparkle key) and `appcast.xml` with the notes in English and
-   Spanish. Use it to check a release before publishing.
-3. `macos/release.sh --publish` also builds for Apple silicon and Intel, notarizes the app and the DMG,
-   creates the GitHub release with the three files, tags the commit `v<version>` and updates the Homebrew
-   cask in [Javiervinus/homebrew-tap](https://github.com/Javiervinus/homebrew-tap) (`version` and
-   `sha256`), which it commits and pushes.
+2. `macos/release.sh` builds everything in `macos/dist/<version>` without notarizing or publishing: the
+   DMG, the `.zip` the updater downloads (signed with the Sparkle key) and `appcast.xml` with the notes in
+   English and Spanish. Use it to check a release before publishing.
+3. `macos/release.sh --notarize` builds the release exactly as it will be published: for Apple silicon
+   and Intel, with the app and the DMG notarized and stapled. It doesn't touch git, GitHub or the tap, so
+   you can check the notarization before publishing.
+4. `macos/release.sh --publish` does the same as `--notarize`, then creates the GitHub release with the
+   three files, tags the commit `v<version>` and updates the Homebrew cask in
+   [Javiervinus/homebrew-tap](https://github.com/Javiervinus/homebrew-tap) (`version` and `sha256`), which
+   it commits and pushes.
 
-`--publish` checks everything before building: a clean tree, `HEAD` pushed, a new version, the tap ready
-to push, and `NOTARY_PROFILE` set. What it needs once, on the Mac that publishes:
+What `release.sh` builds never carries this Mac's settings: it builds without reading
+`macos/build.local.env`, and leaves out `PAPERCLIP_SERVER_URL` and `PAPERCLIP_UPDATE_SCRIPT` even if they are
+in the environment. From that file it only takes what publishing needs, such as `NOTARY_PROFILE`. `--publish` checks
+everything before building: a clean tree, `HEAD` pushed, a new version, the tap ready to push, and
+`NOTARY_PROFILE` set. What it needs once, on the Mac that publishes:
 
 - **A notarization profile:** `xcrun notarytool store-credentials <profile>`, then pass
   `NOTARY_PROFILE=<profile>`.
@@ -253,11 +267,12 @@ folder with `python3 -m http.server 8765 --bind 127.0.0.1`. An already built cop
 ## Contributing
 
 Issues and pull requests are welcome. For bugs, include the app version and your Paperclip version (both are
-in Settings). Keep changes focused, build with `macos/build.sh`, and check the windows you touched with
+in Settings). If you work with a coding agent, [`AGENTS.md`](AGENTS.md) has the project's conventions for it
+(and for you). Keep changes focused, build with `macos/build.sh`, and check the windows you touched with
 `macos/snapshot.zsh`. Every pull request is built automatically on GitHub Actions
 ([`build.yml`](.github/workflows/build.yml)): it runs `macos/build.sh` for Apple silicon and Intel, without a
 developer signature and without installing, so you'll see there whether it compiles. User-facing changes get a
-line in both changelogs under `## Unreleased`.
+line in both changelogs under `## Unreleased` (add that heading at the top if it isn't there).
 
 ## Acknowledgements
 
