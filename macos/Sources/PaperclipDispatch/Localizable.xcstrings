@@ -641,6 +641,16 @@
         }
       }
     },
+    "CEO": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CEO"
+          }
+        }
+      }
+    },
     "CEO · ACME-42": {
       "localizations": {
         "es": {
@@ -2287,16 +2297,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Código abierto en "
-          }
-        }
-      }
-    },
-    "Operations": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Operaciones"
           }
         }
       }

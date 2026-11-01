@@ -14,18 +14,18 @@ enum NotificationsSnapshot {
     /// Para que se vea el botón «Abrir en Paperclip»: con una dirección local (127.0.0.1) Telegram no lo acepta
     /// y el código no lo pone.
     private static let sampleServerURL = URL(string: "https://paperclip.example.ts.net")!
-    private static let operations = (id: "00000000-0000-4000-8000-000000000001", name: String(localized: "Operations"))
+    private static let ceo = (id: "00000000-0000-4000-8000-000000000001", name: String(localized: "CEO"))
     private static let chief = (id: "00000000-0000-4000-8000-000000000002", name: String(localized: "Chief of Staff"))
     private static let skippedMessage = "The previous execution has not released its environment lease. Wait for "
         + "cleanup before continuing this task."
-    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(operations.name)."
+    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(ceo.name)."
     private static let failure = String(localized: "Paperclip returned 500: Internal server error")
 
     static func run(to directory: URL) async {
         let agentItem = sampleItem(
             issue: ("ACME-220", String(localized: "Redesign the pricing page")),
             blocked: ("ACME-221", String(localized: "Launch the new pricing plans")),
-            agentId: operations.id
+            agentId: ceo.id
         )
         let personItem = sampleItem(
             issue: ("ACME-222", String(localized: "Review the client contract")),
@@ -38,7 +38,7 @@ enum NotificationsSnapshot {
             agentId: chief.id
         )
         guard let agentItem, let personItem, let chiefItem, let target = agentItem.wakeTarget else { return }
-        let button = WakeButton(target: target, agentName: operations.name)
+        let button = WakeButton(target: target, agentName: ceo.name)
         let channel = TelegramChannel(
             previewing: TelegramChannel.State(),
             hasToken: true,
@@ -52,7 +52,7 @@ enum NotificationsSnapshot {
             return MacNoticePreview(title: notice.title, body: notice.body, action: wake?.title)
         }
         func macResult(_ outcome: WakeOutcome) -> MacNoticePreview {
-            let text = WakeText.result(outcome, target: target, agentName: operations.name)
+            let text = WakeText.result(outcome, target: target, agentName: ceo.name)
             return MacNoticePreview(title: text.title, body: text.body, action: outcome.allowsRetry ? button.title : nil)
         }
         func message(_ item: AttentionItem, agentName: String?) -> TelegramMessagePreview {
@@ -66,8 +66,8 @@ enum NotificationsSnapshot {
             return TelegramMessagePreview(html: sent.html, buttons: channel.keyboard(for: sent).map { $0.compactMap { $0["text"] as? String } })
         }
         func telegramResult(_ outcome: WakeOutcome) -> [TelegramMessagePreview] {
-            let original = message(agentItem, agentName: operations.name)
-            let status = TelegramFormat.wakeResult(outcome, target: target, agentName: operations.name)
+            let original = message(agentItem, agentName: ceo.name)
+            let status = TelegramFormat.wakeResult(outcome, target: target, agentName: ceo.name)
             guard outcome.allowsRetry else {
                 // El mensaje se edita: suma lo que pasó y pierde los botones.
                 return [TelegramMessagePreview(html: original.html + "\n\n" + status, buttons: [])]
@@ -88,14 +88,14 @@ enum NotificationsSnapshot {
             ("mac-already-running", AnyView(MacScene(notices: [macResult(alreadyRunning)]))),
             ("mac-not-stuck", AnyView(MacScene(notices: [macResult(.notStuck)]))),
             ("mac-failed", AnyView(MacScene(notices: [macResult(failed)]))),
-            ("telegram-agent", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name)]))),
+            ("telegram-agent", AnyView(TelegramScene(messages: [message(agentItem, agentName: ceo.name)]))),
             ("telegram-person", AnyView(TelegramScene(messages: [message(personItem, agentName: nil)]))),
             ("telegram-accepted", AnyView(TelegramScene(messages: telegramResult(accepted)))),
             ("telegram-skipped", AnyView(TelegramScene(messages: telegramResult(skipped)))),
             ("telegram-already-running", AnyView(TelegramScene(messages: telegramResult(alreadyRunning)))),
             ("telegram-failed", AnyView(TelegramScene(messages: telegramResult(failed)))),
             ("telegram-two-tasks", AnyView(TelegramScene(messages: [
-                message(agentItem, agentName: operations.name),
+                message(agentItem, agentName: ceo.name),
                 message(chiefItem, agentName: chief.name),
             ]))),
         ]
