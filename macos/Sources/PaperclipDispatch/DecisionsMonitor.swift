@@ -28,6 +28,7 @@ final class DecisionsMonitor {
     private(set) var signedOut = false
 
     private let api: PaperclipAPI
+    private let resolver: DecisionResolver
     private let preferences: Preferences
     private let notifications: NotificationBridge
     private let isLooking: () -> Bool
@@ -35,6 +36,8 @@ final class DecisionsMonitor {
     private var polling = false
     private var pollAgain = false
     private var pendingCount = 0
+    /// Las tareas que se están despertando ahora, para no mandar dos veces el mismo despertar.
+    private var waking: Set<String> = []
 
     init(
         api: PaperclipAPI,
@@ -43,6 +46,7 @@ final class DecisionsMonitor {
         isLooking: @escaping () -> Bool
     ) {
         self.api = api
+        resolver = DecisionResolver(api: api)
         self.preferences = preferences
         self.notifications = notifications
         self.isLooking = isLooking
@@ -94,7 +98,7 @@ final class DecisionsMonitor {
                 total += attention.deskBadgeCount ?? attention.totalCount ?? attention.items.count
                 let previous = seen[company.id]
                 let known = Set(previous ?? [])
-                announce(attention.items.filter { !known.contains($0.id) }, in: company, firstTime: previous == nil)
+                await announce(attention.items.filter { !known.contains($0.id) }, in: company, firstTime: previous == nil)
                 let current = attention.items.map(\.id)
                 let currentSet = Set(current)
                 let older = (previous ?? []).filter { !currentSet.contains($0) }
@@ -117,7 +121,7 @@ final class DecisionsMonitor {
 
     /// Lo que llega mientras se mira la ventana no se avisa (salvo que se pida en Ajustes): la barra
     /// lateral ya lo muestra. Igual queda como visto. La primera vez sí, porque se acaba de abrir la app.
-    private func announce(_ fresh: [AttentionItem], in company: PaperclipCompany, firstTime: Bool) {
+    private func announce(_ fresh: [AttentionItem], in company: PaperclipCompany, firstTime: Bool) async {
         guard !fresh.isEmpty, preferences.decisionNotifications,
               firstTime || preferences.notifyWhileLooking || !isLooking()
         else { return }
@@ -132,16 +136,44 @@ final class DecisionsMonitor {
             return
         }
         for item in fresh {
-            let parts: [String] = [item.originAgentName, item.relatedIssue?.identifier].compactMap { $0 }
-            let body: String = item.detail?.promptExcerpt ?? item.subject?.title ?? item.whyNow
-                ?? "Algo espera tu decisión."
+            let notice = Self.notice(for: item)
+            // Una tarea trabada a nombre de un agente lleva el botón para despertarlo.
+            var wake: WakeButton?
+            if let target = item.wakeTarget {
+                wake = WakeButton(target: target, agentName: await resolver.agentName(target.agentId))
+            }
+            notifications.show(id: item.id, tag: item.id, title: notice.title, body: notice.body, href: notice.href, wake: wake)
+        }
+    }
+
+    /// Título, texto y enlace del aviso de una decisión.
+    static func notice(for item: AttentionItem) -> (title: String, body: String, href: String?) {
+        let parts: [String] = [item.originAgentName, item.relatedIssue?.identifier].compactMap { $0 }
+        let body: String = item.detail?.promptExcerpt ?? item.subject?.title ?? item.whyNow
+            ?? "Algo espera tu decisión."
+        return (parts.isEmpty ? "Paperclip" : parts.joined(separator: " · "), body, item.subject?.href ?? item.relatedIssue?.href)
+    }
+
+    /// Se apretó «Despertar a …» en un aviso: despierta al agente (solo esta vez, sin reintentos) y cambia el
+    /// aviso por lo que respondió Paperclip. Si Paperclip lo saltó o falló, el aviso nuevo trae el botón otra vez.
+    func wake(_ button: WakeButton, notificationId: String, href: String?) {
+        let target = button.target
+        guard !waking.contains(target.issueId) else { return }
+        waking.insert(target.issueId)
+        Task {
+            defer { waking.remove(target.issueId) }
+            let outcome = await resolver.wake(target)
+            let text = WakeText.result(outcome, target: target, agentName: button.agentName)
             notifications.show(
-                id: item.id,
-                tag: item.id,
-                title: parts.isEmpty ? "Paperclip" : parts.joined(separator: " · "),
-                body: body,
-                href: item.subject?.href ?? item.relatedIssue?.href
+                id: notificationId,
+                tag: notificationId,
+                title: text.title,
+                body: text.body,
+                href: href,
+                wake: outcome.allowsRetry ? button : nil,
+                sound: false
             )
+            refresh()
         }
     }
 }

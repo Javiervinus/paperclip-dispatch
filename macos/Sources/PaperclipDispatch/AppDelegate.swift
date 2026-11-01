@@ -117,6 +117,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onClick = { [weak windowController] href in
             windowController?.openNotification(href: href)
         }
+        notifications.onWake = { [weak decisions] id, wake, href in
+            decisions?.wake(wake, notificationId: id, href: href)
+        }
         notifications.onPermissionChange = { [weak self] permission in
             self?.status.notificationPermission = permission
         }
