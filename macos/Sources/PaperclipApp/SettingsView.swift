@@ -4,8 +4,9 @@ import SwiftUI
 
 /// Medidas, colores y tiempos de Ajustes, para que todas las pestañas se vean iguales.
 enum SettingsDesign {
-    /// Fija, como Ajustes del Sistema: lo que no cabe se desplaza por debajo de la barra.
-    static let windowSize = CGSize(width: 580, height: 620)
+    /// Fija, como Ajustes del Sistema: lo que no cabe se desplaza por debajo de la barra. De alto, lo justo
+    /// para que General quepa entera: una fila cortada por el borde parece un error, no algo desplazable.
+    static let windowSize = CGSize(width: 580, height: 720)
     static let glowHeight: CGFloat = 340
     static let iconSize: CGFloat = 54
     /// Aire entre el selector de la barra y lo primero de cada pestaña.
@@ -117,7 +118,8 @@ private struct AppUpdatesSection: View {
             LabeledContent {
                 accessory
             } label: {
-                Text("Paperclip Dispatch \(AppUpdater.currentVersion)")
+                // «Dispatch» a secas, como en el botón de arriba: «Paperclip» en la interfaz es el servidor.
+                Text("Dispatch \(AppUpdater.currentVersion)")
                 Text(line)
                     .contentTransition(.opacity)
                     .animation(SettingsDesign.animation, value: line)
@@ -130,13 +132,14 @@ private struct AppUpdatesSection: View {
             if let error = updater.checkError {
                 WarningRow(text: "No pude buscar versiones nuevas: \(error)")
             }
-            Toggle(isOn: $updater.automaticallyDownloads) {
-                Text("Descargar versiones nuevas solas")
-                Text("Se instalan cuando reinicias o cierras la app: nunca se reinicia sin preguntarte.")
+            if updater.isConfigured {
+                Toggle(isOn: $updater.automaticallyDownloads) {
+                    Text("Descargar versiones nuevas solas")
+                    Text("Se instalan cuando reinicias o cierras la app: nunca se reinicia sin preguntarte.")
+                }
             }
-            .disabled(!updater.isConfigured)
         } header: {
-            Text("Versiones de esta app")
+            Text("Actualizaciones")
         } footer: {
             Text("Las de Paperclip, el servidor donde trabajan los agentes, están en la pestaña Paperclip.")
                 .settingsFootnote()
@@ -145,11 +148,12 @@ private struct AppUpdatesSection: View {
 
     private var line: String {
         switch updater.phase {
-        case .idle where !updater.isConfigured: return "Esta copia no busca versiones nuevas."
+        // Un build sin appcast: solo el que se arma a mano (los publicados siempre lo traen).
+        case .idle where !updater.isConfigured: return "Esta app · armada en esta Mac: no busca versiones nuevas"
         case .idle:
-            if let news = updater.whatsNew { return "Recién actualizada a la \(news.version)." }
-            guard let checked = updater.lastCheckedAt else { return "Se revisa sola cada pocas horas." }
-            return "Al día · última revisión: \(checked.formatted(date: .omitted, time: .shortened))"
+            if let news = updater.whatsNew { return "Esta app · recién actualizada a la \(news.version)" }
+            guard let checked = updater.lastCheckedAt else { return "Esta app · se revisa sola cada pocas horas" }
+            return "Esta app · al día · revisado a las \(checked.formatted(date: .omitted, time: .shortened))"
         case .checking: return "Buscando…"
         case .available(let release): return "Salió la \(release.version). Se descarga cuando aprietas."
         case .downloading(let release, _): return "Descargando la \(release.version)…"

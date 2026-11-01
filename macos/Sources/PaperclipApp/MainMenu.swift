@@ -8,9 +8,10 @@ enum MainMenu {
         let main = NSMenu()
         main.addItem(submenu(appName, [
             item("Acerca de \(appName)", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+            // Junto a «Acerca de», donde la ponen las apps de Mac que se actualizan solas.
+            item("Buscar actualizaciones…", #selector(AppDelegate.checkForUpdates(_:))),
             .separator(),
             item("Ajustes…", #selector(AppDelegate.showSettings(_:)), ","),
-            item("Buscar actualizaciones…", #selector(AppDelegate.checkForUpdates(_:))),
             .separator(),
             item("Ocultar \(appName)", #selector(NSApplication.hide(_:)), "h"),
             item("Ocultar otras", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),

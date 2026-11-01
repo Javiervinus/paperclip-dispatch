@@ -2,8 +2,7 @@ import SwiftUI
 
 /// Medidas del panel de actualizaciones.
 enum UpdatesDesign {
-    /// Lo justo para que «Paperclip Dispatch 1.10.0» quepa en una línea junto a «Descargar y reiniciar».
-    static let width: CGFloat = 424
+    static let width: CGFloat = 392
     static let iconSize: CGFloat = 38
     /// Las novedades que se muestran antes de mandar a GitHub por el resto.
     static let maxNoteItems = 5
@@ -80,7 +79,7 @@ private struct DispatchUpdateRow: View {
             HStack(spacing: 11) {
                 AppIconImage(size: UpdatesDesign.iconSize)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Paperclip Dispatch \(app.phase.release?.version ?? AppUpdater.currentVersion)")
+                    Text("Dispatch \(app.phase.release?.version ?? AppUpdater.currentVersion)")
                         .font(.body.weight(.semibold))
                     Text(subtitle)
                         .font(.caption)
