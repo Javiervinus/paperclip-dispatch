@@ -126,7 +126,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) no se usa")
+        fatalError("init(coder:) is not used")
     }
 
     // MARK: - Armado
@@ -568,7 +568,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
            Self.unavailableStatusCodes.contains(http.statusCode)
         {
             failedURL = http.url.flatMap { config.isInternal($0) ? $0 : nil } ?? config.serverURL
-            showOffline(reason: "Respondió con un error \(http.statusCode): Paperclip puede estar apagado detrás.")
+            showOffline(reason: String(localized: "It answered with error \(http.statusCode): Paperclip may be off behind it."))
             return .cancel
         }
         return navigationResponse.canShowMIMEType ? .allow : .download
@@ -706,7 +706,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     ) async {
         let alert = NSAlert()
         alert.messageText = message
-        alert.addButton(withTitle: "Aceptar")
+        alert.addButton(withTitle: String(localized: "OK"))
         _ = await present(alert)
     }
 
@@ -717,8 +717,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     ) async -> Bool {
         let alert = NSAlert()
         alert.messageText = message
-        alert.addButton(withTitle: "Aceptar")
-        alert.addButton(withTitle: "Cancelar")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         return await present(alert) == .alertFirstButtonReturn
     }
 
@@ -733,8 +733,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         let field = NSTextField(string: defaultText ?? "")
         field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
         alert.accessoryView = field
-        alert.addButton(withTitle: "Aceptar")
-        alert.addButton(withTitle: "Cancelar")
+        alert.addButton(withTitle: String(localized: "OK"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         return await present(alert) == .alertFirstButtonReturn ? field.stringValue : nil
     }
 

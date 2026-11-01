@@ -13,6 +13,6 @@ enum AboutSnapshot {
         guard let panel = NSApp.windows.first(where: { !before.contains($0.windowNumber) }) else { return }
         Snapshot.hide(panel)
         try? await Task.sleep(for: drawTime)
-        await Snapshot.capture([Snapshot.Window(window: panel, file: "acerca-de.png")], in: directory)
+        await Snapshot.capture([Snapshot.Window(window: panel, file: "about.png")], in: directory)
     }
 }

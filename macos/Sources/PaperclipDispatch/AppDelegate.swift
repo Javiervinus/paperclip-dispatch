@@ -286,7 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             id: "paperclip-test",
             tag: "paperclip-test",
             title: "Paperclip",
-            body: "Así llegan los avisos de Decisions.",
+            body: String(localized: "This is what Decisions notifications look like."),
             href: nil
         )
     }

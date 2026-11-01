@@ -147,41 +147,41 @@ enum WelcomeSnapshot {
             WelcomeModel(mode: .firstRun, step: .found(local, health), phase: .notifications, notificationAccess: access)
         }
         let cases: [(file: String, make: () -> WelcomeModel)] = [
-            ("inicio", { WelcomeModel(mode: .firstRun, step: .found(local, health)) }),
-            ("encontrado", { connect(.found(local, health)) }),
-            ("apagado", { connect(.stopped(local)) }),
-            ("no-encontrado", { connect(.notFound) }),
-            ("instalar", {
+            ("start", { WelcomeModel(mode: .firstRun, step: .found(local, health)) }),
+            ("found", { connect(.found(local, health)) }),
+            ("stopped", { connect(.stopped(local)) }),
+            ("not-found", { connect(.notFound) }),
+            ("install", {
                 let model = connect(.install)
                 model.node = .ready("v24.11.1")
                 return model
             }),
-            ("instalar-sin-node", {
+            ("install-without-node", {
                 let model = connect(.install)
                 model.node = .missing
                 return model
             }),
-            ("direccion", {
+            ("address", {
                 let model = connect(.address)
                 model.address = "192.168.1.20:3100"
                 return model
             }),
-            ("direccion-error", {
+            ("address-error", {
                 let model = connect(.address)
                 model.address = "192.168.1.20:3100"
                 model.addressError = PaperclipLocator.ProbeError.unreachable.message
                 return model
             }),
-            ("avisos", { notifications(NotificationAccess(permission: .notDetermined, banners: false, badge: false)) }),
-            ("avisos-permitidos", { notifications(NotificationAccess(permission: .granted, banners: true, badge: true)) }),
-            ("avisos-a-medias", { notifications(NotificationAccess(permission: .granted, banners: false, badge: true)) }),
-            ("avisos-apagados", { notifications(NotificationAccess(permission: .denied, banners: false, badge: false)) }),
-            ("cambiar", { WelcomeModel(mode: .change(current: local.url), step: .found(local, health)) }),
+            ("notifications", { notifications(NotificationAccess(permission: .notDetermined, banners: false, badge: false)) }),
+            ("notifications-allowed", { notifications(NotificationAccess(permission: .granted, banners: true, badge: true)) }),
+            ("notifications-partial", { notifications(NotificationAccess(permission: .granted, banners: false, badge: true)) }),
+            ("notifications-off", { notifications(NotificationAccess(permission: .denied, banners: false, badge: false)) }),
+            ("change", { WelcomeModel(mode: .change(current: local.url), step: .found(local, health)) }),
         ]
         var controllers: [NSWindowController] = []
         var tipWindows: [NSWindow] = []
         var windows: [Snapshot.Window] = []
-        for (name, appearance) in [("claro", NSAppearance.Name.aqua), ("oscuro", .darkAqua)] {
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
                 let controller = WelcomeWindowController(model: item.make())
                 guard let window = controller.window else { continue }
@@ -195,7 +195,7 @@ enum WelcomeSnapshot {
                 sheet.appearance = NSAppearance(named: appearance)
                 Snapshot.hide(sheet)
                 tipWindows.append(sheet)
-                windows.append(Snapshot.Window(window: sheet, file: "sugerencia-\(tip.rawValue)-\(name).png"))
+                windows.append(Snapshot.Window(window: sheet, file: "tip-\(tip.rawValue)-\(name).png"))
             }
             let offline = MainWindowController(
                 config: AppConfig(serverURL: Snapshot.placeholderServerURL),
@@ -206,7 +206,7 @@ enum WelcomeSnapshot {
                 window.appearance = NSAppearance(named: appearance)
                 Snapshot.hide(window, contentSize: offlineContentSize)
                 controllers.append(offline)
-                windows.append(Snapshot.Window(window: window, file: "sin-conexion-\(name).png"))
+                windows.append(Snapshot.Window(window: window, file: "offline-\(name).png"))
             }
         }
         try? await Task.sleep(for: settleTime)
@@ -244,25 +244,25 @@ enum MainWindowSnapshot {
     /// Novedades de muestra para el ensayo del botón y el panel.
     static let sampleRelease = AppUpdater.Release(
         version: "0.2.0",
-        notes: """
-            - **Avisos en el teléfono con ntfy.** Elige un tema en Ajustes y las decisiones llegan a cualquier teléfono.
-            - **La ventana recuerda su página.** Después de actualizar, abre donde la dejaste.
-            """,
+        notes: String(localized: """
+            - **Phone notifications with ntfy.** Pick a topic in Settings and decisions reach any phone.
+            - **The window remembers its page.** After an update, it opens where you left off.
+            """),
         notesURL: nil
     )
 
     static func run(config: AppConfig, to directory: URL) async {
         let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates, nudge: NotificationNudge.Problem?)] = [
             ("normal", false, false, .upToDate, nil),
-            ("vidrio", true, false, .upToDate, nil),
-            ("normal-a-vidrio", false, true, .upToDate, nil),
-            ("vidrio-a-normal", true, true, .upToDate, nil),
+            ("glass", true, false, .upToDate, nil),
+            ("normal-to-glass", false, true, .upToDate, nil),
+            ("glass-to-normal", true, true, .upToDate, nil),
             ("dispatch-normal", false, false, .dispatch, nil),
-            ("dispatch-vidrio", true, false, .dispatch, nil),
-            ("dos-vidrio", true, false, .both, nil),
-            ("novedades-vidrio", true, false, .whatsNew, nil),
-            ("avisos-apagados-normal", false, false, .upToDate, .off),
-            ("avisos-a-medias-vidrio", true, false, .upToDate, .noBanners),
+            ("dispatch-glass", true, false, .dispatch, nil),
+            ("both-glass", true, false, .both, nil),
+            ("whats-new-glass", true, false, .whatsNew, nil),
+            ("notifications-off-normal", false, false, .upToDate, .off),
+            ("notifications-partial-glass", true, false, .upToDate, .noBanners),
         ]
         let preferences = Preferences()
         let notifications = NotificationBridge()
@@ -340,12 +340,12 @@ enum PageSnapshot {
             buttons.append(Snapshot.upToDateButton(paperclip: version?.currentVersion, host: controller))
             controller.load(path: path)
             shots.append((controller, anchor))
-            windows.append(Snapshot.Window(window: window, file: "pagina-\(index + 1).png"))
+            windows.append(Snapshot.Window(window: window, file: "page-\(index + 1).png"))
         }
         try? await Task.sleep(for: loadTime)
         for shot in shots where !shot.anchor.isEmpty {
             if await !shot.controller.scrollPage(toText: shot.anchor) {
-                NSLog("Paperclip: el ensayo no encontró «%@» en la página", shot.anchor)
+                NSLog("Paperclip: the snapshot did not find “%@” on the page", shot.anchor)
             }
         }
         try? await Task.sleep(for: scrollTime)

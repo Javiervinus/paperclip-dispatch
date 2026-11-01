@@ -27,7 +27,7 @@ struct UpdatesPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Actualizaciones")
+            Text("Updates")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, UpdatesDesign.rowPadding)
@@ -49,7 +49,7 @@ struct UpdatesPanel: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
-            Button("Buscar ahora", action: actions.checkAll)
+            Button("Check Now", action: actions.checkAll)
                 .buttonStyle(.glass)
                 .disabled(busy)
         }
@@ -63,9 +63,9 @@ struct UpdatesPanel: View {
 
     private var checkedLine: String {
         let dates = [app.lastCheckedAt, status.lastCheckedAt].compactMap(\.self)
-        guard let last = dates.max() else { return "Se revisa sola cada pocas horas" }
+        guard let last = dates.max() else { return String(localized: "Checks automatically every few hours") }
         // Sin punto final: la hora ya puede terminar en uno («10:37 p. m.»).
-        return "Última revisión: \(last.formatted(date: .omitted, time: .shortened))"
+        return String(localized: "Last checked: \(last.formatted(date: .omitted, time: .shortened))")
     }
 }
 
@@ -95,7 +95,7 @@ private struct DispatchUpdateRow: View {
                     whatsNew(news)
                 }
                 if let error = app.checkError {
-                    WarningRow(text: "No pude buscar versiones de la app: \(error)")
+                    WarningRow(text: String(localized: "Couldn’t check for app updates: \(error)"))
                 }
             }
             .padding(.leading, UpdatesDesign.textInset)
@@ -108,11 +108,11 @@ private struct DispatchUpdateRow: View {
 
     private var subtitle: String {
         switch app.phase {
-        case .idle where !app.isConfigured: "Esta app · esta copia no busca versiones nuevas"
-        case .idle where app.whatsNew != nil: "Esta app · recién actualizada"
-        case .idle: app.lastCheckedAt == nil ? "Esta app" : "Esta app · al día"
-        case .checking: "Esta app · buscando…"
-        default: "Esta app · tienes la \(AppUpdater.currentVersion)"
+        case .idle where !app.isConfigured: String(localized: "This app · this copy doesn’t check for new versions")
+        case .idle where app.whatsNew != nil: String(localized: "This app · just updated")
+        case .idle: app.lastCheckedAt == nil ? String(localized: "This app") : String(localized: "This app · up to date")
+        case .checking: String(localized: "This app · checking…")
+        default: String(localized: "This app · you have \(AppUpdater.currentVersion)")
         }
     }
 
@@ -120,50 +120,50 @@ private struct DispatchUpdateRow: View {
         switch app.phase {
         case .idle:
             if app.whatsNew != nil {
-                Button("Listo", action: app.dismissWhatsNew).buttonStyle(.glass)
+                Button("Done", action: app.dismissWhatsNew).buttonStyle(.glass)
             } else if app.isConfigured, app.lastCheckedAt != nil {
                 UpToDateBadge()
             }
         case .checking:
             ProgressView().controlSize(.small)
         case .available:
-            Button("Descargar y reiniciar", action: app.install).buttonStyle(.glassProminent)
+            Button("Download and Restart", action: app.install).buttonStyle(.glassProminent)
         case .downloading(_, let progress):
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text(progress.map { "\(Int(($0 * 100).rounded())) %" } ?? "Preparando…")
+                Text(progress.map { String(localized: "\(Int(($0 * 100).rounded()))%") } ?? String(localized: "Preparing…"))
                     .font(.callout)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
         case .ready:
-            Button("Reiniciar", action: app.install).buttonStyle(.glassProminent)
+            Button("Restart", action: app.install).buttonStyle(.glassProminent)
         case .installing:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text("Reiniciando…").font(.callout).foregroundStyle(.secondary)
+                Text("Restarting…").font(.callout).foregroundStyle(.secondary)
             }
         }
     }
 
     @ViewBuilder private func details(for release: AppUpdater.Release) -> some View {
-        Text("Al reiniciar, esta app se cierra y vuelve a abrirse en unos segundos, en la misma página. Paperclip y tus agentes no se detienen: corren aparte.")
+        Text("When you restart, this app quits and reopens in a few seconds, on the same page. Paperclip and your agents don’t stop: they run separately.")
             .font(.callout)
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
         if let notes = release.notes {
             ReleaseNotesView(markdown: notes, link: release.notesURL)
         } else if let link = release.notesURL {
-            Link(destination: link) { Label("Novedades en GitHub", systemImage: "arrow.up.right") }
+            Link(destination: link) { Label("What’s New on GitHub", systemImage: "arrow.up.right") }
                 .font(.callout)
         }
         switch app.phase {
         case .ready:
-            Text("Si prefieres esperar, se instala sola la próxima vez que cierres la app.")
+            Text("If you’d rather wait, it installs automatically the next time you quit the app.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         case .available:
-            Text("Las descargas automáticas están apagadas en Ajustes → General.")
+            Text("Automatic downloads are turned off in Settings → General.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         default:
@@ -173,9 +173,9 @@ private struct DispatchUpdateRow: View {
 
     @ViewBuilder private func whatsNew(_ release: AppUpdater.Release) -> some View {
         if let notes = release.notes {
-            ReleaseNotesView(markdown: notes, link: release.notesURL, title: "Lo nuevo en la \(release.version)")
+            ReleaseNotesView(markdown: notes, link: release.notesURL, title: String(localized: "What’s New in \(release.version)"))
         } else if let link = release.notesURL {
-            Link(destination: link) { Label("Lo nuevo en la \(release.version)", systemImage: "arrow.up.right") }
+            Link(destination: link) { Label("What’s New in \(release.version)", systemImage: "arrow.up.right") }
                 .font(.callout)
         }
     }
@@ -203,17 +203,17 @@ private struct PaperclipUpdateRow: View {
             }
             Group {
                 if let latest = status.latestVersion, status.updateProgress == nil {
-                    Text("Actualizar Paperclip lo reinicia y pausa a tus agentes mientras tanto: mejor en un momento tranquilo.")
+                    Text("Updating Paperclip restarts it and pauses your agents in the meantime: best done at a quiet moment.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Link(destination: UpdateController.releaseNotesURL(for: latest)) {
-                        Label("Novedades de Paperclip", systemImage: "arrow.up.right")
+                        Label("What’s New in Paperclip", systemImage: "arrow.up.right")
                     }
                     .font(.callout)
                 }
                 if let error = status.updateCheckError, status.updatesUnavailable == nil {
-                    WarningRow(text: "No pude revisar Paperclip: \(error)")
+                    WarningRow(text: String(localized: "Couldn’t check Paperclip: \(error)"))
                 }
             }
             .padding(.leading, UpdatesDesign.textInset)
@@ -227,20 +227,20 @@ private struct PaperclipUpdateRow: View {
     }
 
     private var subtitle: String {
-        if let unavailable = status.updatesUnavailable { return "El servidor · \(unavailable)" }
-        if let progress = status.updateProgress { return "El servidor · \(progress)" }
-        if status.checkingUpdate { return "El servidor · revisando…" }
+        if let unavailable = status.updatesUnavailable { return String(localized: "The server · \(unavailable)") }
+        if let progress = status.updateProgress { return String(localized: "The server · \(progress)") }
+        if status.checkingUpdate { return String(localized: "The server · checking…") }
         if status.latestVersion != nil, let current = status.paperclipVersion {
-            return "El servidor · tienes la \(current)"
+            return String(localized: "The server · you have \(current)")
         }
-        return status.paperclipVersion == nil ? "El servidor" : "El servidor · al día"
+        return status.paperclipVersion == nil ? String(localized: "The server") : String(localized: "The server · up to date")
     }
 
     @ViewBuilder private var trailing: some View {
         if status.updateProgress != nil || status.checkingUpdate {
             ProgressView().controlSize(.small)
         } else if status.latestVersion != nil {
-            Button("Actualizar…", action: update).buttonStyle(.glass)
+            Button("Update…", action: update).buttonStyle(.glass)
         } else if status.paperclipVersion != nil, status.updatesUnavailable == nil {
             UpToDateBadge()
         }
@@ -254,7 +254,7 @@ private struct PaperclipUpdateRow: View {
 struct ReleaseNotesView: View {
     let markdown: String
     let link: URL?
-    var title = "Novedades"
+    var title = String(localized: "What’s New")
 
     var body: some View {
         let notes = ReleaseNotes(markdown: markdown, maxItems: UpdatesDesign.maxNoteItems)
@@ -281,10 +281,10 @@ struct ReleaseNotesView: View {
             }
             if notes.truncated {
                 if let link {
-                    Link(destination: link) { Label("Ver todas en GitHub", systemImage: "arrow.up.right") }
+                    Link(destination: link) { Label("See All on GitHub", systemImage: "arrow.up.right") }
                         .padding(.top, 2)
                 } else {
-                    Text("…y más.").foregroundStyle(.secondary)
+                    Text("…and more.").foregroundStyle(.secondary)
                 }
             }
         }
@@ -405,7 +405,7 @@ struct PaperclipGlyph: View {
 private struct UpToDateBadge: View {
     var body: some View {
         Label {
-            Text("Al día").foregroundStyle(.secondary)
+            Text("Up to date").foregroundStyle(.secondary)
         } icon: {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.white, .green)
         }

@@ -1,0 +1,4779 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "\n\n<context>\n%@\n</context>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\n\n<contexto>\n%@\n</contexto>"
+          }
+        }
+      }
+    },
+    " (asks you to write: %@)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (pide escribir: %@)"
+          }
+        }
+      }
+    },
+    " (project %@)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (proyecto %@)"
+          }
+        }
+      }
+    },
+    " (you have %@)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (tienes la %@)"
+          }
+        }
+      }
+    },
+    " Paperclip said: “%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " Paperclip dijo: «%@»"
+          }
+        }
+      }
+    },
+    "%@\n\nClick for details and to try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@\n\nClic para ver detalles y reintentar."
+          }
+        }
+      }
+    },
+    "%@ %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ %@"
+          }
+        }
+      }
+    },
+    "%@ (not installed)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ (no instalado)"
+          }
+        }
+      }
+    },
+    "%@ Install it with %@ and you’ll see it when you reopen the app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ Install it with %2$@ and you’ll see it when you reopen the app."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Se instala con %@ y se ve al volver a abrir la app."
+          }
+        }
+      }
+    },
+    "%@ already has a run in progress.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ya tiene una corrida en marcha."
+          }
+        }
+      }
+    },
+    "%@ is no longer assigned to %@, or it’s already closed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ is no longer assigned to %2$@, or it's already closed."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ya no está a nombre de %@ o ya se cerró."
+          }
+        }
+      }
+    },
+    "%@ isn’t responding.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ no responde."
+          }
+        }
+      }
+    },
+    "%@ on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ en GitHub"
+          }
+        }
+      }
+    },
+    "%@ still isn’t working on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ still isn't working on %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sigue sin trabajar en %@."
+          }
+        }
+      }
+    },
+    "%@ will work on %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@ will work on %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ va a trabajar en %@."
+          }
+        }
+      }
+    },
+    "%lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld %%"
+          }
+        }
+      }
+    },
+    ", status %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", estado %@"
+          }
+        }
+      }
+    },
+    "- **Phone notifications with ntfy.** Pick a topic in Settings and decisions reach any phone.\n- **The window remembers its page.** After an update, it opens where you left off.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "- **Avisos en el teléfono con ntfy.** Elige un tema en Ajustes y las decisiones llegan a cualquier teléfono.\n- **La ventana recuerda su página.** Después de actualizar, abre donde la dejaste."
+          }
+        }
+      }
+    },
+    "123456:ABC…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "123456:ABC…"
+          }
+        }
+      }
+    },
+    "2": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2"
+          }
+        }
+      }
+    },
+    "2 Updates": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2 actualizaciones"
+          }
+        }
+      }
+    },
+    "<i>To ask the agent something, reply to the decision.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<i>Para preguntarle algo al agente, responde a la decisión.</i>"
+          }
+        }
+      }
+    },
+    "<i>You can press the button again.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<i>Puedes volver a apretar el botón.</i>"
+          }
+        }
+      }
+    },
+    "A CLI on this Mac explains it, with no tools: it only reads the task and never decides or writes anything.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo cuenta un CLI de esta Mac, sin herramientas: solo lee la tarea y no decide ni escribe nada."
+          }
+        }
+      }
+    },
+    "A Paperclip agent is asking the person who directs it for a decision, and they’re reading it on their phone. Using the context below, explain it to them in clear English in 4 to 6 short lines: what the task is about, what the agent has done so far, exactly what it’s asking for, and what happens with each option. Don’t decide for them or make up anything that isn’t in the context. Plain text only, with **bold** at most; no headings or long lists.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un agente de Paperclip le pide una decisión a la persona que lo dirige, que la está viendo en el teléfono. Con el contexto de abajo, explícale en español claro y en 4 a 6 líneas cortas: de qué trata la tarea, qué hizo el agente hasta ahora, qué le pide exactamente y qué pasa con cada opción. No decidas por ella ni inventes nada que no esté en el contexto. Solo texto, con **negritas** como mucho; sin títulos ni listas largas."
+          }
+        }
+      }
+    },
+    "A new version of Paperclip, the server where your agents work, is available: %@%@.\nUpdating it pauses your agents while it restarts, so you choose when.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A new version of Paperclip, the server where your agents work, is available: %1$@%2$@.\nUpdating it pauses your agents while it restarts, so you choose when."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay una versión nueva de Paperclip, el servidor donde trabajan tus agentes: la %@%@.\nActualizarlo pausa a los agentes mientras se reinicia: tú eliges cuándo."
+          }
+        }
+      }
+    },
+    "A new version of this app is available: Dispatch %@ (you have %@).\nClick to see what’s new. %@; Paperclip and your agents keep working.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A new version of this app is available: Dispatch %1$@ (you have %2$@).\nClick to see what’s new. %3$@; Paperclip and your agents keep working."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay una versión nueva de esta app: Dispatch %@ (tienes la %@).\nClic para ver qué trae. %@; Paperclip y tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
+    "About %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de %@"
+          }
+        }
+      }
+    },
+    "About 2 minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unos 2 minutos"
+          }
+        }
+      }
+    },
+    "Access request": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicitud de acceso"
+          }
+        }
+      }
+    },
+    "Actual Size": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño real"
+          }
+        }
+      }
+    },
+    "Address": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirección"
+          }
+        }
+      }
+    },
+    "Adds “💡 Explain it to me” to each decision: it explains it in a few lines.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agrega «💡 Explícamela» a cada decisión: te la cuenta en pocas líneas."
+          }
+        }
+      }
+    },
+    "Adjust": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustar"
+          }
+        }
+      }
+    },
+    "Agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agente"
+          }
+        }
+      }
+    },
+    "Agent error": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de un agente"
+          }
+        }
+      }
+    },
+    "Allow Notifications": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir avisos"
+          }
+        }
+      }
+    },
+    "Allowed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitidos"
+          }
+        }
+      }
+    },
+    "Allowed, but without banners or the badge on the Dock icon.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitidos, pero sin banner ni número en el Dock."
+          }
+        }
+      }
+    },
+    "Allowed, but without banners: you’d only see them in Notification Center.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitidos, pero sin banner: solo los verías en el Centro de notificaciones."
+          }
+        }
+      }
+    },
+    "Allowed, but without the badge on the Dock icon.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitidos, pero sin el número en el Dock."
+          }
+        }
+      }
+    },
+    "Always up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siempre al día"
+          }
+        }
+      }
+    },
+    "An agent failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falló un agente"
+          }
+        }
+      }
+    },
+    "And %lld more pending: they’re in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Y %lld decisiones más pendientes: están en Paperclip."
+          }
+        }
+      }
+    },
+    "Another program is handling this bot. Use a bot just for Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otro programa está atendiendo este bot. Usa un bot solo para Paperclip."
+          }
+        }
+      }
+    },
+    "Answer it in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se contesta en Paperclip."
+          }
+        }
+      }
+    },
+    "Appearance": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apariencia"
+          }
+        }
+      }
+    },
+    "Approval": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprobación"
+          }
+        }
+      }
+    },
+    "Approve": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aprobar"
+          }
+        }
+      }
+    },
+    "Auto": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistema"
+          }
+        }
+      }
+    },
+    "Automatic": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático"
+          }
+        }
+      }
+    },
+    "Automatic (none found)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático (no encontré ninguno)"
+          }
+        }
+      }
+    },
+    "Automatic (searching…)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático (buscando…)"
+          }
+        }
+      }
+    },
+    "Automatic downloads are turned off in Settings → General.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las descargas automáticas están apagadas en Ajustes → General."
+          }
+        }
+      }
+    },
+    "Automatic · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático · %@"
+          }
+        }
+      }
+    },
+    "Back": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrás"
+          }
+        }
+      }
+    },
+    "Banners, sound, and the badge on the Dock icon.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banners, sonido y el número en el Dock."
+          }
+        }
+      }
+    },
+    "Banners, sound, and the badge on the Dock icon: all on.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banners, sonido y el número en el Dock: todo encendido."
+          }
+        }
+      }
+    },
+    "Bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bot"
+          }
+        }
+      }
+    },
+    "Bring All to Front": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traer todo al frente"
+          }
+        }
+      }
+    },
+    "Budget": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presupuesto"
+          }
+        }
+      }
+    },
+    "CEO · ACME-42": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CEO · ACME-42"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Can’t open Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede abrir Paperclip"
+          }
+        }
+      }
+    },
+    "Can’t reach Telegram; it will retry on its own.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin conexión con Telegram; se reintenta sola."
+          }
+        }
+      }
+    },
+    "Change Address…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar dirección…"
+          }
+        }
+      }
+    },
+    "Change…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar…"
+          }
+        }
+      }
+    },
+    "Check Now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar ahora"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar actualizaciones…"
+          }
+        }
+      }
+    },
+    "Checked at %@; checks automatically %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Checked at %1$@; checks automatically %2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisado a las %@; se revisa sola %@."
+          }
+        }
+      }
+    },
+    "Checking Node.js…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisando Node.js…"
+          }
+        }
+      }
+    },
+    "Checking for updates…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando…"
+          }
+        }
+      }
+    },
+    "Checking the version…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisando la versión…"
+          }
+        }
+      }
+    },
+    "Checking…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisando…"
+          }
+        }
+      }
+    },
+    "Checks automatically %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se revisa sola %@."
+          }
+        }
+      }
+    },
+    "Checks automatically every few hours": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se revisa sola cada pocas horas"
+          }
+        }
+      }
+    },
+    "Chief of Staff": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jefe de gabinete"
+          }
+        }
+      }
+    },
+    "Click to see more or check again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clic para ver más o buscar de nuevo."
+          }
+        }
+      }
+    },
+    "Close Window": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar ventana"
+          }
+        }
+      }
+    },
+    "Closing the window (Cmd+W) doesn’t turn off notifications: the app keeps checking. Cmd+Q quits it completely.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar la ventana (Cmd+W) no apaga los avisos: la app sigue revisando. Cmd+Q la cierra del todo."
+          }
+        }
+      }
+    },
+    "Command": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comando"
+          }
+        }
+      }
+    },
+    "Confirm": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmar"
+          }
+        }
+      }
+    },
+    "Confirmation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmación"
+          }
+        }
+      }
+    },
+    "Connect": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar"
+          }
+        }
+      }
+    },
+    "Connect a Telegram bot and every decision reaches you as a message, with its buttons. Whatever you tap there is applied in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta un bot de Telegram y cada decisión te llega como mensaje, con sus botones. Lo que tocas ahí se aplica en Paperclip."
+          }
+        }
+      }
+    },
+    "Connect a bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar un bot"
+          }
+        }
+      }
+    },
+    "Connect to one I already have": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectarme a uno que ya tengo"
+          }
+        }
+      }
+    },
+    "Connect your Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta tu Paperclip"
+          }
+        }
+      }
+    },
+    "Connect your chat": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vincula tu chat"
+          }
+        }
+      }
+    },
+    "Connection": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexión"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar"
+          }
+        }
+      }
+    },
+    "Copied": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiado"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar"
+          }
+        }
+      }
+    },
+    "Copy Link to This Page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar enlace de esta página"
+          }
+        }
+      }
+    },
+    "Couldn’t Check Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude revisar Paperclip"
+          }
+        }
+      }
+    },
+    "Couldn’t check Paperclip: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude revisar Paperclip: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t check for app updates: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude buscar versiones de la app: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t check for new versions: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude buscar versiones nuevas: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t comment: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude comentar: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t connect (error %lld).": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo conectar (error %lld)."
+          }
+        }
+      }
+    },
+    "Couldn’t do it: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t explain it: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude explicarla: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t find Paperclip on this Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encontré Paperclip en esta Mac."
+          }
+        }
+      }
+    },
+    "Couldn’t find a CLI on this Mac to explain it (Claude Code, Codex, or OpenCode). Choose one in Settings → Telegram.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encontré un CLI para explicarla en esta Mac (Claude Code, Codex u OpenCode). Se elige en Ajustes → Telegram."
+          }
+        }
+      }
+    },
+    "Couldn’t find the update script": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encuentro el script para actualizar"
+          }
+        }
+      }
+    },
+    "Couldn’t put the explanation together: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude armar la explicación: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t reach Telegram: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude hablar con Telegram: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t read the installed version.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude leer la versión instalada."
+          }
+        }
+      }
+    },
+    "Couldn’t save the bot’s state: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude guardar el estado del bot: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t save the token in the Keychain.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude guardar el token en el llavero."
+          }
+        }
+      }
+    },
+    "Couldn’t send a decision: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude mandar una decisión: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t wake up %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo despertar a %@"
+          }
+        }
+      }
+    },
+    "Create a bot with @BotFather": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un bot con @BotFather"
+          }
+        }
+      }
+    },
+    "Cut": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cortar"
+          }
+        }
+      }
+    },
+    "Dark": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oscuro"
+          }
+        }
+      }
+    },
+    "Decision": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decisión"
+          }
+        }
+      }
+    },
+    "Decisions reach your phone with their buttons, so you can answer them from there. The bot is yours alone, and its token stays in this Mac’s Keychain, never in files. No public address needed: the app asks Telegram.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las decisiones te llegan al teléfono con sus botones, para contestarlas desde ahí. El bot es solo tuyo y el token queda en el llavero de esta Mac, nunca en archivos. No hace falta una dirección pública: la app le pregunta a Telegram."
+          }
+        }
+      }
+    },
+    "Description:\n": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descripción:\n"
+          }
+        }
+      }
+    },
+    "Details:\n%@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detalles:\n%@"
+          }
+        }
+      }
+    },
+    "Dispatch %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch %@"
+          }
+        }
+      }
+    },
+    "Dispatch %@: this app, the window you use Paperclip from.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch %@: esta app, la ventana desde la que usas Paperclip."
+          }
+        }
+      }
+    },
+    "Dispatch notifies you only when an agent is waiting for you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch te avisa solo cuando un agente espera por ti."
+          }
+        }
+      }
+    },
+    "Dispatch opens the Paperclip you already use.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch abre el Paperclip que ya usas."
+          }
+        }
+      }
+    },
+    "Dispatch opens the Paperclip you already use. I found this one on your Mac:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch abre el Paperclip que ya usas. Encontré este en tu Mac:"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        }
+      }
+    },
+    "Done: Paperclip decisions reach you here, with their buttons. “Explain it to me” tells you what each one is about, and if you reply to one with text, it reaches the agent as a comment on its task.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo: aquí te llegan las decisiones de Paperclip, con sus botones. «Explícamela» te cuenta de qué se trata, y si respondes a una con texto, le llega al agente como comentario en su tarea."
+          }
+        }
+      }
+    },
+    "Download Node.js": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar Node.js"
+          }
+        }
+      }
+    },
+    "Download and Restart": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar y reiniciar"
+          }
+        }
+      }
+    },
+    "Download new versions automatically": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargar versiones nuevas solas"
+          }
+        }
+      }
+    },
+    "Downloading %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando la %@…"
+          }
+        }
+      }
+    },
+    "Downloading Dispatch…%@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando Dispatch…%@"
+          }
+        }
+      }
+    },
+    "Downloading the new version of this app. It restarts on its own when it’s done, as you asked.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando la versión nueva de esta app. Al terminar se reinicia sola, como pediste."
+          }
+        }
+      }
+    },
+    "Each one comes with its buttons; whatever you tap is applied in Paperclip on your behalf.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada una con sus botones; lo que tocas se aplica en Paperclip a tu nombre."
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edición"
+          }
+        }
+      }
+    },
+    "Enter Address…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribir dirección…"
+          }
+        }
+      }
+    },
+    "Enter Full Screen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pantalla completa"
+          }
+        }
+      }
+    },
+    "Enter an address, for example 192.168.1.20:3100.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe una dirección, por ejemplo 192.168.1.20:3100."
+          }
+        }
+      }
+    },
+    "Everything is up to date.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo al día."
+          }
+        }
+      }
+    },
+    "Everything waiting in Decisions, not just today’s.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo lo que espera en Decisions, no solo lo de hoy."
+          }
+        }
+      }
+    },
+    "Experimental": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimental"
+          }
+        }
+      }
+    },
+    "Explain decisions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explicar decisiones"
+          }
+        }
+      }
+    },
+    "File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo"
+          }
+        }
+      }
+    },
+    "Forward": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adelante"
+          }
+        }
+      }
+    },
+    "From there you can download and install it whenever you like": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desde ahí la descargas e instalas cuando quieras"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "Get Started": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar"
+          }
+        }
+      }
+    },
+    "Go": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ir"
+          }
+        }
+      }
+    },
+    "Help": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayuda"
+          }
+        }
+      }
+    },
+    "Hide %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar %@"
+          }
+        }
+      }
+    },
+    "Hide Others": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar otras"
+          }
+        }
+      }
+    },
+    "Hide for a week": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esconder por una semana"
+          }
+        }
+      }
+    },
+    "Hire a design agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contratar a un agente de diseño"
+          }
+        }
+      }
+    },
+    "Home": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio"
+          }
+        }
+      }
+    },
+    "If you’d rather wait, it installs automatically the next time you quit the app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si prefieres esperar, se instala sola la próxima vez que cierres la app."
+          }
+        }
+      }
+    },
+    "Install it on this Mac": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalarlo en esta Mac"
+          }
+        }
+      }
+    },
+    "Installed on this Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalado en esta Mac."
+          }
+        }
+      }
+    },
+    "Installing Paperclip with its official command. When it’s done, it keeps running in this window.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalando Paperclip con su comando oficial. Al terminar queda encendido en esta ventana."
+          }
+        }
+      }
+    },
+    "Installing in Terminal": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalando en la Terminal"
+          }
+        }
+      }
+    },
+    "Install…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar…"
+          }
+        }
+      }
+    },
+    "It answered with error %lld: Paperclip may be off behind it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respondió con un error %lld: Paperclip puede estar apagado detrás."
+          }
+        }
+      }
+    },
+    "It didn’t respond in time.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No contestó a tiempo."
+          }
+        }
+      }
+    },
+    "It installs in Terminal": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instala en la Terminal"
+          }
+        }
+      }
+    },
+    "It installs when you restart or quit the app": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instala cuando reinicias o cierras la app"
+          }
+        }
+      }
+    },
+    "It isn’t accepting connections: Paperclip may not be running.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No acepta conexiones: Paperclip puede estar apagado."
+          }
+        }
+      }
+    },
+    "It isn’t responding. Check the address and that Paperclip is running.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No responde. Revisa la dirección y que Paperclip esté encendido."
+          }
+        }
+      }
+    },
+    "It no longer exists in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya no existe en Paperclip."
+          }
+        }
+      }
+    },
+    "It responds, but it isn’t Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responde, pero no es Paperclip."
+          }
+        }
+      }
+    },
+    "It starts in a Terminal window, which has to stay open.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se enciende en una ventana de la Terminal, que tiene que quedar abierta."
+          }
+        }
+      }
+    },
+    "It starts with its service, without opening anything.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se enciende con su servicio, sin abrir nada."
+          }
+        }
+      }
+    },
+    "It was no longer pending in Paperclip: I didn’t change anything.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya no estaba pendiente en Paperclip: no cambié nada."
+          }
+        }
+      }
+    },
+    "Its token is deleted from the Keychain and it stops sending you decisions. To use it again, you’ll have to connect it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se borra su token del llavero y deja de mandarte las decisiones. Para volver, hay que conectarlo de nuevo."
+          }
+        }
+      }
+    },
+    "It’s always in Settings → Telegram.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siempre está en Ajustes → Telegram."
+          }
+        }
+      }
+    },
+    "It’s answered on the Paperclip page.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se contesta en la página de Paperclip."
+          }
+        }
+      }
+    },
+    "It’s free and open source. It installs with its official command and needs Node.js.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es gratis y de código abierto. Se instala con su comando oficial; necesita Node.js."
+          }
+        }
+      }
+    },
+    "It’s now on %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya está en la %@."
+          }
+        }
+      }
+    },
+    "It’s the official command, with Node.js %@. It sets up local mode: only on this Mac and with no password. When it’s done, Paperclip keeps running in that window and this continues on its own.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es su comando oficial, con Node.js %@. Queda en modo local: solo en esta Mac y sin contraseña. Al terminar, Paperclip queda encendido en esa ventana y aquí se sigue solo."
+          }
+        }
+      }
+    },
+    "I’ve Installed It": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya lo instalé"
+          }
+        }
+      }
+    },
+    "Last checked: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Última revisión: %@"
+          }
+        }
+      }
+    },
+    "Latest comments, oldest to newest:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Últimos comentarios, del más viejo al más nuevo:"
+          }
+        }
+      }
+    },
+    "Launch the new pricing plans": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lanzar los planes de precios nuevos"
+          }
+        }
+      }
+    },
+    "Light": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claro"
+          }
+        }
+      }
+    },
+    "Liquid Glass in Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liquid Glass en Paperclip"
+          }
+        }
+      }
+    },
+    "Local mode: you go straight in, no password.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo local: entras directo, sin contraseña."
+          }
+        }
+      }
+    },
+    "Looking for Paperclip on this Mac…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscando Paperclip en esta Mac…"
+          }
+        }
+      }
+    },
+    "Made by ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecha por "
+          }
+        }
+      }
+    },
+    "Made for Paperclip · not an official app": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecho para Paperclip · no es una app oficial"
+          }
+        }
+      }
+    },
+    "Minimize": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimizar"
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo"
+          }
+        }
+      }
+    },
+    "Never miss a decision": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que no se te pase ninguna decisión"
+          }
+        }
+      }
+    },
+    "New versions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versiones nuevas"
+          }
+        }
+      }
+    },
+    "New versions of this app (Dispatch %@) and of Paperclip, the server (%@), are available. Click to see what each one does.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "New versions of this app (Dispatch %1$@) and of Paperclip, the server (%2$@), are available. Click to see what each one does."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay versiones nuevas de esta app (Dispatch %@) y de Paperclip, el servidor (%@). Clic para ver qué hace cada una."
+          }
+        }
+      }
+    },
+    "Next step": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente paso"
+          }
+        }
+      }
+    },
+    "No Dock badge: macOS won’t let the app show the pending count.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin el número en el Dock: macOS no deja mostrar los pendientes."
+          }
+        }
+      }
+    },
+    "No banners or Dock badge: notifications only show up in Notification Center.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin banner ni número en el Dock: los avisos solo se ven en el Centro de notificaciones."
+          }
+        }
+      }
+    },
+    "No banners: notifications only show up in Notification Center.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin banner: los avisos solo se ven en el Centro de notificaciones."
+          }
+        }
+      }
+    },
+    "No longer pending.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya no está pendiente."
+          }
+        }
+      }
+    },
+    "No network setup": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin configurar tu red"
+          }
+        }
+      }
+    },
+    "No wake-up needed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hizo falta despertar"
+          }
+        }
+      }
+    },
+    "Node.js is missing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta Node.js"
+          }
+        }
+      }
+    },
+    "Not Now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        }
+      }
+    },
+    "Not affiliated with ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No es una app oficial de "
+          }
+        }
+      }
+    },
+    "Not checked": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin revisar"
+          }
+        }
+      }
+    },
+    "Not requested yet; without it the app can’t notify you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todavía no se pidió; sin él la app no puede avisarte."
+          }
+        }
+      }
+    },
+    "Notifications": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos"
+          }
+        }
+      }
+    },
+    "Notifications are off:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los avisos están apagados:"
+          }
+        }
+      }
+    },
+    "Notifications are on.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos activados."
+          }
+        }
+      }
+    },
+    "Notifications arrive without banners:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los avisos llegan sin banner:"
+          }
+        }
+      }
+    },
+    "Notifies you when a decision is waiting for you, even if you’re in another app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te avisa cuando una decisión espera por ti, aunque estés en otra app."
+          }
+        }
+      }
+    },
+    "Notifies you when you’re needed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te avisa cuando te necesitan"
+          }
+        }
+      }
+    },
+    "Notify me even while I’m looking at Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar también si estoy mirando Paperclip"
+          }
+        }
+      }
+    },
+    "Notify me when a decision arrives": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar cuando llegue una decisión"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
+          }
+        }
+      }
+    },
+    "Off. You can turn them on anytime; the app will remind you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apagados. Puedes activarlos cuando quieras; la app te lo recordará."
+          }
+        }
+      }
+    },
+    "On %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En %@."
+          }
+        }
+      }
+    },
+    "On another computer on your network or over Tailscale.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En otra computadora de tu red o por Tailscale."
+          }
+        }
+      }
+    },
+    "On your Mac or, if you like, in Telegram from your phone.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En la Mac o, si quieres, en Telegram desde el teléfono."
+          }
+        }
+      }
+    },
+    "Open @BotFather": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir @BotFather"
+          }
+        }
+      }
+    },
+    "Open Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Paperclip"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes del Sistema"
+          }
+        }
+      }
+    },
+    "Open Terminal": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir la Terminal"
+          }
+        }
+      }
+    },
+    "Open Terminal Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir la Terminal otra vez"
+          }
+        }
+      }
+    },
+    "Open at Login": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir al iniciar sesión"
+          }
+        }
+      }
+    },
+    "Open in Browser": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir en el navegador"
+          }
+        }
+      }
+    },
+    "Open in Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir en Paperclip"
+          }
+        }
+      }
+    },
+    "Open on This Mac": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir en esta Mac"
+          }
+        }
+      }
+    },
+    "Open source on ": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código abierto en "
+          }
+        }
+      }
+    },
+    "Operations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operaciones"
+          }
+        }
+      }
+    },
+    "Options: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones: %@"
+          }
+        }
+      }
+    },
+    "Or send it “/start %@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O escríbele «/start %@»"
+          }
+        }
+      }
+    },
+    "Other Command…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otro comando…"
+          }
+        }
+      }
+    },
+    "Other answer…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otra respuesta…"
+          }
+        }
+      }
+    },
+    "Paperclip %@: the server, where your agents work.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip %@: el servidor, donde trabajan tus agentes."
+          }
+        }
+      }
+    },
+    "Paperclip Documentation": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documentación de Paperclip"
+          }
+        }
+      }
+    },
+    "Paperclip Website": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sitio de Paperclip"
+          }
+        }
+      }
+    },
+    "Paperclip accepted the wake-up": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip aceptó el despertar"
+          }
+        }
+      }
+    },
+    "Paperclip address": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dirección de Paperclip"
+          }
+        }
+      }
+    },
+    "Paperclip answered %lld%@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Paperclip answered %1$lld%2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip respondió %lld%@."
+          }
+        }
+      }
+    },
+    "Paperclip didn’t accept it%@. It may have been resolved already.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no lo aceptó%@. Puede que ya estuviera resuelta."
+          }
+        }
+      }
+    },
+    "Paperclip didn’t allow it: the app isn’t signed in, or your user can’t wake up this agent.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no lo permitió: la app no tiene la sesión iniciada o tu usuario no puede despertar a este agente."
+          }
+        }
+      }
+    },
+    "Paperclip is installed, but not running": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está instalado, pero apagado"
+          }
+        }
+      }
+    },
+    "Paperclip is running on this Mac": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está encendido en esta Mac"
+          }
+        }
+      }
+    },
+    "Paperclip is starting up: wait a few seconds.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está arrancando: espera unos segundos."
+          }
+        }
+      }
+    },
+    "Paperclip isn’t responding.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no responde."
+          }
+        }
+      }
+    },
+    "Paperclip isn’t running on this Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está apagado en esta Mac."
+          }
+        }
+      }
+    },
+    "Paperclip never updates on its own: restarting it interrupts whatever the agents are doing, so you choose when.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip nunca se actualiza solo: reiniciarlo corta lo que estén haciendo los agentes, así que tú eliges cuándo."
+          }
+        }
+      }
+    },
+    "Paperclip responded 500: Internal server error": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip respondió 500: Internal server error"
+          }
+        }
+      }
+    },
+    "Paperclip returned %lld%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Paperclip returned %1$lld%2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip respondió %lld%@"
+          }
+        }
+      }
+    },
+    "Paperclip runs on Node.js %lld.%lld or newer. Install it from its website and come back here.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Paperclip runs on Node.js %1$lld.%2$lld or newer. Install it from its website and come back here."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip corre sobre Node.js %lld.%lld o más nuevo. Instálalo desde su página y vuelve aquí."
+          }
+        }
+      }
+    },
+    "Paperclip skipped the wake-up": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip saltó el despertar"
+          }
+        }
+      }
+    },
+    "Paperclip updated": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip actualizado"
+          }
+        }
+      }
+    },
+    "Paperclip updated (rehearsal)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip actualizado (ensayo)"
+          }
+        }
+      }
+    },
+    "Paperclip · Stuck task": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip · Tarea trabada"
+          }
+        }
+      }
+    },
+    "Paperclip’s sidebar on glass, like in macOS 26 apps.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La barra lateral de Paperclip sobre vidrio, como en las apps de macOS 26."
+          }
+        }
+      }
+    },
+    "Paste": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar"
+          }
+        }
+      }
+    },
+    "Paste its token here": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega aquí su token"
+          }
+        }
+      }
+    },
+    "Paste the token @BotFather gave you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pega el token que te dio @BotFather."
+          }
+        }
+      }
+    },
+    "Pending count in the Dock": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Número de pendientes en el Dock"
+          }
+        }
+      }
+    },
+    "Person": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persona"
+          }
+        }
+      }
+    },
+    "Prepare the board meeting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparar la reunión del directorio"
+          }
+        }
+      }
+    },
+    "Preparing…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando…"
+          }
+        }
+      }
+    },
+    "Productivity review": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisión de productividad"
+          }
+        }
+      }
+    },
+    "QR code for the bot link": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código QR del enlace al bot"
+          }
+        }
+      }
+    },
+    "Question": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregunta"
+          }
+        }
+      }
+    },
+    "Question: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregunta: %@"
+          }
+        }
+      }
+    },
+    "Questions and approvals from agents, their failures, and budget alerts.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preguntas y aprobaciones de los agentes, sus fallos y las alertas de presupuesto."
+          }
+        }
+      }
+    },
+    "Quit %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salir de %@"
+          }
+        }
+      }
+    },
+    "Reading the task…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leyendo la tarea…"
+          }
+        }
+      }
+    },
+    "Recovery": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperación"
+          }
+        }
+      }
+    },
+    "Redesign the pricing page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rediseñar la página de precios"
+          }
+        }
+      }
+    },
+    "Redo": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rehacer"
+          }
+        }
+      }
+    },
+    "Reject": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechazar"
+          }
+        }
+      }
+    },
+    "Release Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades de cada versión"
+          }
+        }
+      }
+    },
+    "Reload Page": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recargar"
+          }
+        }
+      }
+    },
+    "Remove Bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar bot"
+          }
+        }
+      }
+    },
+    "Remove the bot?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Quitar el bot?"
+          }
+        }
+      }
+    },
+    "Removes the background from Paperclip’s sidebar so the glass shows through: a new version of Paperclip might throw it off.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le quita el fondo a la barra lateral de Paperclip para que se vea el vidrio: una versión nueva de Paperclip lo puede descuadrar."
+          }
+        }
+      }
+    },
+    "Remove…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar…"
+          }
+        }
+      }
+    },
+    "Reply from wherever you are": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respondes desde donde estés"
+          }
+        }
+      }
+    },
+    "Reply from your phone": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responde desde el teléfono"
+          }
+        }
+      }
+    },
+    "Report an Issue…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reportar un problema…"
+          }
+        }
+      }
+    },
+    "Request changes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pedir cambios"
+          }
+        }
+      }
+    },
+    "Requested by: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La pide: %@"
+          }
+        }
+      }
+    },
+    "Respond at the top right:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responde arriba a la derecha:"
+          }
+        }
+      }
+    },
+    "Respond at the top right: **Options → Allow**.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responde arriba a la derecha: **Opciones → Permitir**."
+          }
+        }
+      }
+    },
+    "Restart": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reiniciar"
+          }
+        }
+      }
+    },
+    "Restarting…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reiniciando…"
+          }
+        }
+      }
+    },
+    "Review": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisión"
+          }
+        }
+      }
+    },
+    "Review the client contract": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar el contrato con el cliente"
+          }
+        }
+      }
+    },
+    "Sample bot message: an approval from the CEO on ACME-42, with the buttons Approve, Reject, and Explain it to me.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejemplo de mensaje del bot: una aprobación del CEO en ACME-42, con los botones Aprobar, Rechazar y Explícamela."
+          }
+        }
+      }
+    },
+    "Sample notification: the CEO asks for your decision on ACME-42, and the Dock icon shows 2 pending.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejemplo de aviso: el CEO pide tu decisión en ACME-42, y el ícono del Dock con 2 pendientes."
+          }
+        }
+      }
+    },
+    "Scan the code with your phone’s camera and tap Start in Telegram.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanea el código con la cámara del teléfono y toca Iniciar en Telegram."
+          }
+        }
+      }
+    },
+    "Search Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar de nuevo"
+          }
+        }
+      }
+    },
+    "Section": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sección"
+          }
+        }
+      }
+    },
+    "See All on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todas en GitHub"
+          }
+        }
+      }
+    },
+    "See What’s New": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver novedades"
+          }
+        }
+      }
+    },
+    "Select All": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleccionar todo"
+          }
+        }
+      }
+    },
+    "Send Test": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mandar prueba"
+          }
+        }
+      }
+    },
+    "Send decisions to Telegram": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mandar las decisiones a Telegram"
+          }
+        }
+      }
+    },
+    "Send it /newbot and choose a name: it gives you a token.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escríbele /newbot y elige un nombre: te da un token."
+          }
+        }
+      }
+    },
+    "Send the proposal": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar la propuesta"
+          }
+        }
+      }
+    },
+    "Sending to Paperclip…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviando a Paperclip…"
+          }
+        }
+      }
+    },
+    "Sent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviado"
+          }
+        }
+      }
+    },
+    "Services": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servicios"
+          }
+        }
+      }
+    },
+    "Set Up Telegram": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurar Telegram"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        }
+      }
+    },
+    "Should we hire a design agent for the new page?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Contratamos a un agente de diseño para la página nueva?"
+          }
+        }
+      }
+    },
+    "Show All": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar todas"
+          }
+        }
+      }
+    },
+    "So notifications arrive as soon as you turn on your Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Así los avisos llegan desde que prendes la Mac."
+          }
+        }
+      }
+    },
+    "Something is waiting for your decision.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo espera tu decisión."
+          }
+        }
+      }
+    },
+    "Start Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encender Paperclip"
+          }
+        }
+      }
+    },
+    "Starting Paperclip. Keep this window open: it runs here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encendiendo Paperclip. Deja esta ventana abierta: aquí corre."
+          }
+        }
+      }
+    },
+    "Starting… this may take a minute.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encendiendo… puede tardar un minuto."
+          }
+        }
+      }
+    },
+    "Step %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso %lld"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Step %1$lld of %2$lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso %lld de %lld"
+          }
+        }
+      }
+    },
+    "Stuck task": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarea trabada"
+          }
+        }
+      }
+    },
+    "Suggested tasks": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tareas sugeridas"
+          }
+        }
+      }
+    },
+    "Summary the agent has been keeping:\n": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen que va llevando el agente:\n"
+          }
+        }
+      }
+    },
+    "Switch Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cambiar de Paperclip"
+          }
+        }
+      }
+    },
+    "Task: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarea: %@"
+          }
+        }
+      }
+    },
+    "Telegram didn’t respond properly.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram no respondió bien."
+          }
+        }
+      }
+    },
+    "Telegram doesn’t recognize that token. Copy it again from @BotFather.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram no reconoce ese token. Cópialo de nuevo desde @BotFather."
+          }
+        }
+      }
+    },
+    "Telegram no longer accepts the bot token. Remove it and connect it again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telegram ya no acepta el token del bot. Quítalo y vuelve a conectarlo."
+          }
+        }
+      }
+    },
+    "Test": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar"
+          }
+        }
+      }
+    },
+    "Test message": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensaje de prueba"
+          }
+        }
+      }
+    },
+    "Test notification": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aviso de prueba"
+          }
+        }
+      }
+    },
+    "That decision is no longer pending: I didn’t change anything.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esa decisión ya no está pendiente: no cambié nada."
+          }
+        }
+      }
+    },
+    "That name can’t be found on the network. Check the address.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encuentra ese nombre en la red. Revisa la dirección."
+          }
+        }
+      }
+    },
+    "That token doesn’t belong to a bot.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ese token no es de un bot."
+          }
+        }
+      }
+    },
+    "The Dock badge is missing:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta el número en el Dock:"
+          }
+        }
+      }
+    },
+    "The agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El agente"
+          }
+        }
+      }
+    },
+    "The app isn’t signed in to Paperclip: open it and sign in.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app no tiene la sesión de Paperclip: ábrela e inicia sesión."
+          }
+        }
+      }
+    },
+    "The command is missing in Settings → Telegram → “Other Command…”.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta el comando en Ajustes → Telegram → «Otro comando…»."
+          }
+        }
+      }
+    },
+    "The command receives the text on standard input and replies on standard output.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El comando recibe el texto por la entrada y responde por la salida."
+          }
+        }
+      }
+    },
+    "The decision they’re asking for now:\n": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La decisión que le piden ahora:\n"
+          }
+        }
+      }
+    },
+    "The one you open in your browser to see Paperclip. If it asks you to sign in, you do that in the app’s window.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La que abres en el navegador para ver Paperclip. Si pide iniciar sesión, lo haces en la ventana de la app."
+          }
+        }
+      }
+    },
+    "The secure connection failed: the certificate isn’t valid.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La conexión segura falló: el certificado no es válido."
+          }
+        }
+      }
+    },
+    "The server": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor"
+          }
+        }
+      }
+    },
+    "The server · %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor · %@"
+          }
+        }
+      }
+    },
+    "The server · checking…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor · revisando…"
+          }
+        }
+      }
+    },
+    "The server · up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor · al día"
+          }
+        }
+      }
+    },
+    "The server · you have %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor · tienes la %@"
+          }
+        }
+      }
+    },
+    "The token has invalid characters.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El token tiene caracteres que no van."
+          }
+        }
+      }
+    },
+    "The update didn’t finish": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La actualización no terminó"
+          }
+        }
+      }
+    },
+    "They install when you restart or quit the app: it never restarts without asking you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instalan cuando reinicias o cierras la app: nunca se reinicia sin preguntarte."
+          }
+        }
+      }
+    },
+    "This Mac isn’t connected to the network.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta Mac no tiene conexión a la red."
+          }
+        }
+      }
+    },
+    "This Paperclip runs on another computer: update it there.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este Paperclip corre en otra computadora: se actualiza allá."
+          }
+        }
+      }
+    },
+    "This app": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app"
+          }
+        }
+      }
+    },
+    "This app was built to update with %@, which is no longer there.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app se armó para actualizar con %@, que ya no está."
+          }
+        }
+      }
+    },
+    "This app was updated to %@. Click to see what’s new.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app se actualizó a la %@. Clic para ver qué trae."
+          }
+        }
+      }
+    },
+    "This app · built on this Mac: doesn’t check for new versions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · armada en esta Mac: no busca versiones nuevas"
+          }
+        }
+      }
+    },
+    "This app · checking…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · buscando…"
+          }
+        }
+      }
+    },
+    "This app · checks automatically every few hours": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · se revisa sola cada pocas horas"
+          }
+        }
+      }
+    },
+    "This app · just updated": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · recién actualizada"
+          }
+        }
+      }
+    },
+    "This app · just updated to %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · recién actualizada a la %@"
+          }
+        }
+      }
+    },
+    "This app · this copy doesn’t check for new versions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · esta copia no busca versiones nuevas"
+          }
+        }
+      }
+    },
+    "This app · up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · al día"
+          }
+        }
+      }
+    },
+    "This app · up to date · checked at %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · al día · revisado a las %@"
+          }
+        }
+      }
+    },
+    "This app · you have %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app · tienes la %@"
+          }
+        }
+      }
+    },
+    "This bot only notifies you about Paperclip decisions: answer them with their buttons. To write to a decision’s agent, press and hold its message, tap Reply, and type: it arrives as a comment.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este bot solo avisa de las decisiones de Paperclip: contéstalas con sus botones. Para escribirle al agente de una, mantén apretado su mensaje, toca Responder y escribe: le llega como comentario."
+          }
+        }
+      }
+    },
+    "This decision is gone.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta decisión ya no está."
+          }
+        }
+      }
+    },
+    "This is a rehearsal: it shows the steps without updating anything.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto es un ensayo: muestra los pasos sin actualizar nada."
+          }
+        }
+      }
+    },
+    "This is how Paperclip decisions reach you: with their buttons. If you reply to one with text, I’ll post it as a comment on its task.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Así te llegan las decisiones de Paperclip: con sus botones. Si respondes a una con texto, lo dejo como comentario en su tarea."
+          }
+        }
+      }
+    },
+    "This is what Decisions notifications look like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Así llegan los avisos de Decisions."
+          }
+        }
+      }
+    },
+    "This one isn’t from a task: answer it with the buttons or in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta no es de una tarea: contéstala con los botones o en Paperclip."
+          }
+        }
+      }
+    },
+    "Title: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título: %@"
+          }
+        }
+      }
+    },
+    "To connect this bot, open it with the link in Paperclip Settings on your Mac.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para conectar este bot, ábrelo con el enlace de Ajustes de Paperclip en tu Mac."
+          }
+        }
+      }
+    },
+    "To see how it looks and whether macOS lets it through.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para ver cómo se ve y si macOS lo deja pasar."
+          }
+        }
+      }
+    },
+    "To see new versions here, you need the Paperclip command.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para ver versiones nuevas aquí hace falta el comando de Paperclip."
+          }
+        }
+      }
+    },
+    "To write to a decision’s agent, reply to its message: it arrives as a comment on the task. Works while this Mac and the app are on.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para escribirle al agente de una decisión, respóndele a su mensaje: le llega como comentario en la tarea. Funciona mientras esta Mac y la app estén encendidas."
+          }
+        }
+      }
+    },
+    "Token": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token"
+          }
+        }
+      }
+    },
+    "Try Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
+          }
+        }
+      }
+    },
+    "Trying again every few seconds.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se vuelve a intentar cada pocos segundos."
+          }
+        }
+      }
+    },
+    "Turn On": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar"
+          }
+        }
+      }
+    },
+    "Type your answer.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe tu respuesta."
+          }
+        }
+      }
+    },
+    "Type: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tipo: %@"
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deshacer"
+          }
+        }
+      }
+    },
+    "Up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al día"
+          }
+        }
+      }
+    },
+    "Update": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar"
+          }
+        }
+      }
+    },
+    "Update Dispatch": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar Dispatch"
+          }
+        }
+      }
+    },
+    "Update Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar Paperclip"
+          }
+        }
+      }
+    },
+    "Update Paperclip and this app with one click, whenever you choose.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza Paperclip y esta app con un clic, cuando tú decidas."
+          }
+        }
+      }
+    },
+    "Update Paperclip to %@?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Actualizar Paperclip a la %@?"
+          }
+        }
+      }
+    },
+    "Update to %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar a %@"
+          }
+        }
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizaciones"
+          }
+        }
+      }
+    },
+    "Updates for Paperclip, the server where the agents work, are in the Paperclip tab.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las de Paperclip, el servidor donde trabajan los agentes, están en la pestaña Paperclip."
+          }
+        }
+      }
+    },
+    "Update…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar…"
+          }
+        }
+      }
+    },
+    "Updating %@/%@…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Updating %1$@/%2$@…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizando %@/%@…"
+          }
+        }
+      }
+    },
+    "Updating Paperclip restarts it and pauses your agents in the meantime: best done at a quiet moment.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar Paperclip lo reinicia y pausa a tus agentes mientras tanto: mejor en un momento tranquilo."
+          }
+        }
+      }
+    },
+    "Updating Paperclip. Don’t quit the app until it finishes.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizando Paperclip. No cierres la app hasta que termine."
+          }
+        }
+      }
+    },
+    "Updating…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizando…"
+          }
+        }
+      }
+    },
+    "Use Another Address…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar otra dirección…"
+          }
+        }
+      }
+    },
+    "Using": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con"
+          }
+        }
+      }
+    },
+    "Version %@ is out. It downloads when you click.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salió la %@. Se descarga cuando aprietas."
+          }
+        }
+      }
+    },
+    "Version %@ is ready: it installs when you restart or quit the app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La %@ está lista: se instala al reiniciar o al cerrar la app."
+          }
+        }
+      }
+    },
+    "Version %@, the latest stable release.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %@, la última estable."
+          }
+        }
+      }
+    },
+    "Version %@. %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Version %1$@. %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %@. %@"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visualización"
+          }
+        }
+      }
+    },
+    "View on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver en GitHub"
+          }
+        }
+      }
+    },
+    "Waiting for Paperclip to start…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando a que Paperclip arranque…"
+          }
+        }
+      }
+    },
+    "Waiting…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando…"
+          }
+        }
+      }
+    },
+    "Wake up %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despertar a %@"
+          }
+        }
+      }
+    },
+    "Wake up the agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despertar al agente"
+          }
+        }
+      }
+    },
+    "Waking up %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despertando a %@…"
+          }
+        }
+      }
+    },
+    "Welcome": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenida"
+          }
+        }
+      }
+    },
+    "We’ll let you know when an agent needs you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te avisamos cuando un agente te necesite."
+          }
+        }
+      }
+    },
+    "What changes do you want?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué cambios pides?"
+          }
+        }
+      }
+    },
+    "What is Paperclip?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué es Paperclip?"
+          }
+        }
+      }
+    },
+    "What’s New": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades"
+          }
+        }
+      }
+    },
+    "What’s New in %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo nuevo en la %@"
+          }
+        }
+      }
+    },
+    "What’s New in Dispatch %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades de Dispatch %@"
+          }
+        }
+      }
+    },
+    "What’s New in Paperclip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades de Paperclip"
+          }
+        }
+      }
+    },
+    "What’s New on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades en GitHub"
+          }
+        }
+      }
+    },
+    "What’s new in version %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novedades de la %@"
+          }
+        }
+      }
+    },
+    "When you restart, this app quits and reopens in a few seconds, on the same page. Paperclip and your agents don’t stop: they run separately.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al reiniciar, esta app se cierra y vuelve a abrirse en unos segundos, en la misma página. Paperclip y tus agentes no se detienen: corren aparte."
+          }
+        }
+      }
+    },
+    "Why?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Por qué?"
+          }
+        }
+      }
+    },
+    "Window": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ventana"
+          }
+        }
+      }
+    },
+    "With Do Not Disturb or a Focus on, notifications don’t appear on screen: they stay in Notification Center.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con No molestar o un modo de concentración, los avisos no aparecen en pantalla: quedan en el Centro de notificaciones."
+          }
+        }
+      }
+    },
+    "With the window in front, the sidebar already shows them.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con la ventana al frente, la barra lateral ya las muestra."
+          }
+        }
+      }
+    },
+    "Write the quarterly report for investors": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribir el informe trimestral para inversionistas"
+          }
+        }
+      }
+    },
+    "You have %@. Paperclip restarts and interrupts whatever the agents are doing. It backs up the database first and takes a minute or two.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tienes la %@. Paperclip se reinicia y corta lo que estén haciendo los agentes. Antes respalda la base; tarda uno o dos minutos."
+          }
+        }
+      }
+    },
+    "You have %@. Version %@ is out.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "You have %1$@. Version %2$@ is out."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tienes la %@. Salió la %@."
+          }
+        }
+      }
+    },
+    "You have %lld pending decisions.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tienes %lld decisiones pendientes."
+          }
+        }
+      }
+    },
+    "You have Node.js %@: a newer one is needed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tienes Node.js %@: hace falta uno más nuevo"
+          }
+        }
+      }
+    },
+    "Your Paperclip agents, in a Mac app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus agentes de Paperclip, en una app de Mac."
+          }
+        }
+      }
+    },
+    "Your agents’ decisions arrive as notifications and as a badge on the Dock icon, even if you close the window.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las decisiones de tus agentes llegan como avisos y con el número en el Dock, aunque cierres la ventana."
+          }
+        }
+      }
+    },
+    "Your bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu bot"
+          }
+        }
+      }
+    },
+    "You’ll be asked to sign in.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te va a pedir iniciar sesión."
+          }
+        }
+      }
+    },
+    "You’re already connected: Paperclip decisions reach you here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya estás conectado: aquí te llegan las decisiones de Paperclip."
+          }
+        }
+      }
+    },
+    "You’re using %@ now. Choose which one to connect to.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora usas %@. Elige a cuál conectarte."
+          }
+        }
+      }
+    },
+    "Zoom": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zoom"
+          }
+        }
+      }
+    },
+    "Zoom In": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ampliar"
+          }
+        }
+      }
+    },
+    "Zoom Out": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reducir"
+          }
+        }
+      }
+    },
+    "another computer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "otra computadora"
+          }
+        }
+      }
+    },
+    "bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bot"
+          }
+        }
+      }
+    },
+    "e.g. gemini -p": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p. ej. gemini -p"
+          }
+        }
+      }
+    },
+    "every %lld hours": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cada %lld horas"
+          }
+        }
+      }
+    },
+    "http://192.168.1.20:3100": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "http://192.168.1.20:3100"
+          }
+        }
+      }
+    },
+    "https://nodejs.org/en/download": {
+      "comment": "La página de descarga de Node.js en el idioma de la app.",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://nodejs.org/es/download"
+          }
+        }
+      }
+    },
+    "in the macOS notification, Options → Allow.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en el aviso de macOS, Opciones → Permitir."
+          }
+        }
+      }
+    },
+    "it finished without an answer.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "terminó sin respuesta."
+          }
+        }
+      }
+    },
+    "macOS couldn’t start the Paperclip service: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS no pudo encender el servicio de Paperclip: %@"
+          }
+        }
+      }
+    },
+    "macOS didn’t allow asking for permission from here. Turn them on in System Settings → Notifications.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS no dejó pedir el permiso desde aquí. Actívalos en Ajustes del Sistema → Notificaciones."
+          }
+        }
+      }
+    },
+    "macOS doesn’t allow showing how many decisions are waiting.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS no deja mostrar cuántas decisiones esperan."
+          }
+        }
+      }
+    },
+    "macOS is blocking notifications from this app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS tiene bloqueados los avisos de esta app."
+          }
+        }
+      }
+    },
+    "macOS needs you to approve it in Login Items.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS pide aprobarla en Ítems de inicio."
+          }
+        }
+      }
+    },
+    "macOS notifications": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos de macOS"
+          }
+        }
+      }
+    },
+    "macOS permission": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permiso de macOS"
+          }
+        }
+      }
+    },
+    "now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ahora"
+          }
+        }
+      }
+    },
+    "that agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ese agente"
+          }
+        }
+      }
+    },
+    "the agent": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "el agente"
+          }
+        }
+      }
+    },
+    "the task": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "la tarea"
+          }
+        }
+      }
+    },
+    "with %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "con %@"
+          }
+        }
+      }
+    },
+    "you won’t know when an agent needs you.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no te vas a enterar cuando un agente te necesite."
+          }
+        }
+      }
+    },
+    "your bot": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tu bot"
+          }
+        }
+      }
+    },
+    "you’d only see them in Notification Center.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "solo los verías en el Centro de notificaciones."
+          }
+        }
+      }
+    },
+    "“%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«%@»"
+          }
+        }
+      }
+    },
+    "“Automatic” uses the CLI your agents use most, with its default model and low effort.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Automático» usa el CLI que más usan tus agentes, con su modelo por defecto y esfuerzo bajo."
+          }
+        }
+      }
+    },
+    "“Auto” follows your Mac, including when it switches on a schedule. If you pick a theme in Paperclip’s menu, it changes here too.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Sistema» sigue a la Mac, también cuando cambia sola por horario. Si eliges el tema en el menú de Paperclip, aquí cambia igual."
+          }
+        }
+      }
+    },
+    "“Explain decisions” is turned off in Settings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "«Explicar decisiones» está apagado en Ajustes."
+          }
+        }
+      }
+    },
+    "•": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "•"
+          }
+        }
+      }
+    },
+    "…and more.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "…y más."
+          }
+        }
+      }
+    },
+    "☑️ <i>No longer pending.</i>": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "☑️ <i>Ya no está pendiente.</i>"
+          }
+        }
+      }
+    },
+    "✅ <b>You answered:</b> %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ <b>Respondiste:</b> %@"
+          }
+        }
+      }
+    },
+    "✅ Sent to %@: “%@”, with your text.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "✅ Sent to %1$@: “%2$@”, with your text."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Enviado a %1$@: «%2$@», con tu texto."
+          }
+        }
+      }
+    },
+    "💡 Explain it to me": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "💡 Explícamela"
+          }
+        }
+      }
+    },
+    "💬 Comment added to %@. Paperclip will let the agent know.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "💬 Comentario agregado en %@. Paperclip le avisa al agente."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

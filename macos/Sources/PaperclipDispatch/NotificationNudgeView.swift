@@ -32,13 +32,13 @@ struct NotificationNudgeView: View {
             message(problem)
                 .contentTransition(.opacity)
             if !model.confirmed {
-                Button(problem == .off ? "Activar" : "Ajustar", action: model.act)
+                Button(problem == .off ? "Turn On" : "Adjust", action: model.act)
                     .buttonStyle(.glassProminent)
-                Button("Esconder por una semana", systemImage: "xmark", action: model.dismiss)
+                Button("Hide for a week", systemImage: "xmark", action: model.dismiss)
                     .labelStyle(.iconOnly)
                     .buttonStyle(.glass)
                     .buttonBorderShape(.circle)
-                    .help("Esconder por una semana")
+                    .help("Hide for a week")
             }
         }
         .padding(.leading, 16)
@@ -51,9 +51,9 @@ struct NotificationNudgeView: View {
 
     private func message(_ problem: NotificationNudge.Problem) -> Text {
         let (lead, rest) = if model.confirmed {
-            ("Avisos activados.", "Te avisamos cuando un agente te necesite.")
+            (String(localized: "Notifications are on."), String(localized: "We’ll let you know when an agent needs you."))
         } else if model.waitingForAnswer {
-            ("Responde arriba a la derecha:", "en el aviso de macOS, Opciones → Permitir.")
+            (String(localized: "Respond at the top right:"), String(localized: "in the macOS notification, Options → Allow."))
         } else {
             texts(problem)
         }
@@ -62,9 +62,9 @@ struct NotificationNudgeView: View {
 
     private func texts(_ problem: NotificationNudge.Problem) -> (String, String) {
         switch problem {
-        case .off: ("Los avisos están apagados:", "no te vas a enterar cuando un agente te necesite.")
-        case .noBanners: ("Los avisos llegan sin banner:", "solo los verías en el Centro de notificaciones.")
-        case .noBadge: ("Falta el número en el Dock:", "macOS no deja mostrar cuántas decisiones esperan.")
+        case .off: (String(localized: "Notifications are off:"), String(localized: "you won’t know when an agent needs you."))
+        case .noBanners: (String(localized: "Notifications arrive without banners:"), String(localized: "you’d only see them in Notification Center."))
+        case .noBadge: (String(localized: "The Dock badge is missing:"), String(localized: "macOS doesn’t allow showing how many decisions are waiting."))
         }
     }
 }

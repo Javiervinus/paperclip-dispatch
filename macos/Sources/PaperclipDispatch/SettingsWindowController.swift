@@ -9,8 +9,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .notifications: "Avisos"
+        case .general: String(localized: "General")
+        case .notifications: String(localized: "Notifications")
         case .telegram: "Telegram"
         case .paperclip: "Paperclip"
         }
@@ -99,7 +99,7 @@ final class SettingsWindowController: NSWindowController {
         hosting.sizingOptions = []
         let window = SnapshotableWindow(contentViewController: hosting)
         window.styleMask = [.titled, .closable, .fullSizeContentView]
-        window.title = "Ajustes"
+        window.title = String(localized: "Settings")
         window.titleVisibility = .hidden
         window.toolbarStyle = .unified
         window.setContentSize(SettingsDesign.windowSize)
@@ -111,7 +111,7 @@ final class SettingsWindowController: NSWindowController {
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) no se usa")
+        fatalError("init(coder:) is not used")
     }
 
     /// `pane`: abre en esa pestaña; sin ella, en la que estaba.
@@ -158,7 +158,7 @@ private struct SettingsRoot: View {
         .frame(width: SettingsDesign.windowSize.width, height: SettingsDesign.windowSize.height)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Picker("Sección", selection: $selection.pane.animation(SettingsDesign.paneAnimation)) {
+                Picker("Section", selection: $selection.pane.animation(SettingsDesign.paneAnimation)) {
                     ForEach(SettingsPane.allCases) { pane in
                         Label(pane.title, systemImage: pane.symbol).tag(pane)
                     }
@@ -241,14 +241,14 @@ enum SettingsSnapshot {
         }
         let variants: [(name: String, telegram: TelegramChannel, status: AppStatus, panes: [SettingsPane])] = [
             ("", real, status, SettingsPane.allCases),
-            ("telegram-sin-bot", channel(TelegramChannel.State(), hasToken: false), status, [.telegram]),
-            ("telegram-sin-vincular", channel(pairing), status, [.telegram]),
-            ("avisos-sin-pedir", real, statusWith(NotificationAccess(permission: .notDetermined, banners: false, badge: false)), [.notifications]),
-            ("avisos-a-medias", real, statusWith(NotificationAccess(permission: .granted, banners: false, badge: true)), [.notifications]),
+            ("telegram-no-bot", channel(TelegramChannel.State(), hasToken: false), status, [.telegram]),
+            ("telegram-not-linked", channel(pairing), status, [.telegram]),
+            ("notifications-not-requested", real, statusWith(NotificationAccess(permission: .notDetermined, banners: false, badge: false)), [.notifications]),
+            ("notifications-partial", real, statusWith(NotificationAccess(permission: .granted, banners: false, badge: true)), [.notifications]),
         ]
         var controllers: [SettingsWindowController] = []
         var windows: [Snapshot.Window] = []
-        for (name, appearance) in [("claro", NSAppearance.Name.aqua), ("oscuro", .darkAqua)] {
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for variant in variants {
                 for pane in variant.panes {
                     let controller = SettingsWindowController(

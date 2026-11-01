@@ -12,7 +12,7 @@ struct WelcomeIntroStep: View {
                 .font(.largeTitle)
                 .bold()
                 .padding(.top, 18)
-            Text("Tus agentes de Paperclip, en una app de Mac.")
+            Text("Your Paperclip agents, in a Mac app.")
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -20,18 +20,18 @@ struct WelcomeIntroStep: View {
             VStack(alignment: .leading, spacing: 18) {
                 FeatureRow(
                     symbol: "bell.badge.fill",
-                    title: "Te avisa cuando te necesitan",
-                    detail: "Las decisiones de tus agentes llegan como avisos y con el número en el Dock, aunque cierres la ventana."
+                    title: String(localized: "Notifies you when you’re needed"),
+                    detail: String(localized: "Your agents’ decisions arrive as notifications and as a badge on the Dock icon, even if you close the window.")
                 )
                 FeatureRow(
                     symbol: "paperplane.fill",
-                    title: "Respondes desde donde estés",
-                    detail: "En la Mac o, si quieres, en Telegram desde el teléfono."
+                    title: String(localized: "Reply from wherever you are"),
+                    detail: String(localized: "On your Mac or, if you like, in Telegram from your phone.")
                 )
                 FeatureRow(
                     symbol: "arrow.triangle.2.circlepath",
-                    title: "Siempre al día",
-                    detail: "Actualiza Paperclip y esta app con un clic, cuando tú decidas."
+                    title: String(localized: "Always up to date"),
+                    detail: String(localized: "Update Paperclip and this app with one click, whenever you choose.")
                 )
             }
             .frame(width: WelcomeDesign.featuresWidth)

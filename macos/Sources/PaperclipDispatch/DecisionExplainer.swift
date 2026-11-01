@@ -28,11 +28,11 @@ struct DecisionExplainer {
 
         var title: String {
             switch self {
-            case .automatic: "Automático"
+            case .automatic: String(localized: "Automatic")
             case .claude: "Claude Code"
             case .codex: "Codex"
             case .opencode: "OpenCode"
-            case .custom: "Otro comando…"
+            case .custom: String(localized: "Other Command…")
             }
         }
 
@@ -113,15 +113,15 @@ struct DecisionExplainer {
         var parts: [String] = []
         if let issueId {
             if let task: TaskContext = try? await api.get("api/issues/\(issueId)/heartbeat-context") {
-                var header = "Tarea: \([task.issue.identifier, task.issue.title].compactMap { $0 }.joined(separator: " — "))"
-                if let project = task.project?.name { header += " (proyecto \(project))" }
-                if let status = task.issue.status { header += ", estado \(status)" }
+                var header = String(localized: "Task: \([task.issue.identifier, task.issue.title].compactMap { $0 }.joined(separator: " — "))")
+                if let project = task.project?.name { header += String(localized: " (project \(project))") }
+                if let status = task.issue.status { header += String(localized: ", status \(status)") }
                 parts.append(header)
                 if let description = task.issue.description, !description.isEmpty {
-                    parts.append("Descripción:\n" + description.prefix(Self.descriptionLimit))
+                    parts.append(String(localized: "Description:\n") + description.prefix(Self.descriptionLimit))
                 }
                 if let summary = task.continuationSummary?.body, !summary.isEmpty {
-                    parts.append("Resumen que va llevando el agente:\n" + summary.prefix(Self.summaryLimit))
+                    parts.append(String(localized: "Summary the agent has been keeping:\n") + summary.prefix(Self.summaryLimit))
                 }
             }
             let comments: [Comment]? = try? await api.get(
@@ -132,14 +132,14 @@ struct DecisionExplainer {
                 ]
             )
             if let comments, !comments.isEmpty {
-                parts.append("Últimos comentarios, del más viejo al más nuevo:")
+                parts.append(String(localized: "Latest comments, oldest to newest:"))
                 for comment in comments.reversed() {
-                    let author = comment.authorType == "user" ? "Persona" : "Agente"
+                    let author = comment.authorType == "user" ? String(localized: "Person") : String(localized: "Agent")
                     parts.append("[\(author)] " + (comment.body ?? "").prefix(Self.commentLimit))
                 }
             }
         }
-        parts.append("La decisión que le piden ahora:\n" + brief)
+        parts.append(String(localized: "The decision they’re asking for now:\n") + brief)
         return parts.joined(separator: "\n\n")
     }
 
@@ -147,14 +147,14 @@ struct DecisionExplainer {
 
     /// `engine` ya resuelto (ver `resolve`); `model` vacío o `nil` es el que el CLI tenga por defecto.
     func explain(context: String, engine: Engine, model: String?, customCommand: String?) async throws -> String {
-        var prompt = """
-        Un agente de Paperclip le pide una decisión a la persona que lo dirige, que la está viendo en el \
-        teléfono. Con el contexto de abajo, explícale en español claro y en 4 a 6 líneas cortas: de qué \
-        trata la tarea, qué hizo el agente hasta ahora, qué le pide exactamente y qué pasa con cada opción. \
-        No decidas por ella ni inventes nada que no esté en el contexto. Solo texto, con **negritas** como \
-        mucho; sin títulos ni listas largas.
-        """
-        prompt += "\n\n<contexto>\n\(context)\n</contexto>"
+        var prompt = String(localized: """
+        A Paperclip agent is asking the person who directs it for a decision, and they’re reading it on \
+        their phone. Using the context below, explain it to them in clear English in 4 to 6 short lines: \
+        what the task is about, what the agent has done so far, exactly what it’s asking for, and what \
+        happens with each option. Don’t decide for them or make up anything that isn’t in the context. \
+        Plain text only, with **bold** at most; no headings or long lists.
+        """)
+        prompt += String(localized: "\n\n<context>\n\(context)\n</context>")
 
         let model = model.flatMap { $0.isEmpty ? nil : $0 }
         let commands = engine.commands(model: model != nil, custom: customCommand)
@@ -177,11 +177,11 @@ struct DecisionExplainer {
         var errorDescription: String? {
             switch self {
             case .noEngine:
-                "No encontré un CLI para explicarla en esta Mac (Claude Code, Codex u OpenCode). Se elige en Ajustes → Telegram."
+                String(localized: "Couldn’t find a CLI on this Mac to explain it (Claude Code, Codex, or OpenCode). Choose one in Settings → Telegram.")
             case .noCommand:
-                "Falta el comando en Ajustes → Telegram → «Otro comando…»."
+                String(localized: "The command is missing in Settings → Telegram → “Other Command…”.")
             case let .failed(detail):
-                "No pude armar la explicación: \(detail)"
+                String(localized: "Couldn’t put the explanation together: \(detail)")
             }
         }
     }
@@ -293,7 +293,7 @@ struct DecisionExplainer {
         let answer = ((try? String(contentsOf: output, encoding: .utf8)) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard result.status == 0, !answer.isEmpty else {
-            throw ExplainError.failed(result.tail(2).isEmpty ? "terminó sin respuesta." : result.tail(2))
+            throw ExplainError.failed(result.tail(2).isEmpty ? String(localized: "it finished without an answer.") : result.tail(2))
         }
         return answer
     }

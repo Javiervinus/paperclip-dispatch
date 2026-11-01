@@ -62,7 +62,7 @@ final class UpdateController {
 
     func start() {
         guard isLocal else {
-            unavailable = "Este Paperclip corre en otra computadora: se actualiza allá."
+            unavailable = String(localized: "This Paperclip runs on another computer: update it there.")
             publish()
             return
         }
@@ -85,7 +85,7 @@ final class UpdateController {
             let result = await Shell.run(["-c", Self.checkCommand])
             checking = false
             if result.status == Self.commandNotFound {
-                unavailable = "Para ver versiones nuevas aquí hace falta el comando de Paperclip."
+                unavailable = String(localized: "To see new versions here, you need the Paperclip command.")
                 checkError = nil
                 publish()
                 return
@@ -137,24 +137,24 @@ final class UpdateController {
         if let script, !FileManager.default.fileExists(atPath: script.path) {
             Task {
                 await showAlert(
-                    "No encuentro el script para actualizar",
-                    "Esta app se armó para actualizar con \(script.path), que ya no está."
+                    String(localized: "Couldn’t find the update script"),
+                    String(localized: "This app was built to update with \(script.path), which is no longer there.")
                 )
             }
             return
         }
         let alert = NSAlert()
-        alert.messageText = "¿Actualizar Paperclip a la \(available.targetVersion)?"
-        alert.informativeText = """
-            Tienes la \(available.currentVersion). Paperclip se reinicia y corta lo que estén haciendo \
-            los agentes. Antes respalda la base; tarda uno o dos minutos.
-            """
+        alert.messageText = String(localized: "Update Paperclip to \(available.targetVersion)?")
+        alert.informativeText = String(localized: """
+            You have \(available.currentVersion). Paperclip restarts and interrupts whatever the agents are \
+            doing. It backs up the database first and takes a minute or two.
+            """)
         if previewTarget != nil {
-            alert.informativeText += "\n\nEsto es un ensayo: muestra los pasos sin actualizar nada."
+            alert.informativeText += "\n\n" + String(localized: "This is a rehearsal: it shows the steps without updating anything.")
         }
-        alert.addButton(withTitle: "Actualizar")
-        alert.addButton(withTitle: "Cancelar")
-        alert.addButton(withTitle: "Ver novedades")
+        alert.addButton(withTitle: String(localized: "Update"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
+        alert.addButton(withTitle: String(localized: "See What’s New"))
         Task {
             switch await host.present(alert) {
             case .alertFirstButtonReturn:
@@ -172,7 +172,7 @@ final class UpdateController {
     }
 
     private func runUpdate(_ arguments: [String], target: String) async {
-        setProgress("Actualizando…")
+        setProgress(String(localized: "Updating…"))
         // Un script propio puede contar sus pasos («2/5 Deteniendo el servicio…»): el botón los muestra.
         let result = await Shell.run(arguments) { [weak self] line in
             guard let step = Self.step(in: line) else { return }
@@ -184,7 +184,7 @@ final class UpdateController {
             host.reload()
         } else {
             publish()
-            await showAlert("La actualización no terminó", result.tail(Self.errorTailLines))
+            await showAlert(String(localized: "The update didn’t finish"), result.tail(Self.errorTailLines))
             runCheck(showProgress: false)
         }
     }
@@ -196,7 +196,7 @@ final class UpdateController {
             guard let printed = line.firstMatch(of: #/^\s*print "(.+)"/#) else { return nil }
             return Self.step(in: String(printed.1))
         }
-        setProgress("Actualizando…")
+        setProgress(String(localized: "Updating…"))
         for step in steps {
             try? await Task.sleep(for: Self.rehearsalStepDuration)
             setProgress(step)
@@ -213,8 +213,8 @@ final class UpdateController {
         notifications.show(
             id: "paperclip-update",
             tag: "paperclip-update",
-            title: previewTarget == nil ? "Paperclip actualizado" : "Paperclip actualizado (ensayo)",
-            body: "Ya está en la \(target).",
+            title: previewTarget == nil ? String(localized: "Paperclip updated") : String(localized: "Paperclip updated (rehearsal)"),
+            body: String(localized: "It’s now on \(target)."),
             href: nil
         )
     }
@@ -227,14 +227,14 @@ final class UpdateController {
     /// «2/5 Deteniendo el servicio…» → «Actualizando 2/5…». Se llama también desde la lectura de la salida.
     nonisolated private static func step(in line: String) -> String? {
         guard let step = line.firstMatch(of: #/^(\d+)/(\d+) /#) else { return nil }
-        return "Actualizando \(step.1)/\(step.2)…"
+        return String(localized: "Updating \(String(step.1))/\(String(step.2))…")
     }
 
     private func showAlert(_ title: String, _ message: String) async {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
-        alert.addButton(withTitle: "Aceptar")
+        alert.addButton(withTitle: String(localized: "OK"))
         _ = await host.present(alert)
     }
 

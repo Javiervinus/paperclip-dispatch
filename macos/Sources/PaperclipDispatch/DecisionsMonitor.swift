@@ -130,7 +130,7 @@ final class DecisionsMonitor {
                 id: "decisions-\(company.id)",
                 tag: "decisions-\(company.id)",
                 title: company.name ?? "Paperclip",
-                body: "Tienes \(fresh.count) decisiones pendientes.",
+                body: String(localized: "You have \(fresh.count) pending decisions."),
                 href: company.issuePrefix.map { "/\($0)/decisions" }
             )
             return
@@ -150,7 +150,7 @@ final class DecisionsMonitor {
     static func notice(for item: AttentionItem) -> (title: String, body: String, href: String?) {
         let parts: [String] = [item.originAgentName, item.relatedIssue?.identifier].compactMap { $0 }
         let body: String = item.detail?.promptExcerpt ?? item.subject?.title ?? item.whyNow
-            ?? "Algo espera tu decisión."
+            ?? String(localized: "Something is waiting for your decision.")
         return (parts.isEmpty ? "Paperclip" : parts.joined(separator: " · "), body, item.subject?.href ?? item.relatedIssue?.href)
     }
 

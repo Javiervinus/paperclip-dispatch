@@ -122,51 +122,51 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         if let progress = status.updateProgress {
             show(progress, symbol: "arrow.down.circle.fill")
             button.tintProminence = .primary
-            button.toolTip = "Actualizando Paperclip. No cierres la app hasta que termine."
+            button.toolTip = String(localized: "Updating Paperclip. Don’t quit the app until it finishes.")
         } else if case .installing = app.phase {
-            show("Reiniciando…", symbol: "arrow.clockwise")
+            show(String(localized: "Restarting…"), symbol: "arrow.clockwise")
             button.toolTip = nil
         } else if case .downloading(_, let progress) = app.phase {
-            let percent = progress.map { " \(Int(($0 * 100).rounded())) %" } ?? ""
-            show("Descargando Dispatch…\(percent)", symbol: "arrow.down.circle")
-            button.toolTip = "Descargando la versión nueva de esta app. Al terminar se reinicia sola, como pediste."
+            let percent = progress.map { " " + String(localized: "\(Int(($0 * 100).rounded()))%") } ?? ""
+            show(String(localized: "Downloading Dispatch…\(percent)"), symbol: "arrow.down.circle")
+            button.toolTip = String(localized: "Downloading the new version of this app. It restarts on its own when it’s done, as you asked.")
         } else if let appRelease, let paperclipLatest {
-            show("2 actualizaciones", symbol: "arrow.down.circle.fill")
+            show(String(localized: "2 Updates"), symbol: "arrow.down.circle.fill")
             button.tintProminence = .primary
-            button.toolTip = """
-                Hay versiones nuevas de esta app (Dispatch \(appRelease.version)) y de Paperclip, el servidor \
-                (\(paperclipLatest)). Clic para ver qué hace cada una.
-                """
+            button.toolTip = String(localized: """
+                New versions of this app (Dispatch \(appRelease.version)) and of Paperclip, the server \
+                (\(paperclipLatest)), are available. Click to see what each one does.
+                """)
         } else if let appRelease {
-            show("Actualizar Dispatch", image: AppIcon.image(size: Self.iconSize))
+            show(String(localized: "Update Dispatch"), image: AppIcon.image(size: Self.iconSize))
             button.tintProminence = .primary
             // Descargada, se instala sola al cerrar la app; sin descargar (descargas automáticas apagadas), no.
             let when = if case .ready = app.phase {
-                "Se instala cuando reinicias o cierras la app"
+                String(localized: "It installs when you restart or quit the app")
             } else {
-                "Desde ahí la descargas e instalas cuando quieras"
+                String(localized: "From there you can download and install it whenever you like")
             }
-            button.toolTip = """
-                Hay una versión nueva de esta app: Dispatch \(appRelease.version) (tienes la \(dispatch)).
-                Clic para ver qué trae. \(when); Paperclip y tus agentes siguen trabajando.
-                """
+            button.toolTip = String(localized: """
+                A new version of this app is available: Dispatch \(appRelease.version) (you have \(dispatch)).
+                Click to see what’s new. \(when); Paperclip and your agents keep working.
+                """)
         } else if let paperclipLatest {
-            show("Actualizar Paperclip", symbol: "paperclip")
+            show(String(localized: "Update Paperclip"), symbol: "paperclip")
             button.tintProminence = .primary
-            button.toolTip = """
-                Hay una versión nueva de Paperclip, el servidor donde trabajan tus agentes: la \(paperclipLatest)\
-                \(status.paperclipVersion.map { " (tienes la \($0))" } ?? "").
-                Actualizarlo pausa a los agentes mientras se reinicia: tú eliges cuándo.
-                """
+            button.toolTip = String(localized: """
+                A new version of Paperclip, the server where your agents work, is available: \(paperclipLatest)\
+                \(status.paperclipVersion.map { String(localized: " (you have \($0))") } ?? "").
+                Updating it pauses your agents while it restarts, so you choose when.
+                """)
         } else if status.checkingUpdate || app.phase == .checking {
-            show("Revisando…", symbol: "arrow.clockwise")
+            show(String(localized: "Checking…"), symbol: "arrow.clockwise")
             button.toolTip = nil
         } else if let news = app.whatsNew {
-            show("Novedades de Dispatch \(news.version)", symbol: "sparkles", tint: .controlAccentColor)
-            button.toolTip = "Esta app se actualizó a la \(news.version). Clic para ver qué trae."
+            show(String(localized: "What’s New in Dispatch \(news.version)"), symbol: "sparkles", tint: .controlAccentColor)
+            button.toolTip = String(localized: "This app was updated to \(news.version). Click to see what’s new.")
         } else if status.updateCheckError != nil, status.paperclipVersion == nil, status.updatesUnavailable == nil {
-            show("No pude revisar Paperclip", symbol: "exclamationmark.triangle.fill", color: .systemOrange)
-            button.toolTip = "\(status.updateCheckError ?? "")\n\nClic para ver detalles y reintentar."
+            show(String(localized: "Couldn’t Check Paperclip"), symbol: "exclamationmark.triangle.fill", color: .systemOrange)
+            button.toolTip = String(localized: "\(status.updateCheckError ?? "")\n\nClick for details and to try again.")
         } else {
             let versions = [status.paperclipVersion.map { "Paperclip \($0)" }, "Dispatch \(dispatch)"]
             show(versions.compactMap(\.self).joined(separator: " · "), symbol: "checkmark.circle.fill", color: .systemGreen)
@@ -176,17 +176,17 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     }
 
     private func upToDateTip(dispatch: String) -> String {
-        var lines = ["Todo al día."]
+        var lines = [String(localized: "Everything is up to date.")]
         if let version = status.paperclipVersion {
-            lines.append("Paperclip \(version): el servidor, donde trabajan tus agentes.")
+            lines.append(String(localized: "Paperclip \(version): the server, where your agents work."))
         } else if let unavailable = status.updatesUnavailable {
             lines.append("Paperclip: \(unavailable)")
         }
-        lines.append("Dispatch \(dispatch): esta app, la ventana desde la que usas Paperclip.")
+        lines.append(String(localized: "Dispatch \(dispatch): this app, the window you use Paperclip from."))
         if let checked = [app.lastCheckedAt, status.lastCheckedAt].compactMap(\.self).max() {
-            lines.append("Última revisión: \(checked.formatted(date: .omitted, time: .shortened))")
+            lines.append(String(localized: "Last checked: \(checked.formatted(date: .omitted, time: .shortened))"))
         }
-        lines.append("Clic para ver más o buscar de nuevo.")
+        lines.append(String(localized: "Click to see more or check again."))
         return lines.joined(separator: "\n")
     }
 

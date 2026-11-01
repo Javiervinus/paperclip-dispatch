@@ -186,18 +186,18 @@ final class TelegramChannel {
     /// Devuelve el error para mostrarlo, o `nil` si quedó conectado.
     func connect(token raw: String) async -> String? {
         let token = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !token.isEmpty else { return "Pega el token que te dio @BotFather." }
+        guard !token.isEmpty else { return String(localized: "Paste the token @BotFather gave you.") }
         let candidate = TelegramBotAPI(token: token)
         let me: TelegramBotAPI.User
         do {
             me = try await candidate.call("getMe")
         } catch let failure as TelegramBotAPI.Failure where failure.code == 401 || failure.code == 404 {
-            return "Telegram no reconoce ese token. Cópialo de nuevo desde @BotFather."
+            return String(localized: "Telegram doesn’t recognize that token. Copy it again from @BotFather.")
         } catch {
-            return "No pude hablar con Telegram: \(error.localizedDescription)"
+            return String(localized: "Couldn’t reach Telegram: \(error.localizedDescription)")
         }
-        guard let username = me.username else { return "Ese token no es de un bot." }
-        guard Keychain.save(token, for: Self.tokenAccount) else { return "No pude guardar el token en el llavero." }
+        guard let username = me.username else { return String(localized: "That token doesn’t belong to a bot.") }
+        guard Keychain.save(token, for: Self.tokenAccount) else { return String(localized: "Couldn’t save the token in the Keychain.") }
         stop()
         state = State()
         state.botUsername = username
@@ -236,8 +236,10 @@ final class TelegramChannel {
         guard isPaired else { return nil }
         do {
             try await sendText(
-                "Así te llegan las decisiones de Paperclip: con sus botones. Si respondes a una con texto, " +
-                    "lo dejo como comentario en su tarea."
+                String(localized: """
+                    This is how Paperclip decisions reach you: with their buttons. If you reply to one with text, \
+                    I’ll post it as a comment on its task.
+                    """)
             )
             return nil
         } catch {
@@ -293,7 +295,7 @@ final class TelegramChannel {
                     issueId: item.issueId, issueIdentifier: item.relatedIssue?.identifier
                 )
             }
-            try? await sendText("Y \(rest.count) decisiones más pendientes: están en Paperclip.", link: decisionsURL())
+            try? await sendText(String(localized: "And \(rest.count) more pending: they’re in Paperclip."), link: decisionsURL())
         }
 
         state.messages = state.messages.filter { _, sent in
@@ -308,7 +310,7 @@ final class TelegramChannel {
         guard let sent = state.messages[id], sent.closedAt == nil else { return }
         state.messages[id]?.closedAt = Date()
         if let messageId = sent.messageId {
-            await edit(messageId, html: sent.html + "\n\n☑️ <i>Ya no está pendiente.</i>")
+            await edit(messageId, html: sent.html + "\n\n" + String(localized: "☑️ <i>No longer pending.</i>"))
         }
     }
 
@@ -352,7 +354,7 @@ final class TelegramChannel {
             message = retry
         } catch {
             // Se vuelve a intentar en la próxima vuelta del monitor.
-            problem = "No pude mandar una decisión: \(error.localizedDescription)"
+            problem = String(localized: "Couldn’t send a decision: \(error.localizedDescription)")
             return
         }
         sent.messageId = message.messageId
@@ -364,9 +366,9 @@ final class TelegramChannel {
         var rows: [[[String: Any]]] = sent.choices.indices.map { index in
             [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
         }
-        if explainEnabled { rows.append([["text": "💡 Explícamela", "callback_data": "e:\(sent.key)"]]) }
+        if explainEnabled { rows.append([["text": String(localized: "💡 Explain it to me"), "callback_data": "e:\(sent.key)"]]) }
         if link, let url = paperclipURL(sent.href) {
-            rows.append([["text": "Abrir en Paperclip", "url": url.absoluteString]])
+            rows.append([["text": String(localized: "Open in Paperclip"), "url": url.absoluteString]])
         }
         return rows
     }
@@ -398,15 +400,15 @@ final class TelegramChannel {
                 }
                 if !updates.isEmpty { save() }
             } catch let failure as TelegramBotAPI.Failure where failure.code == 401 {
-                problem = "Telegram ya no acepta el token del bot. Quítalo y vuelve a conectarlo."
+                problem = String(localized: "Telegram no longer accepts the bot token. Remove it and connect it again.")
                 loop = nil
                 return
             } catch let failure as TelegramBotAPI.Failure where failure.code == 409 {
-                problem = "Otro programa está atendiendo este bot. Usa un bot solo para Paperclip."
+                problem = String(localized: "Another program is handling this bot. Use a bot just for Paperclip.")
                 try? await Task.sleep(for: .seconds(30))
             } catch {
                 if Task.isCancelled { return }
-                problem = "Sin conexión con Telegram; se reintenta sola."
+                problem = String(localized: "Can’t reach Telegram; it will retry on its own.")
                 try? await Task.sleep(for: .seconds(delay))
                 delay = min(delay * 2, 60)
             }
@@ -429,10 +431,10 @@ final class TelegramChannel {
         if parts.count == 2, parts[0] == "e", let key = Int(parts[1]),
            let (itemId, sent) = state.messages.first(where: { $0.value.key == key }) {
             guard explainEnabled else {
-                await answer(callback, "«Explicar decisiones» está apagado en Ajustes.")
+                await answer(callback, String(localized: "“Explain decisions” is turned off in Settings."))
                 return
             }
-            await answer(callback, "Leyendo la tarea…")
+            await answer(callback, String(localized: "Reading the task…"))
             // Tarda unos segundos: mientras, el bot sigue atendiendo los demás botones.
             Task { await explain(itemId: itemId, replyTo: sent.messageId) }
             return
@@ -441,11 +443,11 @@ final class TelegramChannel {
               let (itemId, sent) = state.messages.first(where: { $0.value.key == key }),
               sent.choices.indices.contains(index)
         else {
-            await answer(callback, "Esta decisión ya no está.")
+            await answer(callback, String(localized: "This decision is gone."))
             return
         }
         guard sent.closedAt == nil else {
-            await answer(callback, "Ya no está pendiente.")
+            await answer(callback, String(localized: "No longer pending."))
             return
         }
         let choice = sent.choices[index]
@@ -455,9 +457,9 @@ final class TelegramChannel {
             return
         }
         if case let .wakeAgent(_, agentName) = choice.action {
-            await answer(callback, "Despertando a \(agentName ?? "el agente")…")
+            await answer(callback, String(localized: "Waking up \(agentName ?? String(localized: "the agent"))…"))
         } else {
-            await answer(callback, "Enviando a Paperclip…")
+            await answer(callback, String(localized: "Sending to Paperclip…"))
         }
         await apply(itemId: itemId, choice: index, text: nil)
     }
@@ -471,7 +473,7 @@ final class TelegramChannel {
         }
         guard message.chat.id == chatId, !text.isEmpty else { return }
         if text.hasPrefix("/start") {
-            try? await sendText("Ya estás conectado: aquí te llegan las decisiones de Paperclip.")
+            try? await sendText(String(localized: "You’re already connected: Paperclip decisions reach you here."))
             return
         }
         if let replied = message.replyToMessage?.messageId {
@@ -497,8 +499,10 @@ final class TelegramChannel {
         state.helpSentAt = Date()
         save()
         try? await sendText(
-            "Este bot solo avisa de las decisiones de Paperclip: contéstalas con sus botones. Para escribirle " +
-                "al agente de una, mantén apretado su mensaje, toca Responder y escribe: le llega como comentario.",
+            String(localized: """
+                This bot only notifies you about Paperclip decisions: answer them with their buttons. To write to \
+                a decision’s agent, press and hold its message, tap Reply, and type: it arrives as a comment.
+                """),
             replyTo: message.messageId
         )
     }
@@ -512,7 +516,7 @@ final class TelegramChannel {
             if text.hasPrefix("/start") {
                 try? await bot.send("sendMessage", [
                     "chat_id": message.chat.id,
-                    "text": "Para conectar este bot, ábrelo con el enlace de Ajustes de Paperclip en tu Mac.",
+                    "text": String(localized: "To connect this bot, open it with the link in Paperclip Settings on your Mac."),
                 ])
             }
             return
@@ -522,8 +526,10 @@ final class TelegramChannel {
         state.pairingCode = nil
         save()
         try? await sendText(
-            "Listo: aquí te llegan las decisiones de Paperclip, con sus botones. «Explícamela» te cuenta de " +
-                "qué se trata, y si respondes a una con texto, le llega al agente como comentario en su tarea."
+            String(localized: """
+                Done: Paperclip decisions reach you here, with their buttons. “Explain it to me” tells you what \
+                each one is about, and if you reply to one with text, it reaches the agent as a comment on its task.
+                """)
         )
         requestRefresh?()
     }
@@ -553,7 +559,7 @@ final class TelegramChannel {
         else { return }
         guard sent.closedAt == nil else {
             // P. ej. se escribió el motivo pedido y mientras tanto se resolvió en otro lado.
-            try? await sendText("Esa decisión ya no está pendiente: no cambié nada.", replyTo: sent.messageId)
+            try? await sendText(String(localized: "That decision is no longer pending: I didn’t change anything."), replyTo: sent.messageId)
             return
         }
         working.insert(itemId)
@@ -569,21 +575,21 @@ final class TelegramChannel {
             if await resolver.isPending(itemId: itemId, companyId: sent.companyId) == false {
                 // Se resolvió o se canceló en otro lado (en la Mac, por el agente) antes de que llegara esto.
                 await close(itemId)
-                try? await sendText("Ya no estaba pendiente en Paperclip: no cambié nada.", replyTo: sent.messageId)
+                try? await sendText(String(localized: "It was no longer pending in Paperclip: I didn’t change anything."), replyTo: sent.messageId)
             } else {
-                try? await sendText("No se pudo: \(error.localizedDescription)", replyTo: sent.messageId)
+                try? await sendText(String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId)
             }
             requestRefresh?()
             return
         }
         state.messages[itemId]?.closedAt = Date()
         save()
-        var status = "✅ <b>Respondiste:</b> \(TelegramFormat.escape(choice.label))"
+        var status = String(localized: "✅ <b>You answered:</b> \(TelegramFormat.escape(choice.label))")
         if let text { status += "\n<i>\(TelegramFormat.escape(text))</i>" }
         if let messageId = sent.messageId { await edit(messageId, html: sent.html + "\n\n" + status) }
         if let replyTo {
             try? await sendText(
-                "✅ Enviado a \(sent.issueIdentifier ?? "Paperclip"): «\(choice.label)», con tu texto.",
+                String(localized: "✅ Sent to \(sent.issueIdentifier ?? "Paperclip"): “\(choice.label)”, with your text."),
                 replyTo: replyTo
             )
         }
@@ -608,17 +614,17 @@ final class TelegramChannel {
 
     private func comment(_ text: String, on sent: SentDecision, replyTo: Int) async {
         guard let issueId = sent.issueId else {
-            try? await sendText("Esta no es de una tarea: contéstala con los botones o en Paperclip.", replyTo: replyTo)
+            try? await sendText(String(localized: "This one isn’t from a task: answer it with the buttons or in Paperclip."), replyTo: replyTo)
             return
         }
         do {
             try await resolver.comment(text, issueId: issueId)
             try? await sendText(
-                "💬 Comentario agregado en \(sent.issueIdentifier ?? "la tarea"). Paperclip le avisa al agente.",
+                String(localized: "💬 Comment added to \(sent.issueIdentifier ?? String(localized: "the task")). Paperclip will let the agent know."),
                 replyTo: replyTo
             )
         } catch {
-            try? await sendText("No pude comentar: \(error.localizedDescription)", replyTo: replyTo)
+            try? await sendText(String(localized: "Couldn’t comment: \(error.localizedDescription)"), replyTo: replyTo)
         }
     }
 
@@ -628,7 +634,7 @@ final class TelegramChannel {
     private func explain(itemId: String, replyTo: Int?) async {
         guard let sent = state.messages[itemId] else { return }
         guard explainEnabled else {
-            try? await sendText("«Explicar decisiones» está apagado en Ajustes.", replyTo: replyTo)
+            try? await sendText(String(localized: "“Explain decisions” is turned off in Settings."), replyTo: replyTo)
             return
         }
         guard !explaining.contains(itemId) else { return }
@@ -654,12 +660,12 @@ final class TelegramChannel {
                 customCommand: customCommand
             )
         } catch {
-            try? await sendText("No pude explicarla: \(error.localizedDescription)", replyTo: replyTo)
+            try? await sendText(String(localized: "Couldn’t explain it: \(error.localizedDescription)"), replyTo: replyTo)
             return
         }
 
         let html = "💡 \(TelegramFormat.markdown(answer))\n\n" +
-            "<i>Para preguntarle algo al agente, responde a la decisión.</i>"
+            String(localized: "<i>To ask the agent something, reply to the decision.</i>")
         // Si Telegram no acepta el formato, va como texto simple.
         if (try? await sendHTML(html, replyTo: replyTo)) == nil {
             _ = try? await sendHTML(TelegramFormat.escape(answer), replyTo: replyTo)
@@ -706,7 +712,7 @@ final class TelegramChannel {
         var params: [String: Any] = ["chat_id": chatId, "text": text]
         if let replyTo { params["reply_parameters"] = ["message_id": replyTo, "allow_sending_without_reply": true] }
         if let link {
-            params["reply_markup"] = ["inline_keyboard": [[["text": "Abrir en Paperclip", "url": link.absoluteString]]]]
+            params["reply_markup"] = ["inline_keyboard": [[["text": String(localized: "Open in Paperclip"), "url": link.absoluteString]]]]
         }
         do {
             try await bot.send("sendMessage", params)
@@ -772,7 +778,7 @@ final class TelegramChannel {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try JSONEncoder().encode(state).write(to: url, options: .atomic)
         } catch {
-            problem = "No pude guardar el estado del bot: \(error.localizedDescription)"
+            problem = String(localized: "Couldn’t save the bot’s state: \(error.localizedDescription)")
         }
     }
 
@@ -801,7 +807,7 @@ enum TelegramFormat {
 
         let origin = [item.originAgentName, issueLine(item)].compactMap { $0 }.joined(separator: " · ")
         if !origin.isEmpty { lines.append("<i>\(escape(origin))</i>") }
-        if prompt.choices.isEmpty { lines.append("Se contesta en Paperclip.") }
+        if prompt.choices.isEmpty { lines.append(String(localized: "Answer it in Paperclip.")) }
         return lines.joined(separator: "\n")
     }
 
@@ -815,25 +821,25 @@ enum TelegramFormat {
         case .failed: "❌"
         }
         var html = "\(mark) <b>\(escape(text.title)).</b> \(escape(text.body))"
-        if outcome.allowsRetry { html += "\n<i>Puedes volver a apretar el botón.</i>" }
+        if outcome.allowsRetry { html += "\n" + String(localized: "<i>You can press the button again.</i>") }
         return html
     }
 
     /// La decisión en texto simple, para dársela al modelo que la explica.
     static func brief(_ item: AttentionItem, prompt: DecisionPrompt) -> String {
-        var lines = ["Tipo: \(kindTitle(item))"]
-        if let title = item.subject?.title { lines.append("Título: \(title)") }
-        if let question = prompt.question { lines.append("Pregunta: \(question)") }
-        if let details = prompt.details, !details.isEmpty { lines.append("Detalles:\n\(truncated(details))") }
+        var lines = [String(localized: "Type: \(kindTitle(item))")]
+        if let title = item.subject?.title { lines.append(String(localized: "Title: \(title)")) }
+        if let question = prompt.question { lines.append(String(localized: "Question: \(question)")) }
+        if let details = prompt.details, !details.isEmpty { lines.append(String(localized: "Details:\n\(truncated(details))")) }
         if prompt.choices.isEmpty {
-            lines.append("Se contesta en la página de Paperclip.")
+            lines.append(String(localized: "It’s answered on the Paperclip page."))
         } else {
             let options = prompt.choices.map { choice in
-                "«\(choice.label)»" + (choice.asks.map { " (pide escribir: \($0))" } ?? "")
+                String(localized: "“\(choice.label)”") + (choice.asks.map { String(localized: " (asks you to write: \($0))") } ?? "")
             }
-            lines.append("Opciones: " + options.joined(separator: " / "))
+            lines.append(String(localized: "Options: \(options.joined(separator: " / "))"))
         }
-        if let agent = item.originAgentName { lines.append("La pide: \(agent)") }
+        if let agent = item.originAgentName { lines.append(String(localized: "Requested by: \(agent)")) }
         return lines.joined(separator: "\n")
     }
 
@@ -855,23 +861,23 @@ enum TelegramFormat {
         switch item.sourceKind {
         case "issue_thread_interaction":
             switch item.subject?.metadata?.kind {
-            case "ask_user_questions": "Pregunta"
-            case "suggest_tasks": "Tareas sugeridas"
-            case "request_item_verdicts": "Revisión"
-            case "connection_intent": "Conexión"
-            default: "Confirmación"
+            case "ask_user_questions": String(localized: "Question")
+            case "suggest_tasks": String(localized: "Suggested tasks")
+            case "request_item_verdicts": String(localized: "Review")
+            case "connection_intent": String(localized: "Connection")
+            default: String(localized: "Confirmation")
             }
-        case "approval": "Aprobación"
-        case "decision": "Decisión"
-        case "join_request": "Solicitud de acceso"
-        case "recovery_action": "Recuperación"
-        case "productivity_review": "Revisión de productividad"
-        case "blocker_attention": "Tarea trabada"
-        case "review": "Revisión"
-        case "failed_run": "Falló un agente"
-        case "budget_alert": "Presupuesto"
-        case "agent_error_alert": "Error de un agente"
-        default: "Decisión"
+        case "approval": String(localized: "Approval")
+        case "decision": String(localized: "Decision")
+        case "join_request": String(localized: "Access request")
+        case "recovery_action": String(localized: "Recovery")
+        case "productivity_review": String(localized: "Productivity review")
+        case "blocker_attention": String(localized: "Stuck task")
+        case "review": String(localized: "Review")
+        case "failed_run": String(localized: "An agent failed")
+        case "budget_alert": String(localized: "Budget")
+        case "agent_error_alert": String(localized: "Agent error")
+        default: String(localized: "Decision")
         }
     }
 
