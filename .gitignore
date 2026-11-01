@@ -1,2 +1,6 @@
 # macOS
 .DS_Store
+
+# Landing: la carpeta que arma site/build.sh y lo que dejan los scripts de revisión de diseño
+/_site/
+/.taste-skill/

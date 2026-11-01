@@ -7,6 +7,7 @@
 **Una app nativa de macOS para [Paperclip](https://paperclip.ing): tu Paperclip en su propia ventana, con
 avisos de decisiones, número en el Dock y respuestas desde Telegram.**
 
+[Sitio web](https://javiervinus.github.io/paperclip-dispatch/es/) ·
 [Descargar](https://github.com/Javiervinus/paperclip-dispatch/releases/latest) ·
 [Instalar con Homebrew](#instalación) ·
 [Compilar desde el código](#compilar-desde-el-código) ·

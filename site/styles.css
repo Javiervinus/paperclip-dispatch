@@ -1,0 +1,605 @@
+/* Paperclip Dispatch: la landing. Dirección «sentence-as-layout» (ver el documento design de VIN-237). */
+
+/* ---- Tokens ---- */
+:root {
+  /* La tinta de Paperclip sobre su fondo. El color solo aparece cuando significa algo (el número del Dock). */
+  --ground: #ffffff;
+  --ink: #171717;
+  --soft: #5c5c5c;
+  --surface: #f2f2f2;
+  --on-ink: #ffffff;
+  --badge: #ff3b30;
+  /* Las teclas del mensaje de Telegram (ilustración): un paso más que la superficie */
+  --key: #e3e3e3;
+  /* El aviso del hero: el tono medio del fondo de escritorio y el vidrio de la captura (NotificationsSnapshot) */
+  --desk: #b4b6e9;
+  --notice-glass: rgb(255 255 255 / 0.7);
+  --notice-solid: #f4f1fa;
+  --notice-rim: rgb(255 255 255 / 0.65);
+  --notice-key: rgb(60 40 90 / 0.1);
+  --notice-ink: #0a0a0a;
+  --notice-soft: rgb(10 10 10 / 0.58);
+
+  --font: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-system: -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", Arial, sans-serif; /* taste-skill-ignore: solo para el aviso del hero, que imita uno de macOS */
+  --font-code: ui-monospace, "SF Mono", Menlo, monospace; /* taste-skill-ignore: solo para el comando de Homebrew, que es código real en <code> */
+
+  /* Cinco tamaños, ninguno más */
+  --step-small: 0.875rem;
+  --step-body: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  --step-title: clamp(1.375rem, 1.05rem + 1.1vw, 2.25rem);
+  --step-head: clamp(2.5rem, 1.6rem + 3.6vw, 5rem);
+  --step-display: clamp(3.5rem, 0.6rem + 12vw, 10.5rem);
+
+  --margin: clamp(1rem, 0.4rem + 2.4vw, 2rem);
+  --gap: clamp(1rem, 0.5rem + 1.5vw, 1.5rem);
+  --section: clamp(7.5rem, 4rem + 9vw, 12.5rem);
+  --radius: 14px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #0a0a0a;
+    --ink: #e5e5e5;
+    --soft: #a3a3a3;
+    --surface: #1a1a1a;
+    --on-ink: #0a0a0a;
+    --badge: #ff453a;
+    --key: #2a2a2a;
+    --desk: #2f2548;
+    --notice-glass: rgb(8 6 20 / 0.24);
+    --notice-solid: #2b2540;
+    --notice-rim: rgb(255 255 255 / 0.08);
+    --notice-key: rgb(255 255 255 / 0.1);
+    --notice-ink: #ffffff;
+    --notice-soft: rgb(255 255 255 / 0.62);
+  }
+}
+
+/* ---- Base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--step-body);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+img, picture { display: block; max-width: 100%; }
+img { height: auto; }
+h1, h2, h3, p, figure { margin: 0; }
+h1, h2, h3 { font-weight: 500; text-wrap: balance; }
+p { text-wrap: pretty; }
+strong { font-weight: 500; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--ink); color: var(--ground); }
+
+.note { font-size: var(--step-small); color: var(--soft); }
+
+.link {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 180ms ease;
+}
+
+/* Un solo botón: relleno con la tinta, totalmente redondo (como el «Wake up» del aviso). */
+.button, .copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font: 500 var(--step-body) / 1 var(--font);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), opacity 180ms ease;
+}
+.button { min-height: 3.25rem; padding: 0 1.75rem; }
+.copy { min-height: 2.75rem; padding: 0 1.125rem; font-size: var(--step-small); }
+.button:active, .copy:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .link:hover { text-decoration-color: currentColor; }
+  .button:hover, .copy:hover { opacity: 0.86; }
+}
+
+/* ---- Barra ---- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--margin) * 0.9) var(--margin);
+  font-size: var(--step-small);
+}
+.bar-links { display: flex; gap: 1.25rem; }
+.wordmark { display: inline-flex; align-items: center; gap: 0.625rem; font-weight: 500; text-decoration: none; }
+
+/* ---- Hero: la frase con el aviso en lugar de las últimas palabras ---- */
+.hero { padding: clamp(3rem, 1rem + 8vw, 8rem) var(--margin) 0; }
+
+/* La frase es el h1 y el aviso que la sigue en la misma línea (fuera del h1, para que no sea parte del título) */
+.sentence {
+  font-size: var(--step-display);
+  font-weight: 500;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+  text-wrap: balance;
+}
+.sentence-words { display: block; font: inherit; }
+.br-wide { display: none; }
+
+/* El aviso: un aviso de macOS 26 dibujado aquí, con las medidas de la captura (docs/images/notification.png,
+   que dibuja NotificationsSnapshot.swift) en puntos: el escenario es el recorte de 400 × 72 pt (16 px a 2×
+   alrededor de la tarjeta) y la tarjeta mide 384 × 56 pt. --pt es un punto de la captura a la escala del
+   escenario, así el aviso crece y se achica entero, como lo hacía la imagen. */
+.strip {
+  --stage-w: 400;
+  --stage-h: 72;
+  --pt: calc(100cqw / var(--stage-w));
+  /* Fuera del escenario, a la derecha: de donde llegan los avisos y por donde se van */
+  --notice-off: calc(100% + 16 * var(--pt));
+  container-type: inline-size;
+  position: relative;
+  display: block;
+  margin-top: 0.12em;
+  width: 100%;
+  aspect-ratio: var(--stage-w) / var(--stage-h);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--desk);
+}
+
+@media (min-width: 640px) {
+  .sentence-words { display: inline; }
+  .br-wide { display: inline; }
+  /* Se apoya en la línea base y mide la altura de las mayúsculas */
+  .strip {
+    display: inline-block;
+    vertical-align: baseline;
+    width: calc(0.72em * var(--stage-w) / var(--stage-h));
+    margin: 0 0 0 0.12em;
+    border-radius: 0.09em;
+  }
+  /* En español «te encuentran» y el aviso no caben en una línea: el aviso baja a la suya, en el margen */
+  .sentence:lang(es) .strip { display: block; margin: 0.12em 0 0; }
+}
+
+/* Los avisos van uno encima del otro en la misma tarjeta: cambiar de aviso no mueve nada */
+.notices {
+  font: 400 calc(13 * var(--pt)) / 1.25 var(--font-system);
+  letter-spacing: 0;
+  color: var(--notice-ink);
+}
+.notice {
+  position: absolute;
+  inset: calc(8 * var(--pt));
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--pt));
+  padding: 0 calc(12 * var(--pt));
+  border-radius: calc(22 * var(--pt));
+  background: var(--notice-glass);
+  box-shadow: inset 0 0 0 calc(0.5 * var(--pt)) var(--notice-rim); /* taste-skill-ignore: el borde del vidrio del aviso de macOS que imita */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(var(--notice-off));
+}
+/* Sin movimiento queda solo el primero: el de la tarea trabada, con «Wake up CEO» */
+.notice.is-in { opacity: 1; visibility: visible; transform: none; }
+/* El ícono de la app, el mismo en todos: el de 64 px (que ya carga la barra) mientras mida hasta unos 64 píxeles
+   del dispositivo (un teléfono hasta 2×), el de 180 en el resto */
+.notice::before {
+  content: "";
+  flex: none;
+  width: calc(34 * var(--pt));
+  aspect-ratio: 1;
+  background: url("images/icon-180.png") center / contain no-repeat;
+}
+@media (max-width: 439px) and (max-resolution: 2dppx) {
+  .notice::before { background-image: url("images/icon-64.png"); }
+}
+.notice-text { flex: 1; min-width: 0; display: grid; gap: calc(2 * var(--pt)); }
+.notice-head { display: flex; align-items: baseline; justify-content: space-between; gap: calc(6 * var(--pt)); }
+.notice-title, .notice-body { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.notice-title { font-weight: 600; }
+.notice-time { flex: none; font-size: calc(11 * var(--pt)); color: var(--notice-soft); }
+/* Como en la captura: hasta 110 pt de ancho y dos líneas («Despertar a CEO» baja a la segunda) */
+.notice-action {
+  flex: none;
+  max-width: calc(110 * var(--pt));
+  padding: calc(6 * var(--pt)) calc(10 * var(--pt));
+  border-radius: calc(999 * var(--pt));
+  background: var(--notice-key);
+  font-size: calc(12 * var(--pt));
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Pausar (WCAG 2.2.2): una casilla que cubre todo el escenario, y la marca en la esquina de la tarjeta, donde
+   macOS pone la de cerrar. La marca se ve con el mouse encima, con foco, en pausa y siempre en pantallas táctiles.
+   Las dos aparecen solo si hay movimiento (al final, con las animaciones). */
+.notices-pause, .pause-glyph { display: none; }
+.notices-pause {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  margin: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+.notices-pause:focus-visible { outline-color: var(--notice-ink); outline-offset: -4px; }
+.pause-glyph {
+  position: absolute;
+  z-index: 1;
+  top: calc(1 * var(--pt));
+  left: calc(1 * var(--pt));
+  width: calc(18 * var(--pt));
+  height: calc(18 * var(--pt));
+  padding: calc(3 * var(--pt));
+  border-radius: 50%;
+  background: var(--notice-solid);
+  box-shadow: inset 0 0 0 calc(0.5 * var(--pt)) var(--notice-rim); /* taste-skill-ignore: como el botón de cerrar de un aviso de macOS */
+  fill: var(--notice-ink);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.glyph-play, .notices-pause:checked ~ .pause-glyph .glyph-pause { display: none; }
+.notices-pause:checked ~ .pause-glyph .glyph-play { display: inline; }
+.strip:hover .pause-glyph, .notices-pause:focus-visible ~ .pause-glyph,
+.notices-pause:checked ~ .pause-glyph { opacity: 1; }
+@media (hover: none) { .pause-glyph { opacity: 1; } }
+
+.hero-body {
+  display: grid;
+  gap: 2.5rem var(--gap);
+  margin-top: clamp(2.5rem, 1rem + 4vw, 4.5rem);
+}
+.lead { font-size: var(--step-title); line-height: 1.25; letter-spacing: -0.02em; max-width: 36ch; }
+
+.get { display: grid; gap: 1.75rem; align-content: start; }
+.download { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; }
+
+.brew { display: grid; gap: 0.5rem; position: relative; }
+.command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.375rem 0.375rem 1.125rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-width: 0;
+}
+.command code {
+  /* Nunca más angosto que «javiervinus/tap/paperclip-dispatch»: si no cabe junto al botón, el botón baja */
+  flex: 1 1 17rem;
+  min-width: min(100%, 35ch);
+  padding: 0.25rem 0;
+  font-family: var(--font-code);
+  font-size: var(--step-small);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+.command .nowrap { white-space: nowrap; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.requirements { max-width: 52ch; }
+
+@media (min-width: 900px) {
+  .hero-body { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .lead { grid-column: 1 / span 6; }
+  .get { grid-column: 8 / span 5; }
+}
+
+.window { display: block; margin-top: clamp(4rem, 2rem + 6vw, 8rem); }
+.window img { width: 100%; }
+
+/* ---- Lo que una pestaña no puede hacer: filas colgadas de un eje ---- */
+.tab {
+  padding: var(--section) var(--margin);
+  display: grid;
+  gap: clamp(4rem, 2rem + 5vw, 7.5rem);
+}
+.tab-intro { display: grid; gap: 1.5rem; }
+.tab-intro h2 { font-size: var(--step-head); line-height: 0.98; letter-spacing: -0.04em; }
+.statement { font-size: var(--step-title); line-height: 1.3; letter-spacing: -0.02em; max-width: 48ch; }
+
+.row { display: grid; gap: 1.5rem var(--gap); align-items: start; }
+.row-text { display: grid; gap: 1rem; max-width: 38ch; }
+.row-text h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
+
+.row-media { border-radius: var(--radius); overflow: hidden; }
+.media-notify { width: 100%; max-width: 40rem; }
+.media-dock {
+  width: 70%;
+  max-width: 20rem;
+  justify-self: end;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+}
+.dock { position: relative; width: 52%; }
+.dock img { width: 100%; }
+.badge {
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  display: grid;
+  place-items: center;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--badge);
+  color: #ffffff;
+  font-size: clamp(1.25rem, 0.8rem + 1.6vw, 2rem);
+  font-weight: 500;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.media-glass { width: 55%; max-width: 22rem; aspect-ratio: 4 / 5; position: relative; }
+.media-glass img { position: absolute; top: 0; left: 0; width: 360%; max-width: none; }
+
+@media (min-width: 900px) {
+  .tab-intro, .row { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .tab-intro > * { grid-column: 5 / span 8; }
+  .row-text { grid-column: 5 / span 4; }
+  .row-media { grid-column: 9 / span 4; justify-self: end; }
+  .media-dock { width: 62%; }
+  .media-glass { width: 78%; }
+}
+
+@media (min-width: 1200px) {
+  /* El aviso del titular se abre aquí más grande */
+  .row-notify .row-text { grid-column: 5 / span 3; }
+  .row-notify .row-media { grid-column: 8 / span 5; }
+}
+
+/* ---- Telegram: la ilustración a un lado, el texto al otro (al revés que las filas de arriba) ---- */
+.phone {
+  padding: 0 var(--margin) var(--section);
+  display: grid;
+  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) var(--gap);
+  align-items: start;
+}
+.phone h2, .setup h2, .install h2 { font-size: var(--step-head); line-height: 0.98; letter-spacing: -0.04em; }
+.phone-text { display: grid; gap: 1rem; max-width: 40ch; }
+.phone-lead { margin-bottom: 1.5rem; }
+.phone-text h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
+
+.phone-chat { display: grid; gap: 1rem; width: 100%; max-width: 32rem; }
+/* El mensaje del bot, dibujado con el texto y los botones que arma la app (TelegramFormat.decision y
+   TelegramChannel.keyboard). Es una ilustración: la tecla «Explain it to me» abre el resumen sin JS. */
+.chat {
+  display: grid;
+  gap: 0.375rem;
+  padding: 1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  line-height: 1.45;
+}
+.chat-head { display: flex; align-items: center; gap: 0.625rem; margin-bottom: 0.5rem; }
+.chat-head img { border-radius: 50%; }
+.chat-name { font-weight: 500; }
+.chat-role { color: var(--soft); }
+.bubble {
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius) var(--radius) var(--radius) 4px;
+  background: var(--ground);
+}
+.bubble p { margin: 0; }
+.keys { display: grid; gap: 0.375rem; }
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  background: var(--key);
+  font-weight: 500;
+  text-align: center;
+}
+.explain { display: grid; gap: 0.75rem; }
+.key-live {
+  list-style: none;
+  background: var(--ink);
+  color: var(--on-ink);
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), opacity 180ms ease;
+}
+.key-live::-webkit-details-marker { display: none; }
+.key-live:active { transform: scale(0.97); }
+.reply { display: grid; gap: 0.375rem; }
+.quote { padding: 0.375rem 0.625rem; border-radius: 8px; background: var(--surface); }
+.reply-hint { margin-top: 0.375rem; }
+
+@media (min-width: 900px) {
+  .phone { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .phone h2 { grid-column: 1 / span 12; }
+  .phone-chat { grid-column: 1 / span 6; }
+  .phone-text { grid-column: 8 / span 5; }
+}
+
+/* ---- Primer arranque y actualizaciones: dos capturas de tamaños distintos, la segunda más abajo ---- */
+.setup {
+  padding: 0 var(--margin) var(--section);
+  display: grid;
+  gap: clamp(3rem, 2rem + 3vw, 5rem) var(--gap);
+  align-items: start;
+}
+.setup-step { display: grid; gap: 1.5rem; }
+.setup-step img { width: 100%; }
+.setup-settings img { max-width: 24rem; }
+.setup-text { display: grid; gap: 1rem; max-width: 40ch; }
+.setup-text h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
+.setup-close { max-width: 34ch; }
+
+@media (min-width: 900px) {
+  .setup { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .setup h2 { grid-column: 1 / span 12; }
+  .setup-welcome { grid-column: 1 / span 7; }
+  .setup-settings { grid-column: 9 / span 4; margin-top: clamp(6rem, 2rem + 8vw, 12rem); }
+  .setup-settings img { max-width: none; }
+  .setup-close { grid-column: 5 / span 7; }
+}
+
+/* ---- Instalar: un campo de superficie a todo el ancho ---- */
+.install {
+  padding: var(--section) var(--margin);
+  background: var(--surface);
+  display: grid;
+  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) var(--gap);
+  align-items: start;
+}
+.install .command { background: var(--ground); }
+.install-grid { display: grid; gap: clamp(2.5rem, 1.5rem + 2.5vw, 4rem) var(--gap); }
+.install-block { display: grid; gap: 1rem; align-content: start; max-width: 44ch; }
+.install-block h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
+.install-block .download { margin-top: 0.5rem; }
+.install-block p code, .faq code {
+  font-family: var(--font-code);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 900px) {
+  .install { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .install h2 { grid-column: 1 / span 4; }
+  .install-grid { grid-column: 5 / span 8; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---- Preguntas: la pregunta grande a la izquierda, la respuesta al lado ---- */
+.faq {
+  padding: var(--section) var(--margin);
+  display: grid;
+  gap: clamp(3rem, 2rem + 2.5vw, 5rem);
+}
+.faq h2, .qa h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
+.faq h2 { color: var(--soft); }
+.qa { display: grid; gap: 0.75rem var(--gap); align-items: baseline; }
+.qa p { max-width: 42ch; }
+
+@media (min-width: 900px) {
+  .qa { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .qa h3 { grid-column: 1 / span 6; max-width: 20ch; }
+  .qa p { grid-column: 8 / span 5; }
+}
+
+/* ---- Pie: un campo de tinta, con el nombre de vuelta en grande ---- */
+.close {
+  padding: clamp(2.5rem, 1.5rem + 3vw, 4rem) var(--margin) clamp(2rem, 1rem + 2vw, 3rem);
+  background: var(--ink);
+  color: var(--on-ink);
+  display: grid;
+  gap: clamp(2rem, 1rem + 3vw, 4rem);
+}
+.close :focus-visible { outline-color: var(--on-ink); }
+.close ::selection { background: var(--on-ink); color: var(--ink); }
+.close-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem 2rem; font-size: var(--step-small); }
+.disclaimer { max-width: 52ch; }
+@media (min-width: 640px) {
+  /* El aviso de proyecto independiente, a la vista: a tamaño de frase desde la tableta */
+  .disclaimer { font-size: var(--step-title); line-height: 1.3; letter-spacing: -0.02em; }
+}
+.close-line {
+  margin-top: clamp(2rem, 1rem + 6vw, 8rem);
+  font-size: var(--step-head);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  text-decoration: underline;
+  text-decoration-thickness: 0.05em;
+  text-underline-offset: 0.12em;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 180ms ease;
+}
+.close-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; font-size: var(--step-small); }
+@media (hover: hover) and (pointer: fine) {
+  .close-line:hover { text-decoration-color: currentColor; }
+  .key-live:hover { opacity: 0.86; }
+}
+
+/* ---- Movimiento: solo transform y opacity, y nada se queda oculto sin él ---- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+  @keyframes shutter { from { clip-path: inset(0 100% 0 0 round 0.09em); } to { clip-path: inset(0 0 0 0 round 0.09em); } }
+  /* Las curvas van escritas: dentro de @keyframes, animation-timing-function no resuelve var() (son las de
+     --ease-out y --ease-in-out) */
+  @keyframes notice {
+    0% { opacity: 0; transform: translateX(var(--notice-off)); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+    2.8% { opacity: 1; transform: none; }
+    17.2% { opacity: 1; transform: none; animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
+    18.6%, 100% { opacity: 0; transform: translateX(var(--notice-off)); }
+  }
+  /* visibility va aparte, para que transform y opacity sigan en el compositor. Con step-start cambia apenas
+     empieza cada tramo: se ve desde que arranca su turno hasta que termina de salir (y no antes de su turno) */
+  @keyframes notice-shown {
+    0% { visibility: hidden; }
+    18.6% { visibility: visible; }
+    100% { visibility: hidden; }
+  }
+
+  .sentence { animation: rise 700ms var(--ease-out) both; }
+  .explain[open] .reply { animation: rise 420ms var(--ease-out) both; }
+  .strip { animation: shutter 1100ms var(--ease-in-out) 250ms both; }
+  /* Los avisos llegan de a uno y en bucle: cada uno tiene su turno de --notice-slot en una vuelta de
+     --notice-slot × --notice-count, y espera su turno con el retraso. Entra desde la derecha como un aviso de
+     macOS, se queda y sale por el mismo lado antes de que llegue el siguiente. Los porcentajes de @keyframes
+     notice son de una vuelta de 5 turnos de 5 s (entra en 0,7 s, sale a los 4,3 s en 0,35 s): si cambia el
+     número de avisos o el turno, cambian con ellos. El primero llega cuando se abre el escenario. */
+  .strip { --notice-slot: 5s; --notice-count: 5; }
+  .notice {
+    animation: notice calc(var(--notice-slot) * var(--notice-count)) linear infinite both,
+      notice-shown calc(var(--notice-slot) * var(--notice-count)) step-start infinite both;
+    animation-delay: calc(900ms + var(--turn, 0) * var(--notice-slot));
+  }
+  .notice:nth-child(2) { --turn: 1; }
+  .notice:nth-child(3) { --turn: 2; }
+  .notice:nth-child(4) { --turn: 3; }
+  .notice:nth-child(5) { --turn: 4; }
+  /* Se pausa con la casilla, con su foco o con el mouse encima (no con el dedo, que se queda «encima») */
+  .notices-pause:checked ~ .notices .notice,
+  .notices-pause:focus-visible ~ .notices .notice { animation-play-state: paused; }
+  @media (hover: hover) {
+    .strip:hover .notice { animation-play-state: paused; }
+  }
+  .notices-pause, .pause-glyph { display: block; }
+  .lead { animation: rise 700ms var(--ease-out) 420ms both; }
+  .get > * { animation: rise 700ms var(--ease-out) both; }
+  .get > :nth-child(1) { animation-delay: 500ms; }
+  .get > :nth-child(2) { animation-delay: 580ms; }
+  .get > :nth-child(3) { animation-delay: 660ms; }
+
+  @supports (animation-timeline: view()) {
+    @keyframes enter { from { opacity: 0; transform: translateY(28px); } }
+    @keyframes open { from { opacity: 0.4; transform: scale(0.94); } }
+
+    .window img { animation: open linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
+    .tab-intro > *, .row-text > *, .row-media,
+    .phone h2, .phone-chat, .phone-text > *, .setup h2, .setup-step > *, .setup-close,
+    .install h2, .install-block, .faq h2, .qa > *, .close-line {
+      animation: enter linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 70%;
+    }
+    .tab-intro > :nth-child(2), .row-text > :nth-child(2) { animation-range: entry 12% entry 80%; }
+    .row-text > :nth-child(3) { animation-range: entry 18% entry 90%; }
+    .row-media { animation-range: entry 20% entry 95%; }
+    .phone-chat, .setup-step > :nth-child(2), .qa > p { animation-range: entry 12% entry 80%; }
+    .install-block:nth-child(2n) { animation-range: entry 14% entry 84%; }
+  }
+}
