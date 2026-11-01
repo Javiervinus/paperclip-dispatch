@@ -55,18 +55,31 @@ macOS no lo dibuja. Si se niega el aviso del primer arranque, macOS no vuelve a 
 - Cerrar la ventana (botón rojo o Cmd+W) la esconde, y la app sigue contando y avisando. Cmd+Q la cierra del todo.
 - Para quitarla: borrar `/Applications/Paperclip.app`.
 
-## App nativa (prototipo): `macos/`
+## App nativa: Paperclip Dispatch (`macos/`)
 
-«Paperclip Swift» (`com.javiervinueza.paperclip.swift`) es la misma idea en Swift y AppKit, sin Pake, para
-tener lo que Pake no deja: Liquid Glass y un botón para actualizar Paperclip.
+«Paperclip Dispatch» es la misma idea en Swift y AppKit, sin Pake, para tener lo que Pake no deja: Liquid
+Glass y un botón para actualizar Paperclip. Se llamó «Paperclip Swift» mientras fue prototipo y conserva su
+identificador (`com.javiervinueza.paperclip.swift`), así que guarda los ajustes, la sesión y el permiso de
+avisos de entonces. El nombre completo es también el de la barra de menús.
 
 ```sh
 macos/build.sh
 ```
 
-- Pide Xcode 26 (SDK de macOS 26) y `rsvg-convert`. Compila con `swift build`, arma el .app, lo firma
-  con la identidad «Developer ID Application» del llavero y lo instala en `/Applications`. Tarda
-  segundos.
+- Pide Xcode 26 (SDK de macOS 26). Compila con `swift build`, arma el .app, lo firma con la identidad
+  «Developer ID Application» del llavero y lo instala en `/Applications`. Tarda segundos.
+- **Ícono** (`macos/AppIcon.icon`): un documento de Icon Composer con el clip oficial de Paperclip
+  (`paperclip-icon-black.svg` de paperclip.ing/brand) tal cual, en un solo color y sin efectos, como pide su
+  marca. Tiene variante clara (clip negro sobre blanco), oscura (blanco sobre negro), transparente y
+  tintada, y macOS elige sola según la apariencia. `xcrun actool` lo compila en `Assets.car`, más un
+  `AppIcon.icns` para lo que no lee el `.car`. Para ver una variante sin instalar, con el `ictool` de Icon
+  Composer (`Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool`; el de
+  `/usr/bin` no exporta): `ictool macos/AppIcon.icon --export-image --output-file x.png --platform macOS
+  --rendition Dark --width 512 --height 512 --scale 1`. Las otras son `Default`, `ClearLight`,
+  `ClearDark`, `TintedLight` y `TintedDark`.
+- **Abrir al iniciar sesión** guarda la ruta de la app. Si se mueve o se renombra, al abrirla vuelve a
+  registrar el ítem con la ruta nueva (`LoginItem.swift`): macOS no lo hace solo y el ítem quedaría
+  apuntando a la vieja.
 - Variables: `APP_NAME`, `APP_ID`, `INSTALL_DIR` (por defecto `/Applications`), `PAPERCLIP_SERVER_URL`,
   `PAPERCLIP_UPDATE_SCRIPT` y `SIGN_IDENTITY`. Las de una Mac en particular van en `macos/build.local.env`,
   que no se sube. En esta Mac lleva `PAPERCLIP_UPDATE_SCRIPT` con el `update.sh` de
@@ -219,8 +232,8 @@ macos/build.sh
     (instalado con `npx` no queda), no hay botón y Ajustes explica por qué (y cómo instalarlo).
   - Nunca actualiza sola, porque reiniciar Paperclip corta lo que estén haciendo los agentes.
   - Ensayo, para verlo sin esperar una versión: con la app cerrada,
-    `open -a "Paperclip Swift" --args -PaperclipPreviewUpdate 2026.1101.0`. Finge esa versión y
+    `open -a "Paperclip Dispatch" --args -PaperclipPreviewUpdate 2026.1101.0`. Finge esa versión y
     «Actualizar» muestra los pasos del script sin correrlo. Se sale cerrando la app (Cmd+Q).
 - Al estrenarla pide iniciar sesión una vez, porque no comparte los datos de la app de Pake. Con las dos
   abiertas, los avisos llegan dos veces. La de Pake sigue usando `inject/decisions.js`.
-- `scripts/make-icns.zsh` sirve a los dos builds; `scripts/server-url.zsh`, solo a la de Pake.
+- `scripts/make-icns.zsh` y `scripts/server-url.zsh` sirven solo a la de Pake: la nativa compila su ícono con `actool`.
