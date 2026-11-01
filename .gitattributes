@@ -1,0 +1,3 @@
+# Las skills de agentes que instala skills-lock.json: documentación de terceros, no son parte de la app.
+.agents/** linguist-vendored
+.claude/** linguist-vendored

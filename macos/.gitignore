@@ -1,3 +1,8 @@
+# SwiftPM y Xcode (abrir Package.swift en Xcode crea .swiftpm/)
 .build/
+.swiftpm/
+xcuserdata/
+# Los ajustes de una Mac en particular (ver build.sh): nunca se suben
 build.local.env
+# Lo que arma release.sh
 dist/
