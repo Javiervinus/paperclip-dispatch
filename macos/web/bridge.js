@@ -4,6 +4,8 @@
 //   que hace Paperclip cuando nadie eligió tema. Si se elige en el menú de Paperclip, la app lo adopta
 //   como ajuste, así que los dos lugares quedan de acuerdo.
 // - Tocar un aviso de macOS abre esa decisión sin recargar la página.
+// - Si lo que hay bajo el puntero todavía se desplaza a lo ancho, y hacia qué lado: ese desplazamiento es
+//   de la página y no el gesto de atrás y adelante de la app (PaperclipWebView), como con el de WebKit.
 (() => {
   if (window.top !== window || window.__paperclipNative) return;
   const handler = window.webkit?.messageHandlers?.paperclipApp;
@@ -38,6 +40,42 @@
     history.pushState({}, "", href);
     dispatchEvent(new PopStateEvent("popstate"));
   };
+
+  // Hacia qué lado se puede desplazar a lo ancho lo que hay bajo el puntero (un tablero, una tabla ancha).
+  let pointerTarget = null;
+  let horizontalScroll = { back: false, forward: false };
+  let pendingScrollCheck = 0;
+  const scrollableSides = (target) => {
+    const sides = { back: false, forward: false };
+    for (let element = target; element && element !== document.documentElement; element = element.parentElement) {
+      if (element.scrollWidth <= element.clientWidth) continue;
+      const overflow = getComputedStyle(element).overflowX;
+      if (overflow !== "auto" && overflow !== "scroll") continue;
+      if (element.scrollLeft > 0) sides.back = true;
+      if (element.scrollLeft + element.clientWidth < element.scrollWidth - 1) sides.forward = true;
+    }
+    return sides;
+  };
+  const checkHorizontalScroll = () => {
+    pendingScrollCheck = 0;
+    const sides = scrollableSides(pointerTarget);
+    if (sides.back === horizontalScroll.back && sides.forward === horizontalScroll.forward) return;
+    horizontalScroll = sides;
+    post({ type: "horizontalScroll", ...sides });
+  };
+  const scheduleScrollCheck = () => {
+    if (!pendingScrollCheck) pendingScrollCheck = requestAnimationFrame(checkHorizontalScroll);
+  };
+
+  document.addEventListener(
+    "mousemove",
+    (event) => {
+      pointerTarget = event.target instanceof Element ? event.target : null;
+      scheduleScrollCheck();
+    },
+    { capture: true, passive: true },
+  );
+  document.addEventListener("scroll", scheduleScrollCheck, { capture: true, passive: true });
 
   window.__paperclipNative = {
     // La app lo llama cuando cambia la apariencia. Paperclip ya la sigue si nadie eligió tema; esto cubre

@@ -1,32 +1,36 @@
 import SwiftUI
 
-/// La flecha del gesto de atrás y adelante con Liquid Glass (`PaperclipWebView`): un círculo de vidrio que
-/// entra desde el borde siguiendo a los dedos, en vez de deslizar la página. Al centro, a media altura.
+/// La flecha del gesto de atrás y adelante (`PaperclipWebView`): un círculo de vidrio que entra desde el
+/// borde siguiendo a los dedos, en vez de deslizar la página. A media altura de la ventana.
 struct SwipeIndicatorView: View {
     static let size: CGFloat = 44
     /// Cuánto se aleja del borde con el gesto completo.
     static let margin: CGFloat = 20
 
-    /// De 0 a 1 hacia atrás (entra por la izquierda), de 0 a -1 hacia adelante (por la derecha).
-    let amount: CGFloat
+    let model: SwipeIndicator
 
     var body: some View {
         GeometryReader { geometry in
-            let progress = min(abs(amount), 1)
-            let back = amount > 0
-            let travel = (Self.size + Self.margin) * progress
-            Image(systemName: back ? "chevron.backward" : "chevron.forward")
-                .font(.title2.weight(.semibold))
-                .frame(width: Self.size, height: Self.size)
-                .glassEffect(.regular, in: .circle)
-                .scaleEffect(0.7 + 0.3 * progress)
-                .opacity(progress)
-                .position(
-                    x: back ? travel - Self.size / 2 : geometry.size.width - travel + Self.size / 2,
-                    y: geometry.size.height / 2
-                )
+            if model.isVisible {
+                arrow(in: geometry.size)
+            }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func arrow(in size: CGSize) -> some View {
+        let progress = model.committed ? 1 : model.progress
+        let travel = (Self.size + Self.margin) * progress
+        return Image(systemName: model.back ? "chevron.backward" : "chevron.forward")
+            .font(.title2.weight(.semibold))
+            .frame(width: Self.size, height: Self.size)
+            .glassEffect(.regular, in: .circle)
+            .scaleEffect(model.committed ? 1.1 : 0.7 + 0.3 * progress)
+            .opacity(model.committed ? 0 : progress)
+            .position(
+                x: model.back ? travel - Self.size / 2 : size.width - travel + Self.size / 2,
+                y: size.height / 2
+            )
     }
 }

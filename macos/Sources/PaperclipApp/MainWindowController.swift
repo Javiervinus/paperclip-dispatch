@@ -12,6 +12,9 @@ private final class FlippedView: NSView {
 ///
 /// - **Normal** (por defecto): la página tal cual, debajo de una barra compacta de macOS del color de la
 ///   página, con el botón de la versión. No depende de cómo esté hecho el HTML de Paperclip.
+///
+/// En los dos, el gesto de atrás y adelante es el de la app (`PaperclipWebView`): la página no se mueve y
+/// entra una flecha desde el borde.
 /// - **Liquid Glass** (experimental, Ajustes → General): la página ocupa toda la ventana, en capas:
 ///   1. Un fondo del mismo color que el de Paperclip: alrededor del panel no se nota otro gris.
 ///   2. El panel de la barra lateral: material translúcido de macOS con Liquid Glass (NSGlassEffectView)
@@ -20,8 +23,7 @@ private final class FlippedView: NSView {
 ///   3. La página, transparente donde glass.css le quita el fondo.
 ///   La barra de herramientas va vacía: da las esquinas de ventana de macOS 26 y deja los botones de la
 ///   ventana adentro del panel, donde macOS los pone solo. El botón de la versión flota sobre la barra de
-///   la ruta de Paperclip. El gesto de atrás y adelante es el de la app (`PaperclipWebView`), con una
-///   flecha que entra desde el borde.
+///   la ruta de Paperclip.
 @MainActor
 final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate, WKNavigationDelegate,
     WKUIDelegate, WKScriptMessageHandler
@@ -61,8 +63,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private var sidebarRadius: CGFloat = -1
     private let downloads = DownloadHandler()
     private var webView: PaperclipWebView!
-    /// La flecha del gesto de atrás y adelante con vidrio, mientras dura el gesto.
-    private var swipeIndicator: PassthroughHostingView<SwipeIndicatorView>?
+    /// La flecha del gesto de atrás y adelante, sobre la página.
+    private let swipeIndicator = SwipeIndicator()
     private var pointerOverDragArea = false
     private var mouseDownMonitor: Any?
 
@@ -163,7 +165,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
         let webView = PaperclipWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true
-        webView.onSwipe = { [weak self] amount in self?.showSwipe(amount) }
+        webView.onSwipe = { [weak self] swipe in self?.swipeIndicator.update(swipe) }
         webView.navigationDelegate = self
         webView.uiDelegate = self
         return webView
@@ -197,6 +199,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         container.addSubview(sidebarBackdrop)
         container.addSubview(sidebarClip)
         container.addSubview(webView)
+
+        let indicator = PassthroughHostingView(rootView: SwipeIndicatorView(model: swipeIndicator))
+        indicator.frame = container.bounds
+        indicator.autoresizingMask = [.width, .height]
+        container.addSubview(indicator)
     }
 
     /// Lo que cambia entre el modo normal y el de Liquid Glass. La página toma los scripts nuevos al recargar.
@@ -218,10 +225,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         // Con vidrio, transparente: donde la página no pinta fondo se ven el vidrio y la ventana.
         webView.setValue(!glass, forKey: "drawsBackground")
         webView.underPageBackgroundColor = glass ? .clear : nil
-        // Sin vidrio, el gesto de atrás y adelante de WebKit, como en Safari. Con vidrio, el de la app: el de
-        // WebKit deslizaría la página transparente sobre la anterior.
-        webView.allowsBackForwardNavigationGestures = !glass
-        webView.tracksSwipes = glass
         webView.pageScrollsBack = false
         webView.pageScrollsForward = false
         updateTitlebarColor()
@@ -288,24 +291,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
     private func updateTitle() {
         let title = webView.title?.trimmingCharacters(in: .whitespaces) ?? ""
         window?.title = title.isEmpty ? AppConfig.appName : title
-    }
-
-    /// La flecha del gesto con vidrio: aparece al empezar, sigue a los dedos y se va al terminar.
-    private func showSwipe(_ amount: CGFloat?) {
-        guard let amount else {
-            swipeIndicator?.removeFromSuperview()
-            swipeIndicator = nil
-            return
-        }
-        if let swipeIndicator {
-            swipeIndicator.rootView = SwipeIndicatorView(amount: amount)
-        } else if let container = window?.contentView {
-            let indicator = PassthroughHostingView(rootView: SwipeIndicatorView(amount: amount))
-            indicator.frame = container.bounds
-            indicator.autoresizingMask = [.width, .height]
-            container.addSubview(indicator, positioned: .above, relativeTo: webView)
-            swipeIndicator = indicator
-        }
     }
 
     /// Sin vidrio, la barra de arriba (transparente) muestra el fondo de la ventana: se le da el de la página,
@@ -559,7 +544,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             applyLayout(body)
         case "dragArea" where glass:
             pointerOverDragArea = body["value"] as? Bool ?? false
-        case "horizontalScroll" where glass:
+        case "horizontalScroll":
             webView.pageScrollsBack = body["back"] as? Bool ?? false
             webView.pageScrollsForward = body["forward"] as? Bool ?? false
         default:
