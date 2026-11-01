@@ -768,10 +768,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     func windowDidEnterFullScreen(_ notification: Notification) { syncPageState() }
 
     func windowWillExitFullScreen(_ notification: Notification) {
-        window?.toolbar?.isVisible = true
         sidebarPanel.setBlendsWithinWindow(false)
         inspectorPanel.setBlendsWithinWindow(false)
     }
 
-    func windowDidExitFullScreen(_ notification: Notification) { syncPageState() }
+    /// La barra de herramientas vuelve recién con la ventana fuera de pantalla completa: si vuelve durante la
+    /// salida, macOS deja los botones de la ventana donde van sin ella, pegados a la esquina.
+    func windowDidExitFullScreen(_ notification: Notification) {
+        window?.toolbar?.isVisible = true
+        syncPageState()
+    }
 }
