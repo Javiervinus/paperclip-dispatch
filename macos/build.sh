@@ -61,9 +61,13 @@ rm -rf "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices" \
 install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/$EXECUTABLE"
 # Los scripts y estilos de la página (WebResources.swift dice cuáles se inyectan y en qué orden).
 cp "$ROOT"/web/*.js "$ROOT"/web/*.css "$APP/Contents/Resources/"
-# La app está en español: con esta carpeta, macOS también le da en español sus textos (errores, menús).
-mkdir -p "$APP/Contents/Resources/es.lproj"
-touch "$APP/Contents/Resources/es.lproj/Localizable.strings"
+# Los textos: el código está en inglés y los String Catalogs del target traen el español. `swift build` no los
+# compila (solo Xcode lo hace), así que van aquí: en.lproj y es.lproj, con Localizable.strings (y .stringsdict
+# si hay plurales) e InfoPlist.strings. Con esas carpetas, la app sigue el idioma de la Mac, y macOS también da
+# en ese idioma sus propios textos (errores, menús que agrega el sistema).
+for catalog in "$ROOT"/Sources/$EXECUTABLE/*.xcstrings; do
+  xcrun xcstringstool compile "$catalog" --output-directory "$APP/Contents/Resources" >/dev/null
+done
 # El ícono es un documento de Icon Composer (AppIcon.icon): claro, oscuro, transparente y tintado, como
 # los íconos de macOS 26. actool lo compila en Assets.car, más un AppIcon.icns para lo que no lee el .car.
 # En el mismo Assets.car va el color de acento de la app (Assets.xcassets/AccentColor): la tinta de Paperclip.
@@ -93,16 +97,20 @@ plist NSAccentColorName string AccentColor
 plist CFBundlePackageType string APPL
 plist CFBundleShortVersionString string "$APP_VERSION"
 plist CFBundleVersion string "$APP_VERSION"
-plist CFBundleDevelopmentRegion string es
-# Sin esto, los textos de macOS (errores de conexión, menús que agrega el sistema) salen en inglés.
-plist CFBundleLocalizations json '["es"]'
+plist CFBundleDevelopmentRegion string en
+# Los idiomas de la app, los de sus .lproj. Sin esto, los textos de macOS (errores de conexión, menús que agrega
+# el sistema) salen siempre en inglés.
+plist CFBundleLocalizations json '["en","es"]'
 plist LSMinimumSystemVersion string 26.0
 plist LSApplicationCategoryType string public.app-category.productivity
 plist NSPrincipalClass string NSApplication
 plist NSHighResolutionCapable bool true
-# Por si Paperclip pide el micrófono o la cámara: sin estos textos, macOS cierra la app.
-plist NSMicrophoneUsageDescription string "Paperclip pide el micrófono para dictar."
-plist NSCameraUsageDescription string "Paperclip pide la cámara."
+# Los textos de los permisos, en inglés, de InfoPlist.xcstrings (cada .lproj trae los suyos en InfoPlist.strings).
+# Micrófono y cámara, por si Paperclip los pide: sin estos textos, macOS cierra la app. La Red local la pide
+# macOS al hablar con Paperclip en otra computadora de la red.
+for key in NSMicrophoneUsageDescription NSCameraUsageDescription NSLocalNetworkUsageDescription; do
+  plist $key string "$(plutil -extract $key raw "$APP/Contents/Resources/en.lproj/InfoPlist.strings")"
+done
 [[ -n $PAPERCLIP_SERVER_URL ]] && plist PaperclipServerURL string "$PAPERCLIP_SERVER_URL"
 [[ -n $PAPERCLIP_UPDATE_SCRIPT ]] && plist PaperclipUpdateScript string "$PAPERCLIP_UPDATE_SCRIPT"
 # Actualizaciones de la app (Sparkle). Sin appcast, la app no busca versiones.

@@ -5,6 +5,9 @@ import PackageDescription
 
 let package = Package(
     name: "PaperclipDispatch",
+    // Los textos del código están en inglés; su traducción al español, en los String Catalogs del target
+    // (Localizable.xcstrings y, para el Info.plist, InfoPlist.xcstrings). build.sh copia sus .lproj al .app.
+    defaultLocalization: "en",
     platforms: [.macOS(.v26)],
     dependencies: [
         // Las actualizaciones de la propia app: descarga, verifica la firma y reemplaza el .app.
@@ -15,6 +18,10 @@ let package = Package(
             name: "PaperclipDispatch",
             dependencies: [.product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/PaperclipDispatch",
+            resources: [
+                .process("Localizable.xcstrings"),
+                .process("InfoPlist.xcstrings"),
+            ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("WebKit"),
