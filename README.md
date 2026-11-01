@@ -79,6 +79,13 @@ macos/build.sh
   `/usr/bin` no exporta): `ictool macos/AppIcon.icon --export-image --output-file x.png --platform macOS
   --rendition Dark --width 512 --height 512 --scale 1`. Las otras son `Default`, `ClearLight`,
   `ClearDark`, `TintedLight` y `TintedDark`.
+- **Color de acento** (`macos/Assets.xcassets/AccentColor`): la tinta de Paperclip, la de su `--primary`.
+  Es negro (`#171717`) en modo claro y casi blanco (`#E5E5E5`) en modo oscuro, así que los botones
+  principales, interruptores y puntos se ven como en la web, en blanco y negro. Va en el mismo `Assets.car`
+  (`actool --accent-color`) y en `NSAccentColorName`. macOS lo usa cuando el acento del sistema es
+  «Multicolor»; si la persona eligió otro color, manda el suyo. El color solo aparece donde dice algo: verde
+  para lo permitido o al día, naranja para lo que falta y rojo para lo que borra. Los enlaces siguen en el
+  azul de macOS.
 - **Abrir al iniciar sesión** guarda la ruta de la app. Si se mueve o se renombra, al abrirla vuelve a
   registrar el ítem con la ruta nueva (`LoginItem.swift`): macOS no lo hace solo y el ítem quedaría
   apuntando a la vieja.

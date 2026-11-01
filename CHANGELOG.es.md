@@ -17,8 +17,8 @@ cambios.
 
 ### Nuevo
 
-- **Paperclip en su propia ventana de Mac.** Una app nativa en vez de una pestaña del navegador, con
-  Liquid Glass y los menús, atajos y ventanas de la Mac.
+- **Paperclip en su propia ventana de Mac.** Una app nativa en vez de una pestaña del navegador, en el
+  blanco y negro de Paperclip, con Liquid Glass y los menús, atajos y ventanas de la Mac.
 - **Las decisiones sin tener que mirar.** Un aviso de macOS cuando un agente pregunta algo, pide una
   aprobación o falla, y el número de decisiones pendientes en el ícono del Dock.
 - **Responder desde Telegram.** Vincula un bot de Telegram para recibir cada decisión en el teléfono y
