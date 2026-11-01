@@ -4,10 +4,11 @@ import SwiftUI
 /// Ensayo de los avisos de una tarea trabada (`macos/snapshot.zsh notifications`), en claro y en oscuro: el
 /// aviso de la Mac y el mensaje de Telegram, con un agente y con una persona, y cómo quedan después de
 /// apretar «Despertar a …» (aceptado, saltado, ya en marcha, sin hacer falta o con error). También cuando el
-/// agente ya va en camino (una corrida en cola o en curso): sin el botón. No avisa ni manda
-/// nada: los avisos de macOS los dibuja el sistema y el mensaje vive en Telegram, así que se dibujan aquí con
-/// el mismo título, texto y botones que arma el código de verdad (`DecisionsMonitor.notice`, `WakeText`,
-/// `TelegramFormat`, `TelegramChannel.keyboard`). Los archivos van en inglés (`mac-agent-light.png`).
+/// agente ya va en camino (una corrida en cola o en curso): sin el botón. Y las tarjetas del revisor que
+/// Paperclip se salta (`ReviewWaker`): la del despertar que falló y la de «no se pudo comprobar». No avisa
+/// ni manda nada: los avisos de macOS los dibuja el sistema y el mensaje vive en Telegram, así que se dibujan
+/// aquí con el mismo título, texto y botones que arma el código de verdad (`DecisionsMonitor.notice`,
+/// `WakeText`, `TelegramFormat`, `TelegramChannel.keyboard`). Los archivos van en inglés (`mac-agent-light.png`).
 @MainActor
 enum NotificationsSnapshot {
     /// Lo que tarda SwiftUI en dibujar las ventanas.
@@ -39,6 +40,30 @@ enum NotificationsSnapshot {
             agentId: chief.id
         )
         guard let agentItem, let personItem, let chiefItem, let target = agentItem.wakeTarget else { return }
+        // Las tarjetas del despertar automático del revisor (`ReviewWaker`, se quitan con él en VIN-242).
+        let review = ("ACME-224", String(localized: "Review the onboarding emails"))
+        func unverified(agent: (id: String, name: String)?) -> AttentionItem? {
+            ReviewWaker.unverifiedItem(
+                ReviewWaker.Unverified(
+                    at: .now, showing: true, companyId: "", issueId: UUID().uuidString.lowercased(), agentId: agent?.id,
+                    agentName: agent?.name, identifier: review.0, title: review.1
+                ),
+                key: review.0,
+                issuePrefix: "ACME"
+            )
+        }
+        let reviewFailed = ReviewWaker.failedItem(
+            ReviewWaker.Attempt(
+                at: .now, outcome: .failed, companyId: "", issueId: UUID().uuidString.lowercased(), agentId: operations.id,
+                agentName: operations.name, identifier: review.0, title: review.1
+            ),
+            key: review.0,
+            issuePrefix: "ACME"
+        )
+        guard let reviewFailed, let reviewUnverified = unverified(agent: operations),
+              let reviewUnverifiedNoAgent = unverified(agent: nil), let reviewTarget = reviewFailed.wakeTarget
+        else { return }
+        let reviewButton = WakeButton(target: reviewTarget, agentName: operations.name)
         let button = WakeButton(target: target, agentName: operations.name)
         let channel = TelegramChannel(
             previewing: TelegramChannel.State(),
@@ -115,6 +140,12 @@ enum NotificationsSnapshot {
             ("telegram-skipped", AnyView(TelegramScene(messages: telegramResult(skipped)))),
             ("telegram-already-running", AnyView(TelegramScene(messages: telegramResult(alreadyRunning)))),
             ("telegram-failed", AnyView(TelegramScene(messages: telegramResult(failed)))),
+            ("mac-review-failed", AnyView(MacScene(notices: [mac(reviewFailed, wake: reviewButton)]))),
+            ("mac-review-unverified", AnyView(MacScene(notices: [mac(reviewUnverified, wake: reviewButton)]))),
+            ("mac-review-unverified-no-agent", AnyView(MacScene(notices: [mac(reviewUnverifiedNoAgent, wake: nil)]))),
+            ("telegram-review-failed", AnyView(TelegramScene(messages: [message(reviewFailed, agentName: operations.name)]))),
+            ("telegram-review-unverified", AnyView(TelegramScene(messages: [message(reviewUnverified, agentName: operations.name)]))),
+            ("telegram-review-unverified-no-agent", AnyView(TelegramScene(messages: [message(reviewUnverifiedNoAgent, agentName: nil)]))),
             ("telegram-two-tasks", AnyView(TelegramScene(messages: [
                 message(agentItem, agentName: operations.name),
                 message(chiefItem, agentName: chief.name),
