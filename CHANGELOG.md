@@ -17,10 +17,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   runs, agent errors and budget stops now come with their own buttons, and “Wake up” only shows when the
   agent isn’t already on its way: if it has a run queued or in progress, the message and the Mac
   notification say so instead.
-- **Reviewers that Paperclip forgets to wake up get woken up.** Paperclip 2026.1023.0 sometimes skips
-  waking the agent that should review a task, and the task sits in review. Two minutes later the app wakes
-  that agent once, quietly; if that fails too, you get the stuck-task notification with its button. It’s
-  on by default and can be turned off in Settings → Paperclip.
+- **Reviewers that Paperclip forgets to wake up get woken up.** When Paperclip 2026.1023.0 skips the agent
+  that should review a task, the app wakes it once, quietly, two minutes later; if that fails, or if
+  Paperclip’s answer can’t be read, you get the stuck-task notification instead. It’s on by default and can
+  be turned off in Settings → Paperclip.
 
 ## 0.1.0 — 2026-11-01
 
