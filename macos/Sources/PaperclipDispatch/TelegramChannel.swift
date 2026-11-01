@@ -415,7 +415,7 @@ final class TelegramChannel {
 
         let message: TelegramBotAPI.MessageReference
         do {
-            message = try await withLinkFallback(preview: sent.preview != nil) { links in
+            message = try await withLinkFallback(preview: hasPhonePreview(sent)) { links in
                 try await bot.call("sendMessage", params(links))
             }
         } catch {
@@ -442,6 +442,11 @@ final class TelegramChannel {
             return text + "\n\n" + TelegramCard.body(card, progress)
         }
         return sent.onTheWay.map { text + "\n\n" + TelegramFormat.escape($0) } ?? text
+    }
+
+    /// Si el texto lleva «Ver en vivo»: hay algo servido y el teléfono puede abrirlo.
+    func hasPhonePreview(_ sent: SentDecision) -> Bool {
+        phonePreviewURL(LivePreview.url(sent.preview)) != nil
     }
 
     /// Qué enlaces lleva un mensaje: el de «Ver en vivo», en el texto, y los botones con enlace («Abrir en
@@ -988,7 +993,7 @@ final class TelegramChannel {
             ]
         }
         do {
-            try await withLinkFallback(preview: sent.preview != nil) { links in try await bot.send("editMessageText", params(links)) }
+            try await withLinkFallback(preview: hasPhonePreview(sent)) { links in try await bot.send("editMessageText", params(links)) }
             return true
         } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("message is not modified") {
             return true
@@ -1091,7 +1096,7 @@ final class TelegramChannel {
             ]
         }
         // «message is not modified» o un mensaje borrado: queda como estaba.
-        try? await withLinkFallback(preview: sent.preview != nil) { links in try await bot.send("editMessageText", params(links)) }
+        try? await withLinkFallback(preview: hasPhonePreview(sent)) { links in try await bot.send("editMessageText", params(links)) }
     }
 
     private func sendText(_ text: String, replyTo: Int? = nil, link: URL? = nil) async throws {

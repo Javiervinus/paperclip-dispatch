@@ -22,7 +22,7 @@ extension TelegramChannel {
             return params
         }
         // Si Telegram no acepta una dirección, va sin ella.
-        let message: TelegramBotAPI.MessageReference? = try? await withLinkFallback(preview: preview != nil) { links in
+        let message: TelegramBotAPI.MessageReference? = try? await withLinkFallback(preview: phonePreviewURL(preview) != nil) { links in
             try await bot.call("sendMessage", params(links))
         }
         return message?.messageId
