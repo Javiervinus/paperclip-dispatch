@@ -1,6 +1,8 @@
 # Images
 
-Images used by `README.md` and `README.es.md`. They are taken with `macos/snapshot.zsh` from a test copy of
+Images used by `README.md`, `README.es.md` and the landing (`site/build.sh` makes its WebP versions from
+them; `site/styles.css` crops the hero notification by its size and card position, so update it if
+`notification.png` changes). They are taken with `macos/snapshot.zsh` from a test copy of
 the app (another `APP_ID`, in English with `APP_LANGUAGE=en`) connected to a separate Paperclip instance
 with a made-up company. No personal information is on screen (company names, tasks, addresses).
 
@@ -12,7 +14,8 @@ with a made-up company. No personal information is on screen (company names, tas
 | `window-glass.png` | The main window with the Liquid Glass sidebar | The same, light, with Liquid Glass in Paperclip turned on |
 | `welcome.png` | The connection step of the welcome | `macos/snapshot.zsh welcome` (`found-light.png`) |
 | `settings.png` | Settings, General tab | `macos/snapshot.zsh settings` (`general-light.png`) |
-| `notification.png` | The stuck-task notification with its Wake up button | `macos/snapshot.zsh notifications` (`mac-agent-light.png`) |
+| `notification.png` | The stuck-task notification with its Wake up button, light | `macos/snapshot.zsh notifications` (`mac-agent-light.png`) |
+| `notification-dark.png` | The same, dark (used by the landing in dark mode) | `macos/snapshot.zsh notifications` (`mac-agent-dark.png`) |
 
 The window images use `page` instead of `window` because `page` follows the copy's own Appearance and Liquid
 Glass settings, so light and dark don't depend on the Mac's.
