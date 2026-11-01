@@ -72,12 +72,24 @@ corriendo por su cuenta, y cerrar la app no detiene nada.
   «Explícamela» también.
 
 <p align="center">
-  <img src="docs/images/window-glass.png" width="32%" alt="Barra lateral con Liquid Glass">
-  <img src="docs/images/welcome.png" width="32%" alt="Configuración del primer arranque">
-  <img src="docs/images/settings.png" width="32%" alt="Ajustes">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-glass-dark.png">
+    <img src="docs/images/window-glass.png" width="32%" alt="Barra lateral con Liquid Glass">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/welcome-dark.png">
+    <img src="docs/images/welcome.png" width="32%" alt="Configuración del primer arranque">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
+    <img src="docs/images/settings.png" width="32%" alt="Ajustes">
+  </picture>
 </p>
 <p align="center">
-  <img src="docs/images/notification.png" width="440" alt="Aviso de una tarea trabada con el botón para despertar al agente">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/notification-dark.png">
+    <img src="docs/images/notification.png" width="440" alt="Aviso de una tarea trabada con el botón para despertar al agente">
+  </picture>
 </p>
 
 ## Requisitos
