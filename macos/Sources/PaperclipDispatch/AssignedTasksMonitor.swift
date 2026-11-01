@@ -75,6 +75,9 @@ final class AssignedTasksMonitor {
     private var activityFailures: [String: Int] = [:]
     /// Por company, el nombre de cada proyecto.
     private var projectNames: [String: [String: String]] = [:]
+    /// El usuario de la sesión, leído hace poco (vale para todas las companies de una revisión).
+    private var sessionUser: (id: String, at: Date)?
+    private static let sessionReuse: TimeInterval = 5 * 60
 
     init(
         api: PaperclipAPI,
@@ -112,6 +115,19 @@ final class AssignedTasksMonitor {
             issues = page.compactMap(\.value)
             complete = page.count < Self.pageLimit
         } catch {
+            return
+        }
+        // Si Paperclip dejara de aplicar el filtro `assigneeUserId=me`, la lista traería tareas de otros y se
+        // avisaría de más: en esa revisión no se avisa ni se cierra nada.
+        guard let userId = await sessionUserId() else { return }
+        let foreign = issues.filter { $0.assigneeUserId != userId }
+        guard foreign.isEmpty else {
+            // Puede que la sesión haya cambiado de usuario: la próxima revisión lo vuelve a leer.
+            sessionUser = nil
+            Unexpected.note(
+                "api/companies/\(company.id)/issues?assigneeUserId=me",
+                "\(foreign.count) of \(issues.count) not assigned to the session user: assigned-task notices off this round"
+            )
             return
         }
         var seenAll = defaults.dictionary(forKey: Self.seenKey) as? [String: [String]] ?? [:]
@@ -156,6 +172,14 @@ final class AssignedTasksMonitor {
         }
         if complete { await closeGone(companyId: company.id, current: current) }
         prune()
+    }
+
+    /// El usuario de la sesión de la app; se vuelve a leer cada `sessionReuse`. `nil` si no se pudo.
+    private func sessionUserId() async -> String? {
+        if let sessionUser, Date().timeIntervalSince(sessionUser.at) < Self.sessionReuse { return sessionUser.id }
+        guard let id = await resolver.sessionUserId() else { return nil }
+        sessionUser = (id, Date())
+        return id
     }
 
     /// Quién asignó cada una, leyendo su actividad de a `activityBatch` a la vez. Falta la que no se pudo leer,

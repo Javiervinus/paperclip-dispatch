@@ -97,9 +97,11 @@ extension DecisionResolver {
         switch item.sourceKind {
         case "approval" where metadata?.type == "request_board_approval":
             // Paperclip no la deja contestar en la fila, pero su API sí; se muestra lo que escribió el agente.
-            guard let approval: BoardApproval = try? await api.get("api/approvals/\(subjectId)"),
-                  approval.status == nil || approval.status == "pending"
-            else { return prompt }
+            guard let approval: BoardApproval = try? await api.get("api/approvals/\(subjectId)") else { return prompt }
+            guard approval.status == "pending" else {
+                if approval.status == nil { Unexpected.note("api/approvals/\(subjectId)", "no status") }
+                return prompt
+            }
             let payload = approval.payload
             prompt.question = payload?.summary ?? prompt.question
             prompt.details = Self.boardDetails(payload)
@@ -113,13 +115,21 @@ extension DecisionResolver {
                 ),
             ]
         case "join_request":
-            guard let companyId = item.extras.companyId,
-                  let requests: [Lossy<JoinRequest>] = try? await api.get(
+            guard let companyId = item.extras.companyId else {
+                Unexpected.note("attention \(item.id)", "join_request without companyId")
+                return prompt
+            }
+            guard let requests: [Lossy<JoinRequest>] = try? await api.get(
                       "api/companies/\(companyId)/join-requests",
                       query: [URLQueryItem(name: "status", value: "pending_approval")]
                   ),
                   let request = requests.lazy.compactMap(\.value).first(where: { $0.id == subjectId })
             else { return prompt }
+            // Quién pide: una persona o un agente. Otra cosa no se sabe contar bien.
+            guard let kind = request.requestType, JoinRequest.knownTypes.contains(kind) else {
+                Unexpected.note("api/companies/\(companyId)/join-requests \(subjectId)", "unknown requestType \(request.requestType ?? "null")")
+                return prompt
+            }
             prompt.question = request.summary(fallback: item.subject?.title)
             prompt.choices = [
                 DecisionChoice(label: String(localized: "Approve"), action: .queue(.approveJoin(companyId: companyId, requestId: subjectId)), asks: nil),
@@ -143,8 +153,7 @@ extension DecisionResolver {
             guard let issue: ReviewIssue = try? await api.get("api/issues/\(subjectId)"),
                   let state = issue.executionState, state.status == "pending",
                   let participant = state.currentParticipant, participant.type == "user",
-                  let session: Session = try? await api.get("api/auth/get-session"),
-                  let userId = session.user?.id, participant.userId == userId
+                  let userId = await sessionUserId(), participant.userId == userId
             else { return prompt }
             prompt.question = state.currentStageType == "approval"
                 ? String(localized: "It’s waiting for your approval.")
@@ -163,19 +172,28 @@ extension DecisionResolver {
                 prompt.choices.append(
                     DecisionChoice(label: String(localized: "Retry"), action: .queue(.retryRun(agentId: agentId, runId: subjectId)), asks: nil)
                 )
+            } else {
+                Unexpected.note("attention \(item.id)", "failed_run without metadata.agentId: no Retry")
             }
             if let choice = dismissChoice(item) { prompt.choices.append(choice) }
         case "agent_error_alert":
             prompt.question = metadata?.errorReason ?? prompt.question
             if let choice = dismissChoice(item) { prompt.choices = [choice] }
         case "budget_alert":
-            guard let companyId = item.extras.companyId else { return prompt }
-            let spent = metadata?.amountObserved.map { Int($0.rounded()) }
-            let limit = metadata?.amountLimit.map { Int($0.rounded()) }
-            if let spent, let limit {
-                prompt.question = String(localized: "Spent \(Self.usd(spent)) of a \(Self.usd(limit)) budget.")
+            // Sin lo que usan los botones (la company, lo gastado, el tope y si se pausó), va en Paperclip.
+            guard let companyId = item.extras.companyId,
+                  let spent = metadata?.amountObserved.map({ Int($0.rounded()) }),
+                  let limit = metadata?.amountLimit.map({ Int($0.rounded()) }),
+                  let threshold = metadata?.thresholdType, ["hard", "soft"].contains(threshold)
+            else {
+                Unexpected.note(
+                    "attention \(item.id)",
+                    "budget_alert without companyId, amountObserved, amountLimit or a known thresholdType"
+                )
+                return prompt
             }
-            let hardStop = metadata?.thresholdType == "hard"
+            prompt.question = String(localized: "Spent \(Self.usd(spent)) of a \(Self.usd(limit)) budget.")
+            let hardStop = threshold == "hard"
             prompt.choices = [
                 DecisionChoice(
                     label: hardStop ? String(localized: "Keep paused") : String(localized: "Dismiss"),
@@ -246,6 +264,16 @@ extension DecisionResolver {
         if response.id != nil || response.actionId != nil, !stopped.contains(response.status ?? "") { return }
         throw WakeError(message: response.message.map { String(localized: "Paperclip didn’t retry it: “\($0)”") }
             ?? String(localized: "Paperclip didn’t retry it."))
+    }
+
+    /// El usuario con la sesión de la app. `nil` si no se pudo leer.
+    func sessionUserId() async -> String? {
+        guard let session: Session = try? await api.get("api/auth/get-session") else { return nil }
+        guard let id = session.user?.id, !id.isEmpty else {
+            Unexpected.note("api/auth/get-session", "no user.id")
+            return nil
+        }
+        return id
     }
 
     private func dismissChoice(_ item: AttentionItem) -> DecisionChoice? {
@@ -341,6 +369,8 @@ extension DecisionResolver {
     }
 
     private struct JoinRequest: Decodable {
+        static let knownTypes: Set<String> = ["human", "agent"]
+
         let id: String
         let requestType: String?
         let agentName: String?

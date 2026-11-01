@@ -290,18 +290,34 @@ extension DecisionCard {
     /// `respond` acepta hasta 20 respuestas: un formulario más largo se contesta en la página.
     static let maxAnswers = 20
 
-    /// Un formulario. `nil` si trae algo que no se puede contestar fuera de la página.
+    /// Un formulario. `nil` si trae algo que no se puede contestar fuera de la página: el formulario entero va
+    /// en Paperclip, nunca a medias.
     static func form(issueId: String, interactionId: String, payload: InteractionPayload) -> DecisionCard? {
-        guard let questions = payload.questions, !questions.isEmpty, questions.count <= maxAnswers else { return nil }
+        guard let questions = payload.questions, !questions.isEmpty else {
+            Unexpected.note(source(interactionId), "ask_user_questions without questions")
+            return nil
+        }
+        guard questions.count <= maxAnswers else { return nil }
+        let readable = questions.compactMap { question($0, interactionId: interactionId) }
+        guard readable.count == questions.count else { return nil }
         var card = DecisionCard(kind: .form, issueId: issueId, interactionId: interactionId)
-        card.questions = questions.map(question)
+        card.questions = readable
         card.acceptLabel = payload.submitLabel
         return card
     }
 
     /// Una pregunta como la guarda Paperclip. Una de texto llega como una sola opción `freeText`; «Otra
-    /// respuesta» (`allowOther`) solo se agrega si no hay ya una opción para escribir.
-    static func question(_ wire: InteractionPayload.Question) -> Question {
+    /// respuesta» (`allowOther`) solo se agrega si no hay ya una opción para escribir. `nil` (y una línea en el
+    /// registro) si no tiene opciones o su `selectionMode` no es uno de los que conoce la app.
+    static func question(_ wire: InteractionPayload.Question, interactionId: String) -> Question? {
+        guard let mode = wire.selectionMode.flatMap(Question.Mode.init(rawValue:)), mode != .text else {
+            Unexpected.note(source(interactionId), "question \(wire.id): unknown selectionMode \(wire.selectionMode ?? "null")")
+            return nil
+        }
+        guard !wire.options.isEmpty else {
+            Unexpected.note(source(interactionId), "question \(wire.id) has no options")
+            return nil
+        }
         let isText = wire.options.count == 1 && wire.options[0].freeText == true
         if isText {
             let option = wire.options[0]
@@ -318,10 +334,12 @@ extension DecisionCard {
             options.append(Option(id: nil, label: String(localized: "Other answer…"), detail: nil, asksText: true))
         }
         return Question(
-            id: wire.id, prompt: wire.prompt, help: wire.helpText,
-            mode: wire.selectionMode == "multi" ? .multi : .single, required: wire.required ?? false, options: options
+            id: wire.id, prompt: wire.prompt, help: wire.helpText, mode: mode, required: wire.required ?? false, options: options
         )
     }
+
+    /// Para el registro: de dónde salió la tarjeta.
+    private static func source(_ interactionId: String) -> String { "interaction \(interactionId)" }
 
     /// Tareas sugeridas. `agentNames`, por id, para decir a quién va cada una.
     static func tasks(
@@ -330,7 +348,16 @@ extension DecisionCard {
         payload: InteractionPayload,
         agentNames: [String: String]
     ) -> DecisionCard? {
-        guard let tasks = payload.tasks, !tasks.isEmpty else { return nil }
+        guard let tasks = payload.tasks, !tasks.isEmpty else {
+            Unexpected.note(source(interactionId), "suggest_tasks without tasks")
+            return nil
+        }
+        // Una clave repetida, o una madre que no está en la lista, no se puede marcar como en la página.
+        let keys = Set(tasks.map(\.clientKey))
+        guard keys.count == tasks.count, tasks.allSatisfy({ $0.parentClientKey.map(keys.contains) ?? true }) else {
+            Unexpected.note(source(interactionId), "suggest_tasks with repeated or missing clientKey")
+            return nil
+        }
         var card = DecisionCard(kind: .tasks, issueId: issueId, interactionId: interactionId)
         card.entries = tasks.map { task in
             let assignee: String? = if let agentId = task.assigneeAgentId {
@@ -352,7 +379,18 @@ extension DecisionCard {
     }
 
     static func checkboxes(issueId: String, interactionId: String, payload: InteractionPayload) -> DecisionCard? {
-        guard let options = payload.options, !options.isEmpty else { return nil }
+        guard let options = payload.options, !options.isEmpty else {
+            Unexpected.note(source(interactionId), "request_checkbox_confirmation without options")
+            return nil
+        }
+        // Lo que no se puede cumplir (pedir más de las que hay, un máximo menor que el mínimo) va en la página.
+        let minimum = payload.minSelected ?? 0
+        guard Set(options.map(\.id)).count == options.count, (0...options.count).contains(minimum),
+              payload.maxSelected.map({ $0 >= max(minimum, 1) }) ?? true
+        else {
+            Unexpected.note(source(interactionId), "request_checkbox_confirmation with repeated ids or impossible limits")
+            return nil
+        }
         var card = DecisionCard(kind: .checkboxes, issueId: issueId, interactionId: interactionId)
         card.entries = options.map { Entry(id: $0.id, title: $0.label, detail: $0.description) }
         let ids = Set(options.map(\.id))
@@ -373,7 +411,21 @@ extension DecisionCard {
         payload: InteractionPayload,
         result: InteractionResult?
     ) -> DecisionCard? {
-        guard let items = payload.items, !items.isEmpty else { return nil }
+        guard let items = payload.items, !items.isEmpty else {
+            Unexpected.note(source(interactionId), "request_item_verdicts without items")
+            return nil
+        }
+        // Un veredicto que la app no conoce (en la lista, en los que piden motivo o en uno ya mandado) dejaría la
+        // tarjeta a medias: va en Paperclip.
+        let names = (payload.verdicts ?? []) + (payload.requireReasonOn ?? []) + (result?.items ?? []).map(\.verdict)
+        if let unknown = names.first(where: { Verdict(rawValue: $0) == nil }) {
+            Unexpected.note(source(interactionId), "unknown verdict \(unknown)")
+            return nil
+        }
+        guard Set(items.map(\.id)).count == items.count else {
+            Unexpected.note(source(interactionId), "request_item_verdicts with repeated item ids")
+            return nil
+        }
         var card = DecisionCard(kind: .verdicts, issueId: issueId, interactionId: interactionId)
         let resolved = Dictionary(
             (result?.items ?? []).compactMap { item in Verdict(rawValue: item.verdict).map { (item.id, (verdict: $0, reason: item.reason)) } },
@@ -393,7 +445,10 @@ extension DecisionCard {
     /// Una decisión con campos: cada campo es una pregunta de texto y al final se elige la opción. `nil` si
     /// un campo no se llena con texto.
     static func decision(decisionId: String, inputs: [DecisionInput], options: [(id: String, label: String)]) -> DecisionCard? {
-        guard !inputs.isEmpty, !options.isEmpty, inputs.allSatisfy(\.isText) else { return nil }
+        guard !inputs.isEmpty, !options.isEmpty, inputs.allSatisfy(\.isText) else {
+            Unexpected.note("decision \(decisionId)", "inputs that aren’t text, or no options")
+            return nil
+        }
         var card = DecisionCard(kind: .decision, decisionId: decisionId)
         card.questions = inputs.map {
             Question(

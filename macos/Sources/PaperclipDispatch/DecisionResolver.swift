@@ -324,6 +324,10 @@ struct DecisionResolver {
         var prompt = fallback
         prompt.question = payload.prompt ?? fallback.question
         prompt.details = payload.detailsMarkdown
+        let cardKinds: Set<String> = ["ask_user_questions", "suggest_tasks", "request_checkbox_confirmation", "request_item_verdicts"]
+        if let kind = interaction.kind, cardKinds.contains(kind), let problem = interaction.cardProblem {
+            Unexpected.note("api/issues/\(issueId)/interactions \(interactionId)", "\(kind) payload: \(problem)")
+        }
 
         switch interaction.kind {
         case "request_confirmation":
@@ -390,6 +394,8 @@ struct DecisionResolver {
                 DecisionCard.checkboxes(issueId: issueId, interactionId: interactionId, payload: $0)
             }
         case "request_item_verdicts":
+            // Sin los veredictos ya mandados, la tarjeta mostraría como pendiente lo que ya se resolvió.
+            guard interaction.cardProblem == nil else { return prompt }
             prompt.card = interaction.card.flatMap {
                 DecisionCard.verdicts(issueId: issueId, interactionId: interactionId, payload: $0, result: interaction.result)
             }
@@ -409,6 +415,8 @@ struct DecisionResolver {
         /// `payload` y `result`, leídos para las tarjetas. Si no se entienden, la tarjeta va en Paperclip.
         let card: DecisionCard.InteractionPayload?
         let result: DecisionCard.InteractionResult?
+        /// Por qué no se pudo leer `card` o `result`, para el registro.
+        let cardProblem: String?
 
         private enum CodingKeys: String, CodingKey { case id, kind, status, payload, result }
 
@@ -418,8 +426,20 @@ struct DecisionResolver {
             kind = try container.decodeIfPresent(String.self, forKey: .kind)
             status = try container.decodeIfPresent(String.self, forKey: .status)
             payload = try container.decodeIfPresent(Payload.self, forKey: .payload)
-            card = try? container.decodeIfPresent(DecisionCard.InteractionPayload.self, forKey: .payload)
-            result = try? container.decodeIfPresent(DecisionCard.InteractionResult.self, forKey: .result)
+            var problem: String?
+            do {
+                card = try container.decodeIfPresent(DecisionCard.InteractionPayload.self, forKey: .payload)
+            } catch {
+                card = nil
+                problem = (error as? DecodingError).map(Unexpected.describe) ?? error.localizedDescription
+            }
+            do {
+                result = try container.decodeIfPresent(DecisionCard.InteractionResult.self, forKey: .result)
+            } catch {
+                result = nil
+                problem = problem ?? (error as? DecodingError).map(Unexpected.describe) ?? error.localizedDescription
+            }
+            cardProblem = problem
         }
     }
 

@@ -14,6 +14,8 @@ struct RunLimitAgent: Decodable, Sendable {
     let status: String?
     /// `nil`: sin tope.
     let maxDailyRuns: Int?
+    /// El tope no es un número (p. ej. el texto "60"): Paperclip lo toma como 0 y la app no avisa.
+    let limitUnreadable: Bool
 
     private enum CodingKeys: String, CodingKey { case id, name, urlKey, status, runtimeConfig }
     private enum RuntimeKeys: String, CodingKey { case heartbeat }
@@ -34,6 +36,7 @@ struct RunLimitAgent: Decodable, Sendable {
             .compactMap { key in heartbeat.flatMap { try? $0.decodeIfPresent(LimitValue.self, forKey: key) } }
             .first
         maxDailyRuns = value?.limit
+        limitUnreadable = value?.unreadable ?? false
     }
 
     /// Lo que Paperclip hace con el valor (`normalizeOptionalNonNegativeInteger`): un número se redondea hacia
@@ -41,6 +44,7 @@ struct RunLimitAgent: Decodable, Sendable {
     /// número, `true`) cuenta como 0. `null` no tiene valor y sigue con el próximo nombre.
     private struct LimitValue: Decodable {
         let limit: Int?
+        var unreadable = false
 
         init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
@@ -48,13 +52,14 @@ struct RunLimitAgent: Decodable, Sendable {
                 throw DecodingError.valueNotFound(Int.self, .init(codingPath: decoder.codingPath, debugDescription: "null"))
             }
             if let number = try? container.decode(Double.self) {
-                guard number.isFinite else { limit = 0; return }
+                guard number.isFinite else { limit = 0; unreadable = true; return }
                 let floored = number.rounded(.down)
                 limit = floored >= 0 ? Int(min(floored, Double(Int.max / 2))) : nil
             } else if let text = try? container.decode(String.self), text.isEmpty {
                 limit = nil
             } else {
                 limit = 0
+                unreadable = true
             }
         }
     }
@@ -199,6 +204,9 @@ final class RunLimitMonitor {
         }
         // Un agente en pausa o dado de baja no corre igual, y uno con tope 0 está apagado a propósito: avisarlo
         // cada día sería ruido.
+        for agent in agents.compactMap(\.value) where agent.limitUnreadable {
+            Unexpected.note("api/companies/\(company.id)/agents", "\(agent.id): maxDailyRuns isn’t a number, no notice")
+        }
         let watched = agents.compactMap(\.value).filter { agent in
             guard let limit = agent.maxDailyRuns, limit > 0, !Self.idle.contains(agent.status ?? "") else { return false }
             return !notified.contains(Self.key(agent, day: day.key, limit: limit))

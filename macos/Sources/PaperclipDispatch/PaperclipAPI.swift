@@ -36,7 +36,7 @@ final class PaperclipAPI {
     }
 
     func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
-        try JSONDecoder().decode(T.self, from: await send("GET", path, query: query, body: nil))
+        try decode(T.self, await send("GET", path, query: query, body: nil), path: path)
     }
 
     /// Un cambio (aceptar, responder, comentar). Lo que devuelve Paperclip no hace falta.
@@ -52,7 +52,17 @@ final class PaperclipAPI {
     /// Un cambio cuya respuesta sí hace falta (p. ej. si Paperclip aceptó o saltó un despertar).
     func post<T: Decodable>(_ path: String, _ body: [String: Any] = [:], returning: T.Type) async throws -> T {
         let data = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))
-        return try JSONDecoder().decode(T.self, from: data)
+        return try decode(T.self, data, path: path)
+    }
+
+    /// Un JSON que no se puede leer queda en el registro (`Unexpected`) con su ruta.
+    private func decode<T: Decodable>(_ type: T.Type, _ data: Data, path: String) throws -> T {
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch let error as DecodingError {
+            Unexpected.note(path, Unexpected.describe(error))
+            throw error
+        }
     }
 
     private func send(_ method: String, _ path: String, query: [URLQueryItem], body: Data?) async throws -> Data {
@@ -81,6 +91,12 @@ final class PaperclipAPI {
         if status == 401 || status == 403 { throw APIError.signedOut }
         guard (200..<300).contains(status) else {
             let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error
+            // Una ruta que ya no existe (o que ya no acepta ese método); un 404 también es algo que se borró.
+            if status == 404 || status == 405 {
+                Unexpected.note("\(method) \(path)", "HTTP \(status)")
+            } else if (400..<500).contains(status), method != "GET" {
+                Unexpected.note("\(method) \(path)", "rejected with \(status)\(message.map { ": \($0)" } ?? "")")
+            }
             throw APIError.http(status, message)
         }
         return data

@@ -3,7 +3,7 @@ import OSLog
 
 // «Ver en vivo»: lo que una tarea deja servido para revisarlo (una página, una app web), registrado como
 // entregable (`GET /api/issues/{id}/work-products`). Los avisos de la Mac y los mensajes de Telegram de esa tarea
-// llevan un botón que lo abre. Se lee a la defensiva, como Decisions.
+// lo abren: una acción en la Mac y un enlace en el texto en Telegram. Se lee a la defensiva, como Decisions.
 
 /// Un entregable de una tarea. Solo `id` es obligatorio.
 struct IssueWorkProduct: Decodable, Sendable {
@@ -32,16 +32,33 @@ struct IssueWorkProduct: Decodable, Sendable {
 enum LivePreview {
     /// Los entregables que se pueden abrir para ver el trabajo funcionando.
     private static let types: Set<String> = ["preview_url", "runtime_service"]
-    /// Los que ya no están servidos.
+    /// Los tipos que la app conoce y no abre (`IssueWorkProductType` de Paperclip 2026.1023.0).
+    private static let otherTypes: Set<String> = ["pull_request", "branch", "commit", "artifact", "document"]
+    /// Los estados en que sigue servido. Los de `gone` ya no; uno que la app no conoce, tampoco.
+    private static let live: Set<String> = ["active", "ready_for_review", "approved", "changes_requested", "draft", "merged"]
     private static let gone: Set<String> = ["closed", "archived", "failed"]
 
     /// La dirección que abre «Ver en vivo»: la del entregable principal (`isPrimary`) o, si ninguno lo es, la
     /// del más reciente. `nil` si ninguno sirve (otro tipo, sin dirección o cerrado).
-    static func pick(_ products: [IssueWorkProduct]) -> URL? {
+    static func pick(_ products: [IssueWorkProduct], issueId: String = "") -> URL? {
+        let path = "api/issues/\(issueId)/work-products"
         let candidates = products.compactMap { product -> (product: IssueWorkProduct, url: URL)? in
-            guard let type = product.type, types.contains(type), !gone.contains(product.status ?? ""),
-                  let url = url(product.url)
-            else { return nil }
+            guard let type = product.type, types.contains(type) else {
+                if !otherTypes.contains(product.type ?? "") {
+                    Unexpected.note(path, "\(product.id): unknown type \(product.type ?? "null")")
+                }
+                return nil
+            }
+            guard let status = product.status, live.contains(status) else {
+                if !gone.contains(product.status ?? "") {
+                    Unexpected.note(path, "\(product.id): unknown status \(product.status ?? "null")")
+                }
+                return nil
+            }
+            guard let url = url(product.url) else {
+                Unexpected.note(path, "\(product.id): \(type) without a web url")
+                return nil
+            }
             return (product, url)
         }
         let best = candidates.max { lhs, rhs in
@@ -63,7 +80,7 @@ enum LivePreview {
     }
 
     /// Una dirección que solo abre en esta Mac (`localhost`, `127.0.0.1`, `::1`): en el teléfono no sirve y
-    /// Telegram la rechaza, así que ahí no va el botón.
+    /// Telegram la rechaza, así que ahí no va el enlace.
     static func isLocal(_ url: URL) -> Bool {
         url.host().map(LocalHost.contains) ?? false
     }
@@ -81,7 +98,7 @@ final class LivePreviews {
     enum Lookup: Equatable {
         case found(URL)
         case none
-        /// No se pudo leer (sin red, Paperclip reiniciándose…): el aviso sale igual, sin el botón.
+        /// No se pudo leer (sin red, Paperclip reiniciándose…): el aviso sale igual, sin «Ver en vivo».
         case failed
 
         var url: URL? { if case let .found(url) = self { url } else { nil } }
@@ -134,7 +151,7 @@ final class LivePreviews {
     private func read(_ issueId: String) async -> Lookup {
         do {
             let products: [Lossy<IssueWorkProduct>] = try await api.get("api/issues/\(issueId)/work-products")
-            let url = LivePreview.pick(products.compactMap(\.value))
+            let url = LivePreview.pick(products.compactMap(\.value), issueId: issueId)
             Self.log.notice("\(issueId, privacy: .public): \(url == nil ? "no preview" : "preview", privacy: .public)")
             return url.map(Lookup.found) ?? .none
         } catch {
