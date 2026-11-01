@@ -50,15 +50,48 @@
 
   <main>
     <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title" class="sentence">
-        <span class="sentence-words">Decisions find<br class="br-wide"> you</span>
-        <span class="strip shutter">
-          <picture>
-            <source media="(prefers-color-scheme: dark)" srcset="images/notification-dark-880.webp">
-            <img src="images/notification-880.webp" width="880" height="224" alt="" fetchpriority="high">
-          </picture>
+      <div class="sentence">
+        <h1 id="hero-title" class="sentence-words">Decisions find<br class="br-wide"> you</h1>
+        <!-- Avisos de ejemplo con el título, el texto y el botón que arma la app (DecisionsMonitor.notice,
+             WakeText). Llegan de a uno, solo con CSS; con «reducir movimiento» queda el primero. La casilla los pausa. -->
+        <span class="strip" data-ui>
+          <input class="notices-pause" type="checkbox" aria-label="Pause the notifications">
+          <span class="notices" aria-hidden="true">
+            <span class="notice is-in">
+              <span class="notice-text">
+                <span class="notice-head"><span class="notice-title">ACME-221</span></span>
+                <span class="notice-body">Redesign the pricing page</span>
+              </span>
+              <span class="notice-action">Wake up CEO</span>
+            </span>
+            <span class="notice">
+              <span class="notice-text">
+                <span class="notice-head"><span class="notice-title">Paperclip accepted the wake-up</span><span class="notice-time">now</span></span>
+                <span class="notice-body">CEO will work on ACME-220.</span>
+              </span>
+            </span>
+            <span class="notice">
+              <span class="notice-text">
+                <span class="notice-head"><span class="notice-title">CEO</span><span class="notice-time">now</span></span>
+                <span class="notice-body">Hire a design agent</span>
+              </span>
+            </span>
+            <span class="notice">
+              <span class="notice-text">
+                <span class="notice-head"><span class="notice-title">CEO · ACME-224</span><span class="notice-time">now</span></span>
+                <span class="notice-body">Which plans go on the new pricing page?</span>
+              </span>
+            </span>
+            <span class="notice">
+              <span class="notice-text">
+                <span class="notice-head"><span class="notice-title">Chief of Staff · ACME-219</span><span class="notice-time">now</span></span>
+                <span class="notice-body">Approve the plan for the quarterly report?</span>
+              </span>
+            </span>
+          </span>
+          <svg class="pause-glyph" viewBox="0 0 16 16" aria-hidden="true"><path class="glyph-pause" d="M5 4h2v8H5zm4 0h2v8H9z"/><path class="glyph-play" d="M5.5 3.8v8.4L12 8z"/></svg>
         </span>
-      </h1>
+      </div>
 
       <div class="hero-body">
         <p class="lead">A Mac app that puts your Paperclip in its own window and tells you when an agent needs you, even with the window closed.</p>
