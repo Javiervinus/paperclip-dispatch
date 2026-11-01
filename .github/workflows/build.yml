@@ -47,3 +47,7 @@ jobs:
           SIGN_IDENTITY: '-'
           OUTPUT_DIR: ${{ runner.temp }}/app
         run: macos/build.sh
+
+      # Que todo texto del código esté en el String Catalog y traducido al español (ver macos/strings.zsh).
+      - name: Strings
+        run: macos/strings.zsh --check
