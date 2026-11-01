@@ -255,8 +255,9 @@ folder with `python3 -m http.server 8765 --bind 127.0.0.1`. An already built cop
 Issues and pull requests are welcome. For bugs, include the app version and your Paperclip version (both are
 in Settings). Keep changes focused, build with `macos/build.sh`, and check the windows you touched with
 `macos/snapshot.zsh`. Every pull request is built automatically on GitHub Actions
-([`build.yml`](.github/workflows/build.yml)), so you'll see there whether it compiles. User-facing changes get
-a line in both changelogs under `## Unreleased`.
+([`build.yml`](.github/workflows/build.yml)): it runs `macos/build.sh` for Apple silicon and Intel, without a
+developer signature and without installing, so you'll see there whether it compiles. User-facing changes get a
+line in both changelogs under `## Unreleased`.
 
 ## Acknowledgements
 

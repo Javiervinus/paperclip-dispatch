@@ -258,8 +258,9 @@ con `defaults write <identificador> DispatchFeedURL <url>`.
 Los issues y pull requests son bienvenidos. En un error, incluye la versión de la app y la de Paperclip
 (las dos están en Ajustes). Mantén los cambios enfocados, compila con `macos/build.sh` y revisa con
 `macos/snapshot.zsh` las ventanas que tocaste. Cada pull request se compila automáticamente en GitHub Actions
-([`build.yml`](.github/workflows/build.yml)), así que ahí ves si compila. Lo que cambie para quien usa la app
-lleva una línea en los dos CHANGELOG, bajo `## Unreleased`.
+([`build.yml`](.github/workflows/build.yml)): corre `macos/build.sh` para Apple silicon e Intel, sin firma de
+desarrollador y sin instalar, así que ahí ves si compila. Lo que cambie para quien usa la app lleva una línea
+en los dos CHANGELOG, bajo `## Unreleased`.
 
 ## Agradecimientos
 
