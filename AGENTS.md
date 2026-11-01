@@ -49,11 +49,13 @@ What the CI runs; run it before proposing a change:
 - Swift 6 (tools 6.2) and macOS 26 only; building needs Xcode 26.
 - Repo skills for SwiftUI are in `.agents/skills` (linked from `.claude/skills`), pinned in
   `skills-lock.json`. Refresh them with `npx skills experimental_install`.
-- Code is in English. Every user-facing text (`Text("…")`, `Button("…")`, `String(localized: "…")`) goes
-  to the catalog: run `macos/strings.zsh` (it compiles and adds new keys to `Localizable.xcstrings`), then
-  give each new key its Spanish in `localizations.es.stringUnit`, with `"state" : "translated"` and the
-  `value`. A `String` passed to `Text(variable)` is not translated: build it with `String(localized:)`.
-  Permission texts are in `InfoPlist.xcstrings`, edited by hand. `macos/strings.zsh --check` must pass.
+- Identifiers and commits are in English. Comments, the script headers and what the scripts print are in
+  Spanish: write comments in the language of the file you edit.
+- Every user-facing text (`Text("…")`, `Button("…")`, `String(localized: "…")`) goes to the catalog: run
+  `macos/strings.zsh` (it compiles and adds new keys to `Localizable.xcstrings`), then give each new key its
+  Spanish in `localizations.es.stringUnit`, with `"state" : "translated"` and the `value`. A `String` passed
+  to `Text(variable)` is not translated: build it with `String(localized:)`. Permission texts are in
+  `InfoPlist.xcstrings`, edited by hand. `macos/strings.zsh --check` must pass.
 
 ## Proposing a change
 
