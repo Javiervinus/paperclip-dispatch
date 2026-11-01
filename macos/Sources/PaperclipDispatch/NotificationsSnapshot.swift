@@ -14,8 +14,8 @@ enum NotificationsSnapshot {
     /// Para que se vea el botón «Abrir en Paperclip»: con una dirección local (127.0.0.1) Telegram no lo acepta
     /// y el código no lo pone.
     private static let sampleServerURL = URL(string: "https://paperclip.example.ts.net")!
-    private static let operations = (id: "a7c4ef48-e5b5-486d-a001-41375763a58c", name: "Operaciones")
-    private static let chief = (id: "2545ffc4-be97-4e7e-a00e-cd6ea78d1dd6", name: "Jefe de gabinete")
+    private static let operations = (id: "00000000-0000-4000-8000-000000000001", name: "Operaciones")
+    private static let chief = (id: "00000000-0000-4000-8000-000000000002", name: "Jefe de gabinete")
     private static let skippedMessage = "The previous execution has not released its environment lease. Wait for "
         + "cleanup before continuing this task."
     private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by Operaciones."
