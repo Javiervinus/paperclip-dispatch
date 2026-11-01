@@ -19,7 +19,7 @@ enum NotificationsSnapshot {
     private static let skippedMessage = "The previous execution has not released its environment lease. Wait for "
         + "cleanup before continuing this task."
     private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(operations.name)."
-    private static let failure = String(localized: "Paperclip responded 500: Internal server error")
+    private static let failure = String(localized: "Paperclip returned 500: Internal server error")
 
     static func run(to directory: URL) async {
         let agentItem = sampleItem(

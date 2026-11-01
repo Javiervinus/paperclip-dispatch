@@ -18,7 +18,7 @@ final class PaperclipAPI {
             case let .http(409, message), let .http(422, message):
                 String(localized: "Paperclip didn’t accept it\(message.map { " (\($0))" } ?? ""). It may have been resolved already.")
             case let .http(status, message):
-                String(localized: "Paperclip answered \(status)\(message.map { ": \($0)" } ?? "").")
+                String(localized: "Paperclip returned \(status)\(message.map { ": \($0)" } ?? "").")
             }
         }
     }

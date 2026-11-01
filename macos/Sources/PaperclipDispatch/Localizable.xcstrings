@@ -63,12 +63,6 @@
     },
     "%@ %@": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ %2$@"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -89,12 +83,6 @@
     },
     "%@ Install it with %@ and you’ll see it when you reopen the app.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ Install it with %2$@ and you’ll see it when you reopen the app."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -115,12 +103,6 @@
     },
     "%@ is no longer assigned to %@, or it’s already closed.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ is no longer assigned to %2$@, or it's already closed."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -151,12 +133,6 @@
     },
     "%@ still isn’t working on %@.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ still isn't working on %2$@."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -167,12 +143,6 @@
     },
     "%@ will work on %@.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "%1$@ will work on %2$@."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -283,12 +253,6 @@
     },
     "A new version of Paperclip, the server where your agents work, is available: %@%@.\nUpdating it pauses your agents while it restarts, so you choose when.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "A new version of Paperclip, the server where your agents work, is available: %1$@%2$@.\nUpdating it pauses your agents while it restarts, so you choose when."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -299,12 +263,6 @@
     },
     "A new version of this app is available: Dispatch %@ (you have %@).\nClick to see what’s new. %@; Paperclip and your agents keep working.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "A new version of this app is available: Dispatch %1$@ (you have %2$@).\nClick to see what’s new. %3$@; Paperclip and your agents keep working."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -475,10 +433,40 @@
     },
     "And %lld more pending: they’re in Paperclip.": {
       "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "And %lld more pending: it’s in Paperclip."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "And %lld more pending: they’re in Paperclip."
+                }
+              }
+            }
+          }
+        },
         "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Y %lld decisiones más pendientes: están en Paperclip."
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Y %lld decisión más pendiente: está en Paperclip."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Y %lld decisiones más pendientes: están en Paperclip."
+                }
+              }
+            }
           }
         }
       }
@@ -735,12 +723,6 @@
     },
     "Checked at %@; checks automatically %@.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Checked at %1$@; checks automatically %2$@."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -1951,12 +1933,6 @@
     },
     "New versions of this app (Dispatch %@) and of Paperclip, the server (%@), are available. Click to see what each one does.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "New versions of this app (Dispatch %1$@) and of Paperclip, the server (%2$@), are available. Click to see what each one does."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -2415,22 +2391,6 @@
         }
       }
     },
-    "Paperclip answered %lld%@.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Paperclip answered %1$lld%2$@."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paperclip respondió %lld%@."
-          }
-        }
-      }
-    },
     "Paperclip didn’t accept it%@. It may have been resolved already.": {
       "localizations": {
         "es": {
@@ -2511,7 +2471,33 @@
         }
       }
     },
-    "Paperclip responded 500: Internal server error": {
+    "Paperclip returned %lld%@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip respondió %lld%@"
+          }
+        }
+      }
+    },
+    "Paperclip returned %lld%@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Paperclip returned %1$lld%2$@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip respondió %lld%@."
+          }
+        }
+      }
+    },
+    "Paperclip returned 500: Internal server error": {
       "localizations": {
         "es": {
           "stringUnit": {
@@ -2521,30 +2507,8 @@
         }
       }
     },
-    "Paperclip returned %lld%@": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Paperclip returned %1$lld%2$@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paperclip respondió %lld%@"
-          }
-        }
-      }
-    },
     "Paperclip runs on Node.js %lld.%lld or newer. Install it from its website and come back here.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Paperclip runs on Node.js %1$lld.%2$lld or newer. Install it from its website and come back here."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -3215,12 +3179,6 @@
     },
     "Step %lld of %lld": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Step %1$lld of %2$lld"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -3951,12 +3909,6 @@
     },
     "Updating %@/%@…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Updating %1$@/%2$@…"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -4047,12 +3999,6 @@
     },
     "Version %@. %@": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Version %1$@. %2$@"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -4303,12 +4249,6 @@
     },
     "You have %@. Version %@ is out.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "You have %1$@. Version %2$@ is out."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
@@ -4740,12 +4680,6 @@
     },
     "✅ Sent to %@: “%@”, with your text.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "✅ Sent to %1$@: “%2$@”, with your text."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
