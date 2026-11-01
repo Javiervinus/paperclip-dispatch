@@ -149,22 +149,35 @@ macos/build.sh
     clics.
   - La ventana lleva una barra de herramientas vacía (`NSToolbar` con estilo `.unified`). No dibuja nada,
     pero hace que macOS 26 redondee más las esquinas (26 pt) y baje los botones de la ventana a la altura
-    de la barra de Paperclip. En pantalla completa se esconde y aparece con la barra de menús, como en
-    Safari.
+    de la barra de Paperclip. En pantalla completa se esconde: al llevar el puntero arriba baja la barra
+    de título normal, del mismo alto que en otras apps.
   - Como retoca la página por dentro, una versión nueva de Paperclip puede descuadrarlo.
+- **Menús** (`MainMenu.swift`). Además de los de toda app de Mac:
+  - Archivo: «Copiar enlace de esta página» (Cmd+Mayús+C), para pegar una tarea en un chat, y «Abrir en el
+    navegador».
+  - Ir: «Atrás» (Cmd+[), «Adelante» (Cmd+]) e «Inicio» (Cmd+Mayús+H), que lleva al Dashboard.
+  - Ventana: «Paperclip Dispatch» (Cmd+0) trae la ventana de vuelta después de cerrarla.
+  - Ayuda: el repositorio en GitHub, sus versiones y «Reportar un problema…», más la documentación y el
+    sitio de Paperclip.
+- **Acerca de** (`AboutPanel.swift`). El panel de macOS, con quién hizo la app, su código en GitHub y que no
+  es una app oficial de Paperclip. El autor y el repositorio salen de `macos/release.env` (`APP_AUTHOR`,
+  `APP_AUTHOR_URL`, `REPOSITORY_URL`); sin `REPOSITORY_URL`, build.sh usa el remoto `origin` si está en
+  GitHub, y sin ninguno los enlaces a GitHub no se muestran. Ensayo: `macos/snapshot.zsh about [carpeta]`.
 - **Navegación con dos dedos** (`PaperclipWebView.swift`, `SwipeIndicator.swift`,
   `SwipeIndicatorView.swift`). Deslizar dos dedos en el trackpad va atrás o adelante, en los dos modos. La
   página se queda en su lugar y una flecha entra desde el borde siguiendo el gesto; al completarlo, la app
   navega. Usa `NSEvent.trackSwipeEvent`. Si el puntero está sobre algo que se desplaza a lo ancho, como un
   tablero, el gesto desplaza ese contenido (lo informa `web/bridge.js`).
-- **Liquid Glass en la barra lateral, experimental** (Ajustes → General → Experimental, apagado por
-  defecto). Se aplica al momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres
-  capas: abajo, el mismo color de fondo de Paperclip; en medio, un panel translúcido con Liquid Glass
-  (`NSGlassEffectView`) justo detrás de la barra lateral; arriba, la página transparente.
-  - `web/glass.css` le quita el fondo a la barra lateral y fija el margen del panel y su radio,
-    concéntrico con la ventana.
-  - `web/layout.js` le avisa a la app dónde está la barra lateral y el color de fondo de Paperclip.
-  - En pantalla completa el panel toma el color de la ventana en vez del fondo de pantalla.
+- **Liquid Glass en los paneles, experimental** (Ajustes → General → Experimental, apagado por defecto).
+  Se aplica al momento: cambia la ventana y recarga la página. Con él, la ventana tiene tres capas: abajo,
+  el mismo color de fondo de Paperclip; en medio, paneles translúcidos con Liquid Glass
+  (`GlassPanel.swift`, `NSGlassEffectView`) justo detrás de la barra lateral y del panel de propiedades
+  de una tarea; arriba, la página transparente.
+  - `web/glass.css` les quita el fondo a esos dos paneles y fija su margen y su radio, concéntrico con la
+    ventana. El panel de propiedades está dentro de la columna de contenido: ahí el fondo pasa a lo que
+    está junto a él.
+  - `web/layout.js` le avisa a la app dónde están los paneles y el color de fondo de Paperclip.
+  - En pantalla completa los paneles toman el color de la ventana en vez del fondo de pantalla.
   - Ensayo visual de los dos modos, también al cambiar de uno a otro con la página cargada:
     `macos/snapshot.zsh window [carpeta]` (ver el ensayo de Ajustes, abajo).
 - **Decisions: avisos de macOS y número del Dock.** Los revisa la app misma cada minuto
@@ -285,7 +298,8 @@ macos/build.sh
   - Un clic abre un panel con las dos en filas separadas. Cada una dice qué hace al actualizarse:
     reiniciar la app no corta nada, porque Paperclip y los agentes corren aparte; actualizar Paperclip lo
     reinicia y pausa a los agentes. Abajo, «Buscar ahora» revisa las dos. El menú «Buscar
-    actualizaciones…» abre el mismo panel.
+    actualizaciones…» abre el mismo panel. Mientras está abierto, el botón no se angosta (por ejemplo, al
+    pasar a «Revisando…»), así el panel no se corre.
 - **Versiones nuevas de la app** (`AppUpdater.swift`, con [Sparkle](https://sparkle-project.org) 2 por
   SwiftPM y una interfaz propia en vez de sus ventanas).
   - Busca sola cada 6 h (`UPDATE_CHECK_INTERVAL`) y, por defecto, descarga en silencio. Se apaga en
