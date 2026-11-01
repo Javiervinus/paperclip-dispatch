@@ -1677,12 +1677,52 @@
         }
       }
     },
+    "In review, but Paperclip didn’t wake up the reviewing agent to review it, and the app’s automatic wake-up didn’t work either.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero Paperclip no despertó al agente revisor para revisarla, y el despertar automático de la app tampoco funcionó."
+          }
+        }
+      }
+    },
     "In review, but Paperclip didn’t wake up the reviewing agent.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "En revisión, pero Paperclip no despertó al agente revisor."
+          }
+        }
+      }
+    },
+    "In review, but the app couldn’t check whether %@ is on its way to review it: Paperclip’s answer couldn’t be read. Check the task in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero la app no pudo comprobar si %@ va en camino para revisarla: no pudo leer lo que contestó Paperclip. Revisa la tarea en Paperclip."
+          }
+        }
+      }
+    },
+    "In review, but the app couldn’t check whether the reviewer is on its way.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero la app no pudo comprobar si el revisor va en camino."
+          }
+        }
+      }
+    },
+    "In review, but the app couldn’t check whether the reviewing agent is on its way to review it: Paperclip’s answer couldn’t be read. Check the task in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En revisión, pero la app no pudo comprobar si el agente revisor va en camino para revisarla: no pudo leer lo que contestó Paperclip. Revisa la tarea en Paperclip."
           }
         }
       }
@@ -3163,6 +3203,16 @@
         }
       }
     },
+    "Review the onboarding emails": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar los correos de bienvenida"
+          }
+        }
+      }
+    },
     "Reviews": {
       "localizations": {
         "es": {
@@ -3711,16 +3761,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "La que abres en el navegador para ver Paperclip. Si pide iniciar sesión, lo haces en la ventana de la app."
-          }
-        }
-      }
-    },
-    "The reviewing agent": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El agente revisor"
           }
         }
       }
