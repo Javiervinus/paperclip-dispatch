@@ -7,7 +7,7 @@ struct AppConfig: Sendable {
 
     let serverURL: URL
     /// Un script propio para actualizar Paperclip (build.sh lo deja en el Info.plist si se pide con
-    /// PAPERCLIP_UPDATE_SCRIPT). Sin él, se actualiza con el comando oficial en la Terminal.
+    /// PAPERCLIP_UPDATE_SCRIPT). Sin él, se actualiza con el comando oficial de su CLI.
     let updateScript: URL?
 
     init(serverURL: URL, bundle: Bundle = .main) {

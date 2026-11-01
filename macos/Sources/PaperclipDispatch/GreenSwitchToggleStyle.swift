@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// El interruptor de macOS, encendido en verde como en el iPhone. Con el acento de la app (la tinta de
-/// Paperclip), en modo oscuro la pista quedaba casi blanca bajo la perilla blanca y parecía bloqueado; el
+/// Paperclip), en modo oscuro la pista queda casi blanca bajo la perilla blanca y parece bloqueado; el
 /// verde además es el color de «encendido» y de «permitido» en el resto de la app.
 struct GreenSwitchToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {

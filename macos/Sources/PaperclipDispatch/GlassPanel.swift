@@ -3,7 +3,7 @@ import AppKit
 /// Un panel de Liquid Glass detrás de la página, donde layout.js dice que hay un panel de Paperclip (la barra
 /// lateral o el de propiedades de una tarea): material translúcido de macOS con Liquid Glass
 /// (NSGlassEffectView) encima. El vidrio va recortado al panel: su sombra hacia afuera, invisible en oscuro,
-/// en claro agrisaba el margen.
+/// en claro agrisaría el margen.
 @MainActor
 final class GlassPanel {
     /// El borde de la ventana al que va pegado: al cambiar el ancho de la ventana, el panel lo sigue hasta
