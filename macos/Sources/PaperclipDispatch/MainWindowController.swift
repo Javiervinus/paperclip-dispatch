@@ -25,6 +25,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     WKScriptMessageHandler, NSMenuItemValidation
 {
     private static let frameAutosaveName = "PaperclipMainWindow"
+    private static let toolbarIdentifier = "PaperclipMainToolbar"
     private static let messageHandlerName = "paperclipDispatch"
     private static let defaultContentSize = NSSize(width: 1440, height: 900)
     private static let minimumContentSize = NSSize(width: 520, height: 420)
@@ -44,9 +45,12 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     static let unboundedSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
     /// Separación de lo que flota abajo (el recordatorio de avisos) con el borde de la ventana.
     private static let bottomOverlayMargin: CGFloat = 26
+    /// Direcciones que arma la propia página (about:blank, blob:, data:): se quedan en la ventana.
+    private static let pageOwnedSchemes: Set<String> = ["about", "blob", "data"]
+    /// El campo de texto de un `prompt()` de la página.
+    private static let promptFieldSize = NSSize(width: 280, height: 24)
 
     private let config: AppConfig
-    private static let toolbarIdentifier = "PaperclipMainToolbar"
     /// Si la página va sobre Liquid Glass (el modo experimental).
     private var glass: Bool
 
@@ -63,7 +67,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     private var updateButton: NSButton?
     private var updateButtonCenterY: NSLayoutConstraint?
-    private var updateButtonWanted = false
     private var titleObservation: NSKeyValueObservation?
     private var urlObservation: NSKeyValueObservation?
     /// Lo que flota abajo y al centro, sobre la página (el recordatorio de avisos).
@@ -170,8 +173,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         let container = FlippedView()
         window.contentView = container
 
+        // El color lo pone applyMode, y después el que informa layout.js.
         base.wantsLayer = true
-        base.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         base.frame = container.bounds
         base.autoresizingMask = [.width, .height]
 
@@ -279,7 +282,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         }
     }
 
-    /// Abre una ruta de Paperclip (`/VIN/agent-usage`) cargando la página de nuevo. Para el ensayo de páginas.
+    /// Abre una ruta de Paperclip (p. ej. `/<prefijo>/agent-usage`) cargando la página de nuevo. Para el ensayo
+    /// de páginas.
     func load(path: String) {
         webView.load(URLRequest(url: config.serverURL.appending(path: path)))
     }
@@ -346,10 +350,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         return NSApp.isActive && window.isKeyWindow && window.occlusionState.contains(.visible)
     }
 
-    /// Muestra u oculta el botón de la versión, arriba a la derecha: centrado en la barra de la ruta de
-    /// Paperclip, solo en el Dashboard (`pageWithFreeCorner`).
-    func setUpdateButton(_ button: NSButton, visible: Bool) {
-        updateButtonWanted = visible
+    /// Pone el botón de la versión, arriba a la derecha: centrado en la barra de la ruta de Paperclip y visible
+    /// solo en el Dashboard (`pageWithFreeCorner`).
+    func setUpdateButton(_ button: NSButton) {
         if updateButton !== button {
             updateButton?.removeFromSuperview()
             updateButton = button
@@ -363,7 +366,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private func refreshUpdateButton() {
         guard let updateButton else { return }
         updateButtonCenterY?.constant = topBarHeight / 2
-        updateButton.isHidden = !updateButtonWanted || !pageIsDesktop || topBarHeight == 0 || !pageHasFreeCorner
+        updateButton.isHidden = !pageIsDesktop || topBarHeight == 0 || !pageHasFreeCorner
         syncPageState()
     }
 
@@ -552,7 +555,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         if navigationAction.shouldPerformDownload { return .download }
         guard let url = navigationAction.request.url else { return .allow }
         let isMainFrame = navigationAction.targetFrame?.isMainFrame ?? true
-        if !isMainFrame || config.isInternal(url) || ["about", "blob", "data"].contains(url.scheme ?? "") {
+        if !isMainFrame || config.isInternal(url) || Self.pageOwnedSchemes.contains(url.scheme ?? "") {
             return .allow
         }
         // Lo que no es de Paperclip se abre en el navegador por defecto.
@@ -731,7 +734,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         let alert = NSAlert()
         alert.messageText = prompt
         let field = NSTextField(string: defaultText ?? "")
-        field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
+        field.frame = NSRect(origin: .zero, size: Self.promptFieldSize)
         alert.accessoryView = field
         alert.addButton(withTitle: "Aceptar")
         alert.addButton(withTitle: "Cancelar")
@@ -756,9 +759,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     }
 
     /// En pantalla completa la barra de herramientas vacía sobra (no hay esquinas que redondear) y, al llevar
-    /// el puntero arriba, bajaba una franja más alta que la de otras apps: se esconde y queda la barra de
-    /// título normal. Detrás de la ventana solo queda el fondo de pantalla, que teñiría el panel (y aparece y
-    /// desaparece al cambiar de escritorio): ahí el material toma el fondo de la propia ventana.
+    /// el puntero arriba, haría bajar una franja más alta que la de otras apps: se esconde y queda la barra
+    /// de título normal. Detrás de la ventana solo queda el fondo de pantalla, que teñiría el panel (y aparece
+    /// y desaparece al cambiar de escritorio): ahí el material toma el fondo de la propia ventana.
     func windowWillEnterFullScreen(_ notification: Notification) {
         window?.toolbar?.isVisible = false
         sidebarPanel.setBlendsWithinWindow(true)

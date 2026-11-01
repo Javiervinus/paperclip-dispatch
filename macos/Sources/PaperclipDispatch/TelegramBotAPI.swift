@@ -12,6 +12,10 @@ struct TelegramBotAPI {
         var errorDescription: String? { reason }
     }
 
+    /// Para los pedidos normales; `getUpdates` pasa el suyo.
+    private static let defaultTimeout: TimeInterval = 20
+    /// Si Telegram pide esperar más que esto (429), el pedido falla en vez de quedarse esperando.
+    private static let maxRetryAfter = 30
     private static let session = URLSession(configuration: .ephemeral)
     private static let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -23,7 +27,7 @@ struct TelegramBotAPI {
     func call<T: Decodable>(
         _ method: String,
         _ params: [String: Any] = [:],
-        timeout: TimeInterval = 20
+        timeout: TimeInterval = defaultTimeout
     ) async throws -> T {
         guard let url = URL(string: "https://api.telegram.org/bot\(token)/\(method)") else {
             throw Failure(code: nil, reason: "El token tiene caracteres que no van.")
@@ -37,7 +41,7 @@ struct TelegramBotAPI {
         let envelope = try Self.decoder.decode(Envelope<T>.self, from: data)
         if envelope.ok, let result = envelope.result { return result }
         // Demasiados mensajes seguidos: Telegram dice cuánto esperar.
-        if envelope.errorCode == 429, let wait = envelope.parameters?.retryAfter, wait <= 30 {
+        if envelope.errorCode == 429, let wait = envelope.parameters?.retryAfter, wait <= Self.maxRetryAfter {
             try await Task.sleep(for: .seconds(wait))
             return try await call(method, params, timeout: timeout)
         }
@@ -91,7 +95,6 @@ extension TelegramBotAPI {
     struct CallbackQuery: Decodable {
         let id: String
         let from: User
-        let message: MessageReference?
         let data: String?
     }
 

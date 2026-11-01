@@ -22,7 +22,10 @@ final class UpdateController {
     static let installCLICommand = "npm install -g paperclipai"
     /// Lo que devuelve zsh cuando no encuentra el comando.
     private static let commandNotFound: Int32 = 127
-    private static let releaseNotesBase = "https://github.com/paperclipai/paperclip/releases/tag/v"
+    /// Las versiones publicadas de Paperclip; cada una tiene su página en `tag/v<versión>`.
+    private static let releasesURL = URL(string: "https://github.com/paperclipai/paperclip/releases")!
+    /// Un solo aviso de «Paperclip actualizado»: el de la próxima vez reemplaza al anterior.
+    private static let updatedNotificationID = "paperclip-update"
     private static let errorTailLines = 12
     /// Ensayo: abrir la app con `--args -PaperclipPreviewUpdate <versión>` finge que salió esa versión, para
     /// ver el botón sin esperar una de verdad. Ahí «Actualizar» muestra los pasos sin actualizar nada.
@@ -110,7 +113,6 @@ final class UpdateController {
         status.paperclipVersion = last?.currentVersion
         status.latestVersion = last?.updateAvailable == true ? last?.targetVersion : nil
         status.checkingUpdate = checking
-        status.updateCheckFailed = checkError != nil
         status.updateCheckError = checkError
         status.lastCheckedAt = lastCheckedAt
         status.updateProgress = progress
@@ -118,7 +120,7 @@ final class UpdateController {
     }
 
     static func releaseNotesURL(for version: String) -> URL {
-        URL(string: releaseNotesBase + version) ?? URL(string: "https://github.com/paperclipai/paperclip/releases")!
+        releasesURL.appending(path: "tag/v\(version)")
     }
 
     /// «Actualizar…» del panel y de Ajustes: con una versión nueva pide confirmación y actualiza; si no,
@@ -211,8 +213,8 @@ final class UpdateController {
         lastCheckedAt = .now
         publish()
         notifications.show(
-            id: "paperclip-update",
-            tag: "paperclip-update",
+            id: Self.updatedNotificationID,
+            tag: Self.updatedNotificationID,
             title: previewTarget == nil ? "Paperclip actualizado" : "Paperclip actualizado (ensayo)",
             body: "Ya está en la \(target).",
             href: nil

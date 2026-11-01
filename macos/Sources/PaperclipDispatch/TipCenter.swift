@@ -23,8 +23,6 @@ final class TipCenter {
     /// La hoja se cerró, con cualquiera de los dos botones.
     var onClose: (() -> Void)?
 
-    var isShowing: Bool { sheet != nil }
-
     init(host: MainWindowController, defaults: UserDefaults = .standard, isRelevant: @escaping (Tip) -> Bool) {
         self.host = host
         self.defaults = defaults
