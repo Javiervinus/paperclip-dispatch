@@ -1,0 +1,58 @@
+/* Paperclip Dispatch: la página de Paperclip ocupa la ventana entera, hasta arriba.
+ *
+ * La ventana no tiene barra de título: los botones de la ventana quedan sobre la barra lateral de
+ * Paperclip y la ventana se mueve desde las partes vacías de sus barras de arriba (layout.js). Aquí se
+ * le hace lugar a los botones y al de la versión, con la clase semántica .primary-sidebar-surface, el
+ * atributo data-sidebar-overlay de SidebarShell y la variable --sz-safe-top de Paperclip.
+ *
+ * La app lee de aquí el alto de la franja de los botones.
+ */
+:root {
+  /* Franja de arriba reservada a los botones de la ventana: macOS los centra a 26 px y miden 14. */
+  --paperclip-app-titlebar: 40px;
+  /* Aire debajo del selector de company, ya sin el alto fijo de su fila: el mismo px-3 de la barra. */
+  --paperclip-app-sidebar-gap: 12px;
+  /* Margen de la barra lateral con el borde de la ventana: ninguno, salvo con Liquid Glass (glass.css). */
+  --paperclip-app-sidebar-inset: 0px;
+}
+
+@media (min-width: 768px) {
+  /* La fila del selector de company baja y deja arriba la fila de los botones de la ventana. */
+  :root:not([data-paperclip-app-fullscreen])
+    div:not([data-sidebar-overlay])
+    > div
+    > .primary-sidebar-surface
+    > div:first-child {
+    height: auto;
+    min-height: var(--sz-60px);
+    padding-top: calc(var(--paperclip-app-titlebar) - var(--paperclip-app-sidebar-inset));
+    padding-bottom: var(--paperclip-app-sidebar-gap);
+  }
+
+  /* La app muestra la versión de Paperclip arriba a la derecha («Al día» o «Actualizar a…»), solo en el
+     Dashboard: la barra de la ruta le deja ese espacio. En las otras páginas la app no lo marca. */
+  :root[data-paperclip-app-version] .flex-col.min-w-0 > div:first-child [class*="h-(--sz-60px)"] {
+    padding-right: var(--paperclip-app-version-width) !important;
+  }
+}
+
+/* Ventana angosta (Paperclip pasa a su vista móvil): toda la página baja la franja, con el fondo de
+   la página detrás de los botones, y el encabezado fijo se pega debajo de ella. */
+@media (max-width: 767px) {
+  :root:not([data-paperclip-app-fullscreen]) {
+    --sz-safe-top: var(--paperclip-app-titlebar);
+  }
+
+  :root:not([data-paperclip-app-fullscreen]) body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--paperclip-app-titlebar);
+    background: var(--background);
+    z-index: 30;
+  }
+
+  :root:not([data-paperclip-app-fullscreen]) .sticky.top-0:has(> [class*="h-(--sz-60px)"]) {
+    top: var(--paperclip-app-titlebar);
+  }
+}

@@ -85,7 +85,7 @@ private struct GeneralPane: View {
             } header: {
                 Text("Experimental")
             } footer: {
-                Text("Retoca la página de Paperclip por dentro: una versión nueva de Paperclip lo puede descuadrar. Apagado, Paperclip se ve tal cual.")
+                Text("Le quita el fondo a la barra lateral de Paperclip para que se vea el vidrio: una versión nueva de Paperclip lo puede descuadrar.")
                     .settingsFootnote()
             }
         }

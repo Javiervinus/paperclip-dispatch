@@ -1,14 +1,14 @@
-// Paperclip Swift: le cuenta a la app lo que necesita saber de la página.
+// Paperclip Dispatch: le cuenta a la app lo que necesita saber de la página.
 //
-// - Dónde está la barra lateral, para poner el panel de vidrio justo detrás (glass.css le quita el fondo).
-// - El color de fondo de Paperclip, que la app pinta alrededor del panel.
 // - El alto de las barras de arriba y si la página está en su vista de escritorio, para el botón de la
 //   versión.
-// - Si el puntero está sobre una parte vacía de esas barras: desde ahí se mueve la ventana, como en una
-//   barra de título de macOS. La app decide en el clic mismo, así que se avisa al mover el puntero.
+// - Si el puntero está sobre una parte vacía de esas barras: desde ahí se mueve la ventana, que no tiene
+//   barra de título. La app decide en el clic mismo, así que se avisa al mover el puntero.
+// - Para Liquid Glass: dónde está la barra lateral, para poner el panel de vidrio justo detrás (glass.css
+//   le quita el fondo), y el color de fondo de Paperclip, que la app pinta alrededor del panel.
 (() => {
-  if (window.top !== window || window.__paperclipAppGlass) return;
-  window.__paperclipAppGlass = true;
+  if (window.top !== window || window.__paperclipAppLayout) return;
+  window.__paperclipAppLayout = true;
   const handler = window.webkit?.messageHandlers?.paperclipApp;
   if (!handler) return;
 

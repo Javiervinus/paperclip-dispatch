@@ -58,7 +58,8 @@ ditto "$BIN_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 rm -rf "$APP/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices" \
   "$APP/Contents/Frameworks/Sparkle.framework/XPCServices"
 install_name_tool -add_rpath @executable_path/../Frameworks "$APP/Contents/MacOS/$EXECUTABLE"
-cp "$ROOT/web/bridge.js" "$ROOT/web/glass.js" "$ROOT/web/glass.css" "$APP/Contents/Resources/"
+# Los scripts y estilos de la página (WebResources.swift dice cuáles se inyectan y en qué orden).
+cp "$ROOT"/web/*.js "$ROOT"/web/*.css "$APP/Contents/Resources/"
 # La app está en español: con esta carpeta, macOS también le da en español sus textos (errores, menús).
 mkdir -p "$APP/Contents/Resources/es.lproj"
 touch "$APP/Contents/Resources/es.lproj/Localizable.strings"

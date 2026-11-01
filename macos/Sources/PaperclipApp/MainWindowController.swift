@@ -2,31 +2,28 @@ import AppKit
 import SwiftUI
 import WebKit
 
-/// Contenedor con el origen arriba a la izquierda, como la página: los rectángulos que manda glass.js
+/// Contenedor con el origen arriba a la izquierda, como la página: los rectángulos que manda layout.js
 /// se usan tal cual.
 private final class FlippedView: NSView {
     override var isFlipped: Bool { true }
 }
 
-/// La ventana de Paperclip. Tiene dos modos:
+/// La ventana de Paperclip. La página la ocupa entera, sin barra de título: los botones de la ventana
+/// quedan sobre la barra lateral de Paperclip, que les hace lugar (layout.css), y la ventana se mueve desde
+/// las partes vacías de sus barras de arriba (layout.js). La barra de herramientas va vacía: da las
+/// esquinas de ventana de macOS 26. El botón de la versión flota sobre la barra de la ruta de Paperclip,
+/// solo en el Dashboard. El gesto de atrás y adelante es el de la app (`PaperclipWebView`): la página no
+/// se mueve y entra una flecha desde el borde.
 ///
-/// - **Normal** (por defecto): la página tal cual, debajo de una barra compacta de macOS del color de la
-///   página, con el botón de la versión. No depende de cómo esté hecho el HTML de Paperclip.
-///
-/// En los dos, el gesto de atrás y adelante es el de la app (`PaperclipWebView`): la página no se mueve y
-/// entra una flecha desde el borde.
-/// - **Liquid Glass** (experimental, Ajustes → General): la página ocupa toda la ventana, en capas:
-///   1. Un fondo del mismo color que el de Paperclip: alrededor del panel no se nota otro gris.
-///   2. El panel de la barra lateral: material translúcido de macOS con Liquid Glass (NSGlassEffectView)
-///      encima, ubicado donde glass.js dice que está la barra lateral de Paperclip. El vidrio va recortado
-///      al panel: su sombra hacia afuera, invisible en oscuro, en claro agrisaba el margen.
-///   3. La página, transparente donde glass.css le quita el fondo.
-///   La barra de herramientas va vacía: da las esquinas de ventana de macOS 26 y deja los botones de la
-///   ventana adentro del panel, donde macOS los pone solo. El botón de la versión flota sobre la barra de
-///   la ruta de Paperclip.
+/// Con **Liquid Glass** (experimental, Ajustes → General), además, la barra lateral va sobre vidrio, en capas:
+/// 1. Un fondo del mismo color que el de Paperclip: alrededor del panel no se nota otro gris.
+/// 2. El panel de la barra lateral: material translúcido de macOS con Liquid Glass (NSGlassEffectView)
+///    encima, ubicado donde layout.js dice que está la barra lateral de Paperclip. El vidrio va recortado
+///    al panel: su sombra hacia afuera, invisible en oscuro, en claro agrisaba el margen.
+/// 3. La página, transparente donde glass.css le quita el fondo.
 @MainActor
-final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolbarDelegate, WKNavigationDelegate,
-    WKUIDelegate, WKScriptMessageHandler
+final class MainWindowController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate,
+    WKScriptMessageHandler
 {
     private static let frameAutosaveName = "PaperclipMainWindow"
     private static let messageHandlerName = "paperclipApp"
@@ -51,7 +48,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     private let config: AppConfig
     private static let toolbarIdentifier = "PaperclipMainToolbar"
-    private static let versionItemIdentifier = NSToolbarItem.Identifier("PaperclipVersion")
     /// Si la página va sobre Liquid Glass (el modo experimental).
     private var glass: Bool
 
@@ -70,21 +66,18 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     private var updateButton: NSButton?
     private var updateButtonCenterY: NSLayoutConstraint?
-    /// Sin vidrio, el botón de la versión va en este ítem de la barra.
-    private var versionItem: NSToolbarItem?
     private var updateButtonWanted = false
     private var titleObservation: NSKeyValueObservation?
     private var urlObservation: NSKeyValueObservation?
-    private var pageColorObservation: NSKeyValueObservation?
     /// Lo que flota abajo y al centro, sobre la página (el recordatorio de avisos).
     private var bottomOverlay: NSView?
-    /// Alto de las barras de arriba de Paperclip (--sz-60px), en puntos; lo informa glass.js.
+    /// Alto de las barras de arriba de Paperclip (--sz-60px), en puntos; lo informa layout.js.
     private var topBarHeight: CGFloat = 0
     /// En la vista angosta de Paperclip (móvil) la barra de arriba es otra y no hay lugar para el botón.
     private var pageIsDesktop = true
-    /// Con vidrio, el botón de la versión flota sobre la página y solo sale en el Dashboard
-    /// (`/<company>/dashboard`): es la única página sin nada arriba a la derecha. En las otras ahí van
-    /// botones de Paperclip, o el panel de propiedades de una tarea, que llega hasta arriba.
+    /// El botón de la versión flota sobre la página y solo sale en el Dashboard (`/<company>/dashboard`):
+    /// es la única página sin nada arriba a la derecha. En las otras ahí van botones de Paperclip, o el
+    /// panel de propiedades de una tarea, que llega hasta arriba.
     private static let pageWithFreeCorner = "dashboard"
     private var pageHasFreeCorner: Bool { webView.url?.lastPathComponent == Self.pageWithFreeCorner }
 
@@ -131,9 +124,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
                 self?.onPageChange?()
             }
         }
-        pageColorObservation = webView.observe(\.underPageBackgroundColor) { [weak self] _, _ in
-            MainActor.assumeIsolated { self?.updateTitlebarColor() }
-        }
         webView.load(URLRequest(url: initialURL ?? config.serverURL))
     }
 
@@ -150,6 +140,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         window.tabbingMode = .disallowed
         window.contentMinSize = Self.minimumContentSize
         window.delegate = self
+        // Sin título (la página ya dice dónde estás) y con la barra de título transparente, sobre la página.
+        // La barra de herramientas vacía no muestra nada ni se queda con los clics sobre la página (probado
+        // con hitTest): solo da las esquinas de macOS 26 y la altura de los botones de la ventana.
+        window.toolbar = NSToolbar(identifier: Self.toolbarIdentifier)
+        window.toolbarStyle = .unified
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
         guard remembersFrame else { return }
         if !window.setFrameUsingName(Self.frameAutosaveName) {
             window.center()
@@ -206,28 +204,17 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         container.addSubview(indicator)
     }
 
-    /// Lo que cambia entre el modo normal y el de Liquid Glass. La página toma los scripts nuevos al recargar.
+    /// Lo que cambia con Liquid Glass. La página toma los scripts nuevos al recargar.
     private func applyMode() {
         guard let window else { return }
-        if glass {
-            window.styleMask.insert(.fullSizeContentView)
-        } else {
-            window.styleMask.remove(.fullSizeContentView)
-        }
-        // Sin título en la barra (la página ya dice dónde estás) y barra transparente: sin vidrio se ve el
-        // fondo de la ventana, que toma el color de la página (updateTitlebarColor). La barra compacta, solo
-        // sin vidrio: con vidrio los semáforos van a la altura de la barra de Paperclip.
-        window.toolbarStyle = glass ? .unified : .unifiedCompact
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        window.titlebarSeparatorStyle = .none
+        // Con vidrio, ventana y página transparentes: donde la página no pinta fondo se ven el vidrio y lo
+        // que hay detrás de la ventana.
         window.isOpaque = !glass
-        // Con vidrio, transparente: donde la página no pinta fondo se ven el vidrio y la ventana.
+        window.backgroundColor = glass ? .clear : .windowBackgroundColor
         webView.setValue(!glass, forKey: "drawsBackground")
         webView.underPageBackgroundColor = glass ? .clear : nil
         webView.pageScrollsBack = false
         webView.pageScrollsForward = false
-        updateTitlebarColor()
         base.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         setSidebarPanel(nil, radius: 0)
         topBarHeight = 0
@@ -236,54 +223,23 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         WebResources.userScripts(glass: glass).forEach(controller.addUserScript)
-        arrangeToolbar()
-    }
-
-    /// Sin vidrio, la barra lleva el botón de la versión a la derecha. Con vidrio va vacía, que no muestra
-    /// nada ni se queda con los clics sobre la página (probado con hitTest), y el botón flota sobre la barra
-    /// de la ruta de Paperclip, que le deja el espacio (glass.css, data-paperclip-app-version).
-    private func arrangeToolbar() {
-        updateButtonCenterY = nil
-        updateButton?.removeFromSuperview()
-        updateButton?.bezelStyle = glass ? .glass : .toolbar
-        updateButton?.translatesAutoresizingMaskIntoConstraints = !glass
-        versionItem = nil
-        let toolbar = NSToolbar(identifier: Self.toolbarIdentifier)
-        toolbar.delegate = self
-        toolbar.displayMode = .iconOnly
-        window?.toolbar = toolbar
-        if glass, let updateButton, let container = window?.contentView {
-            container.addSubview(updateButton, positioned: .above, relativeTo: webView)
-            let centerY = updateButton.centerYAnchor.constraint(equalTo: container.topAnchor)
-            updateButtonCenterY = centerY
-            NSLayoutConstraint.activate([
-                updateButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.accessoryMargin),
-                centerY,
-            ])
-        }
         refreshUpdateButton()
     }
 
-    func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        glass ? [] : [.flexibleSpace, Self.versionItemIdentifier]
-    }
-
-    func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [.flexibleSpace, Self.versionItemIdentifier]
-    }
-
-    func toolbar(
-        _ toolbar: NSToolbar,
-        itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
-        willBeInsertedIntoToolbar flag: Bool
-    ) -> NSToolbarItem? {
-        guard itemIdentifier == Self.versionItemIdentifier else { return nil }
-        let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-        item.label = "Versión de Paperclip"
-        item.view = glass ? nil : updateButton
-        item.isHidden = updateButton == nil || !updateButtonWanted
-        versionItem = item
-        return item
+    /// El botón de la versión flota sobre la página, a la derecha de la barra de la ruta de Paperclip, que le
+    /// deja el espacio (layout.css, data-paperclip-app-version).
+    private func placeUpdateButton() {
+        updateButtonCenterY = nil
+        guard let updateButton, let container = window?.contentView else { return }
+        updateButton.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(updateButton, positioned: .above, relativeTo: webView)
+        let centerY = updateButton.centerYAnchor.constraint(equalTo: container.topAnchor)
+        updateButtonCenterY = centerY
+        NSLayoutConstraint.activate([
+            updateButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -Self.accessoryMargin),
+            centerY,
+        ])
+        refreshUpdateButton()
     }
 
     /// El título de la página, como en un navegador: no se muestra en la barra, pero lo usan el menú Ventana,
@@ -293,23 +249,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         window?.title = title.isEmpty ? AppConfig.appName : title
     }
 
-    /// Sin vidrio, la barra de arriba (transparente) muestra el fondo de la ventana: se le da el de la página,
-    /// el que WebKit saca de su <html> y <body>, para que la barra y Paperclip sean una sola superficie. Sin
-    /// conexión, el de macOS, como la vista que la tapa.
-    private func updateTitlebarColor() {
-        guard let window else { return }
-        window.backgroundColor = if glass {
-            .clear
-        } else if offlineView == nil, let page = webView.underPageBackgroundColor, page.alphaComponent > 0 {
-            page
-        } else {
-            .windowBackgroundColor
-        }
-    }
-
-    /// Con vidrio no hay barra de título nativa: la ventana se mueve desde las partes vacías de las barras de
-    /// Paperclip. glass.js avisa al mover el puntero si está sobre una; aquí se decide en el clic mismo,
-    /// que es lo que necesita `performDrag`.
+    /// Sin barra de título, la ventana se mueve desde las partes vacías de las barras de arriba de Paperclip.
+    /// layout.js avisa al mover el puntero si está sobre una; aquí se decide en el clic mismo, que es lo que
+    /// necesita `performDrag`.
     private func watchDragClicks() {
         mouseDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
             guard let self, self.shouldDragWindow(for: event), let window = event.window else { return event }
@@ -418,29 +360,22 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         return NSApp.isActive && window.isKeyWindow && window.occlusionState.contains(.visible)
     }
 
-    /// Muestra u oculta el botón de la versión, arriba a la derecha: en la barra de la ventana o, con vidrio,
-    /// centrado en la barra de la ruta de Paperclip, solo en el Dashboard (`pageWithFreeCorner`).
+    /// Muestra u oculta el botón de la versión, arriba a la derecha: centrado en la barra de la ruta de
+    /// Paperclip, solo en el Dashboard (`pageWithFreeCorner`).
     func setUpdateButton(_ button: NSButton, visible: Bool) {
         updateButtonWanted = visible
         if updateButton !== button {
+            updateButton?.removeFromSuperview()
             updateButton = button
-            arrangeToolbar()
+            placeUpdateButton()
         } else {
             refreshUpdateButton()
         }
     }
 
-    /// Con vidrio, hasta que glass.js informa el alto de la barra, el botón no tiene dónde centrarse.
+    /// Hasta que layout.js informa el alto de la barra, el botón no tiene dónde centrarse.
     private func refreshUpdateButton() {
-        // Sin botón (o sin versión que mostrar), el ítem no se ve: quedaría un círculo de vidrio vacío.
-        versionItem?.isHidden = updateButton == nil || !updateButtonWanted
         guard let updateButton else { return }
-        guard glass else {
-            updateButton.isHidden = false
-            // En la barra de la ventana, el color de acento lo pone el ítem, no el botón.
-            versionItem?.style = updateButton.tintProminence == .primary ? .prominent : .plain
-            return
-        }
         updateButtonCenterY?.constant = topBarHeight / 2
         updateButton.isHidden = !updateButtonWanted || !pageIsDesktop || topBarHeight == 0 || !pageHasFreeCorner
         syncPageState()
@@ -506,9 +441,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
 
     // MARK: - Estado que la página necesita saber
 
-    /// Con vidrio: pantalla completa (sin botones de ventana) y espacio para el botón de la versión.
+    /// Pantalla completa (sin botones de ventana) y espacio para el botón de la versión.
     private func syncPageState() {
-        guard glass else { return }
         let fullscreen = window?.styleMask.contains(.fullScreen) == true
         let updateWidth = updateButton.flatMap { $0.isHidden ? nil : $0.fittingSize.width + Self.accessoryMargin * 2 }
         let zoom = max(webView.pageZoom, 0.01)
@@ -540,9 +474,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         case "themeChosen":
             guard let theme = body["theme"] as? String else { return }
             onThemeChosen?(theme == "dark")
-        case "layout" where glass:
+        case "layout":
             applyLayout(body)
-        case "dragArea" where glass:
+        case "dragArea":
             pointerOverDragArea = body["value"] as? Bool ?? false
         case "horizontalScroll":
             webView.pageScrollsBack = body["back"] as? Bool ?? false
@@ -567,7 +501,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             pageIsDesktop = desktop
             refreshUpdateButton()
         }
-        guard let sidebar = body["sidebar"] as? [String: Any],
+        // El panel de vidrio, solo con Liquid Glass.
+        guard glass, let sidebar = body["sidebar"] as? [String: Any],
               let x = (sidebar["x"] as? NSNumber)?.doubleValue,
               let y = (sidebar["y"] as? NSNumber)?.doubleValue,
               let width = (sidebar["width"] as? NSNumber)?.doubleValue,
@@ -597,7 +532,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         }
         for view in [sidebarBackdrop, sidebarClip] {
             view.frame = frame
-            // Entre un aviso de glass.js y el siguiente, el panel sigue el alto de la ventana. Recién
+            // Entre un aviso de layout.js y el siguiente, el panel sigue el alto de la ventana. Recién
             // ahora: con tamaño cero y alto flexible, macOS agranda la ventana 10 puntos cada vez que se abre.
             view.autoresizingMask = [.height]
             view.isHidden = false
@@ -688,7 +623,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
             hosting.autoresizingMask = [.width, .height]
             container.addSubview(hosting, positioned: .above, relativeTo: webView)
             offlineView = hosting
-            updateTitlebarColor()
             bottomOverlay?.isHidden = true
             // Sin página cargada, WKWebView se queda con los atajos (⌘, ⌘R…) y no se los pasa al menú.
             window?.makeFirstResponder(nil)
@@ -737,7 +671,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         guard let offlineView else { return }
         offlineView.removeFromSuperview()
         self.offlineView = nil
-        updateTitlebarColor()
         bottomOverlay?.isHidden = false
         failedURL = nil
         webView.isHidden = false
@@ -823,13 +756,13 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, NSToolba
         return false
     }
 
-    /// Con vidrio, en pantalla completa la barra de herramientas vacía se quedaría fija arriba, tapando la
-    /// página: así se esconde y aparece junto con la barra de menús, como en Safari.
+    /// En pantalla completa la barra de herramientas vacía se quedaría fija arriba, tapando la página: así se
+    /// esconde y aparece junto con la barra de menús, como en Safari.
     func window(
         _ window: NSWindow,
         willUseFullScreenPresentationOptions proposedOptions: NSApplication.PresentationOptions = []
     ) -> NSApplication.PresentationOptions {
-        proposedOptions.union(glass ? [.fullScreen, .autoHideMenuBar, .autoHideToolbar] : [.fullScreen, .autoHideMenuBar])
+        proposedOptions.union([.fullScreen, .autoHideMenuBar, .autoHideToolbar])
     }
 
     /// Detrás de una ventana en pantalla completa solo queda el fondo de pantalla, que teñiría el panel (y
