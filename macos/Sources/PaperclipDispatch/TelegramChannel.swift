@@ -12,8 +12,9 @@ import Observation
 /// - Las de varios pasos (formularios, tareas sugeridas, casillas, veredictos, decisiones con campos) son un
 ///   solo mensaje que se edita a medida que se avanza (`TelegramCard`). Lo marcado se guarda aquí y a
 ///   Paperclip le llega todo junto con el botón final.
-/// - Si la tarea de la decisión tiene algo servido para verlo, el mensaje lleva «Ver en vivo» (`LivePreviews`),
-///   en todos sus pasos, hasta que deja de estar pendiente. Se lee al mandarlo y al volver a editarlo.
+/// - Si la tarea de la decisión tiene algo servido para verlo, el texto del mensaje lleva el enlace «Ver en vivo»
+///   (`LivePreviews`), debajo de la descripción y en todos sus pasos, hasta que deja de estar pendiente. No es
+///   un botón: los botones son para contestar. Se lee al mandarlo y al volver a editarlo.
 /// - Es un bot de avisos: no conversa. Lo que se escribe cuenta solo en dos casos: como el texto que pidió un
 ///   botón (un motivo, otra respuesta), o como comentario para el agente si se responde a una decisión. Un
 ///   mensaje suelto vale como el último texto pedido, si se pidió hace poco; si no, no se aplica a nada,
@@ -170,7 +171,7 @@ final class TelegramChannel {
                 guard let updated = state.messages[itemId], updated.closedAt == nil, !working.contains(itemId),
                       let messageId = updated.messageId
                 else { continue }
-                await setKeyboard(messageId, for: updated)
+                await editKeepingButtons(messageId, for: updated)
             }
         }
     }
@@ -322,7 +323,7 @@ final class TelegramChannel {
             state.messages[item.id]?.explainable = true
             await refreshPreview(item.id)
             guard let updated = state.messages[item.id], updated.closedAt == nil, !working.contains(item.id) else { continue }
-            await setKeyboard(messageId, for: updated)
+            await editKeepingButtons(messageId, for: updated)
         }
 
         // Una tarea trabada que ya salió pierde o recupera «Despertar a …» según su agente vaya en camino o no.
@@ -377,8 +378,10 @@ final class TelegramChannel {
         async let preview = previews?.url(issueId: item.taskId)
         var prompt = await resolver.prompt(for: item)
         // Si no cabe en un mensaje de Telegram (botones o caracteres), va con el enlace, como antes.
+        // Con lugar para «Ver en vivo» en el texto, aunque todavía no se sepa si lo lleva.
         if let card = prompt.card,
-           !TelegramCard.fits(card, base: TelegramFormat.decision(item, prompt: prompt), extraButtons: Self.extraButtons) {
+           !TelegramCard.fits(card, base: TelegramFormat.decision(item, prompt: prompt) + "\n" + TelegramFormat.previewLink(serverURL),
+                              extraButtons: Self.extraButtons) {
             prompt.card = nil
         }
         var sent = SentDecision(
@@ -403,7 +406,7 @@ final class TelegramChannel {
         func params(_ links: Links) -> [String: Any] {
             [
                 "chat_id": chatId,
-                "text": messageText(sent),
+                "text": messageText(sent, links: links),
                 "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
                 "reply_markup": ["inline_keyboard": keyboard(for: sent, links: links)],
@@ -424,38 +427,54 @@ final class TelegramChannel {
         state.messages[item.id] = sent
     }
 
-    /// Lo que no es de la decisión: «Ver en vivo», «Explícamela» y el enlace a Paperclip.
-    private static let extraButtons = 3
+    /// Lo que no es de la decisión: «Explícamela» y el enlace a Paperclip.
+    private static let extraButtons = 2
 
-    /// El texto del mensaje: el encabezado y, en una tarjeta, el paso en que va; en una tarea trabada cuyo agente
-    /// ya tiene una corrida, «⏳ Ya va en camino…» al final.
-    func messageText(_ sent: SentDecision) -> String {
+    /// El texto del mensaje: el encabezado, el enlace «Ver en vivo» (si la tarea tiene algo servido y el teléfono
+    /// puede abrirlo) y, en una tarjeta, el paso en que va; en una tarea trabada cuyo agente ya tiene una corrida,
+    /// «⏳ Ya va en camino…» al final.
+    func messageText(_ sent: SentDecision, links: Links = .all) -> String {
+        var text = sent.html
+        if links.preview, let preview = phonePreviewURL(LivePreview.url(sent.preview)) {
+            text += "\n" + TelegramFormat.previewLink(preview)
+        }
         if let card = sent.card, let progress = sent.progress {
-            return sent.html + "\n\n" + TelegramCard.body(card, progress)
+            return text + "\n\n" + TelegramCard.body(card, progress)
         }
-        return sent.onTheWay.map { sent.html + "\n\n" + TelegramFormat.escape($0) } ?? sent.html
+        return sent.onTheWay.map { text + "\n\n" + TelegramFormat.escape($0) } ?? text
     }
 
-    /// Qué enlaces lleva un mensaje: todos, todos menos «Ver en vivo» o ninguno (Telegram rechazó alguno).
-    enum Links { case all, withoutPreview, none }
+    /// Qué enlaces lleva un mensaje: el de «Ver en vivo», en el texto, y los botones con enlace («Abrir en
+    /// Paperclip»). Se quitan los que Telegram rechace (`withLinkFallback`).
+    struct Links: Equatable {
+        var preview = true
+        var buttons = true
 
-    /// Un pedido con botones de enlace. Si Telegram rechaza una dirección (BUTTON_URL_INVALID, p. ej. una que
-    /// no es pública), lo intenta sin «Ver en vivo» y, si sigue, sin enlaces: los demás botones van igual.
+        static let all = Links()
+    }
+
+    /// Un pedido con enlaces. Si Telegram rechaza la dirección de un botón (BUTTON_URL_INVALID, p. ej. una que
+    /// no es pública), va sin los botones con enlace; si rechaza el mensaje por otra cosa y lleva «Ver en vivo»
+    /// (`preview`), va sin ese enlace. Lo demás va igual.
     func withLinkFallback<T>(preview: Bool, _ attempt: (Links) async throws -> T) async throws -> T {
-        do {
-            return try await attempt(.all)
-        } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("BUTTON_URL_INVALID") {
-            if preview {
-                do {
-                    return try await attempt(.withoutPreview)
-                } catch let failure as TelegramBotAPI.Failure where failure.reason.contains("BUTTON_URL_INVALID") {}
+        var links = Links.all
+        while true {
+            do {
+                return try await attempt(links)
+            } catch let failure as TelegramBotAPI.Failure {
+                if links.buttons, failure.reason.contains("BUTTON_URL_INVALID") {
+                    links.buttons = false
+                } else if preview, links.preview, failure.code == 400, !failure.reason.contains("message is not modified") {
+                    links.preview = false
+                } else {
+                    throw failure
+                }
             }
-            return try await attempt(.none)
         }
     }
 
-    /// Una fila por opción (`c:<key>:<n>`) o los de la tarjeta (`f:<key>:…`), «Ver en vivo», «Explícamela»
-    /// (`e:<key>`) y el enlace a Paperclip. Sin opciones si el agente ya va en camino.
+    /// Una fila por opción (`c:<key>:<n>`) o los de la tarjeta (`f:<key>:…`), «Explícamela» (`e:<key>`) y el
+    /// enlace a Paperclip. Sin opciones si el agente ya va en camino. «Ver en vivo» no va aquí: va en el texto.
     func keyboard(for sent: SentDecision, links: Links = .all) -> [[[String: Any]]] {
         var rows: [[[String: Any]]] = if let card = sent.card, let progress = sent.progress {
             TelegramCard.buttons(card, progress, key: sent.key).map { row in
@@ -468,11 +487,8 @@ final class TelegramChannel {
                 [["text": sent.choices[index].label, "callback_data": "c:\(sent.key):\(index)"]]
             }
         }
-        if links == .all, let preview = phonePreviewURL(LivePreview.url(sent.preview)) {
-            rows.append([["text": String(localized: "Open preview"), "url": preview.absoluteString]])
-        }
         if explainEnabled { rows.append([["text": String(localized: "💡 Explain it to me"), "callback_data": "e:\(sent.key)"]]) }
-        if links != .none, let url = paperclipURL(sent.href) {
+        if links.buttons, let url = paperclipURL(sent.href) {
             rows.append([["text": String(localized: "Open in Paperclip"), "url": url.absoluteString]])
         }
         return rows
@@ -720,7 +736,11 @@ final class TelegramChannel {
                 await close(itemId)
                 try? await sendText(String(localized: "It was no longer pending in Paperclip: I didn’t change anything."), replyTo: sent.messageId)
             } else {
-                try? await sendText(String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId)
+                // Paperclip no lo aceptó: no se dice que se envió, y queda la página para hacerlo ahí.
+                try? await sendText(
+                    String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId,
+                    link: paperclipURL(sent.href)
+                )
             }
             requestRefresh?()
             return
@@ -864,7 +884,11 @@ final class TelegramChannel {
                 await close(itemId)
                 try? await sendText(String(localized: "It was no longer pending in Paperclip: I didn’t change anything."), replyTo: sent.messageId)
             } else {
-                try? await sendText(String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId)
+                // Paperclip no lo aceptó: no se dice que se envió, y queda la página para hacerlo ahí.
+                try? await sendText(
+                    String(localized: "Couldn’t do it: \(error.localizedDescription)"), replyTo: sent.messageId,
+                    link: paperclipURL(sent.href)
+                )
             }
             requestRefresh?()
             return
@@ -950,13 +974,14 @@ final class TelegramChannel {
     }
 
     /// Cambia el texto de un mensaje y deja sus botones como están en `sent`. Dice si Telegram lo aceptó.
+    @discardableResult
     private func editKeepingButtons(_ messageId: Int, for sent: SentDecision) async -> Bool {
         guard let bot, let chatId = state.chatId else { return false }
         func params(_ links: Links) -> [String: Any] {
             [
                 "chat_id": chatId,
                 "message_id": messageId,
-                "text": messageText(sent),
+                "text": messageText(sent, links: links),
                 "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
                 "reply_markup": ["inline_keyboard": keyboard(for: sent, links: links)],
@@ -1059,7 +1084,7 @@ final class TelegramChannel {
             [
                 "chat_id": chatId,
                 "message_id": messageId,
-                "text": messageText(sent),
+                "text": messageText(sent, links: links),
                 "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
                 "reply_markup": ["inline_keyboard": keyboard(for: sent, links: links)],
@@ -1067,16 +1092,6 @@ final class TelegramChannel {
         }
         // «message is not modified» o un mensaje borrado: queda como estaba.
         try? await withLinkFallback(preview: sent.preview != nil) { links in try await bot.send("editMessageText", params(links)) }
-    }
-
-    /// Cambia solo los botones de un mensaje.
-    private func setKeyboard(_ messageId: Int, for sent: SentDecision) async {
-        guard let bot, let chatId = state.chatId else { return }
-        func params(_ links: Links) -> [String: Any] {
-            ["chat_id": chatId, "message_id": messageId, "reply_markup": ["inline_keyboard": keyboard(for: sent, links: links)]]
-        }
-        // Si el mensaje ya no está, no pasa nada.
-        try? await withLinkFallback(preview: sent.preview != nil) { links in try await bot.send("editMessageReplyMarkup", params(links)) }
     }
 
     private func sendText(_ text: String, replyTo: Int? = nil, link: URL? = nil) async throws {
@@ -1226,6 +1241,12 @@ enum TelegramFormat {
             .replacingOccurrences(of: "&lt;", with: "<")
             .replacingOccurrences(of: "&gt;", with: ">")
             .replacingOccurrences(of: "&amp;", with: "&")
+    }
+
+    /// «Ver en vivo» en el texto de un mensaje (el HTML de la Bot API).
+    static func previewLink(_ url: URL) -> String {
+        let href = escape(url.absoluteString).replacingOccurrences(of: "\"", with: "&quot;")
+        return "<a href=\"\(href)\">\(escape(String(localized: "Open preview")))</a>"
     }
 
     static func escape(_ text: String) -> String {

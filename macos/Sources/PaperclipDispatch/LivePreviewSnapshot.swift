@@ -71,8 +71,8 @@ extension NotificationsSnapshot {
         let taskMac = AssignedTaskFormat.mac(task)
         func taskMessage(_ preview: URL?) -> TelegramMessagePreview {
             TelegramMessagePreview(
-                html: AssignedTaskFormat.telegram(task),
-                buttons: (channel.linkKeyboard(task.href, preview: preview)?["inline_keyboard"] as? [[[String: Any]]] ?? [])
+                html: channel.noticeText(AssignedTaskFormat.telegram(task), preview: preview),
+                buttons: (channel.linkKeyboard(task.href)?["inline_keyboard"] as? [[[String: Any]]] ?? [])
                     .map { $0.compactMap { $0["text"] as? String } }
             )
         }

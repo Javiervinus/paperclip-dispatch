@@ -1,22 +1,23 @@
 import Foundation
 
 /// Los avisos del bot que no son decisiones (las tareas asignadas, de `AssignedTasksMonitor`, y los topes
-/// diarios, de `RunLimitMonitor`): mensajes con un enlace a Paperclip (y «Ver en vivo», si la tarea tiene algo
-/// servido) y sin otros botones, que se editan cuando cambia lo que avisaron. Usan el mismo chat vinculado y,
+/// diarios, de `RunLimitMonitor`): mensajes con un enlace a Paperclip y sin otros botones (y, en el texto, el
+/// enlace «Ver en vivo», si la tarea tiene algo servido), que se editan cuando cambia lo que avisaron. Usan el mismo chat vinculado y,
 /// como las decisiones, no salen con el bot apagado en Ajustes.
 extension TelegramChannel {
     /// El chat vinculado, si el bot está encendido; si no, no se manda nada.
     var noticeChatId: Int64? { state.enabled && bot != nil ? state.chatId : nil }
 
-    /// Un aviso con «Abrir en Paperclip» (o `linkLabel`) y «Ver en vivo», si el teléfono puede abrirlos.
-    /// Devuelve su mensaje, o `nil` si no salió.
+    /// Un aviso con «Abrir en Paperclip» (o `linkLabel`) y, en el texto, «Ver en vivo», si el teléfono puede
+    /// abrirlos. Devuelve su mensaje, o `nil` si no salió.
     func postNotice(_ html: String, href: String?, preview: URL? = nil, linkLabel: String? = nil) async -> Int? {
         guard let bot, let chatId = noticeChatId else { return nil }
         func params(_ links: Links) -> [String: Any] {
             var params: [String: Any] = [
-                "chat_id": chatId, "text": html, "parse_mode": "HTML", "link_preview_options": ["is_disabled": true],
+                "chat_id": chatId, "text": noticeText(html, preview: links.preview ? preview : nil), "parse_mode": "HTML",
+                "link_preview_options": ["is_disabled": true],
             ]
-            params["reply_markup"] = noticeKeyboard(href, preview: preview, label: linkLabel, links: links)
+            params["reply_markup"] = noticeKeyboard(href, label: linkLabel, links: links)
             return params
         }
         // Si Telegram no acepta una dirección, va sin ella.
@@ -37,7 +38,7 @@ extension TelegramChannel {
                 "chat_id": chatId, "message_id": messageId, "text": html, "parse_mode": "HTML",
                 "link_preview_options": ["is_disabled": true],
             ]
-            params["reply_markup"] = noticeKeyboard(href, preview: nil, label: nil, links: links)
+            params["reply_markup"] = noticeKeyboard(href, label: nil, links: links)
             return params
         }
         do {
@@ -61,23 +62,20 @@ extension TelegramChannel {
         ])
     }
 
-    /// «Ver en vivo» y «Abrir en Paperclip» (o `label`), cada uno en su fila, o `nil` si el teléfono no puede
-    /// abrir ninguno (direcciones locales).
-    func linkKeyboard(_ href: String?, preview: URL? = nil, label: String? = nil) -> [String: Any]? {
-        noticeKeyboard(href, preview: preview, label: label, links: .all)
+    /// El texto de un aviso con «Ver en vivo» debajo, si el teléfono puede abrirlo.
+    func noticeText(_ html: String, preview: URL?) -> String {
+        phonePreviewURL(preview).map { html + "\n" + TelegramFormat.previewLink($0) } ?? html
     }
 
-    /// Los de `linkKeyboard`, sin los que Telegram rechazó (`withLinkFallback`).
-    private func noticeKeyboard(_ href: String?, preview: URL?, label: String?, links: Links) -> [String: Any]? {
-        guard links != .none else { return nil }
-        var rows: [[[String: Any]]] = []
-        if links == .all, let preview = phonePreviewURL(preview) {
-            rows.append([["text": String(localized: "Open preview"), "url": preview.absoluteString]])
-        }
-        if let url = paperclipURL(href) {
-            rows.append([["text": label ?? String(localized: "Open in Paperclip"), "url": url.absoluteString]])
-        }
-        return rows.isEmpty ? nil : ["inline_keyboard": rows]
+    /// «Abrir en Paperclip» (o `label`), o `nil` si el teléfono no puede abrirlo (una dirección local).
+    func linkKeyboard(_ href: String?, label: String? = nil) -> [String: Any]? {
+        noticeKeyboard(href, label: label, links: .all)
+    }
+
+    /// El de `linkKeyboard`, salvo que Telegram lo haya rechazado (`withLinkFallback`).
+    private func noticeKeyboard(_ href: String?, label: String?, links: Links) -> [String: Any]? {
+        guard links.buttons, let url = paperclipURL(href) else { return nil }
+        return ["inline_keyboard": [[["text": label ?? String(localized: "Open in Paperclip"), "url": url.absoluteString]]]]
     }
 
     /// «Ver en vivo» solo si el teléfono puede abrirla: una dirección de esta Mac (`localhost`) no.
