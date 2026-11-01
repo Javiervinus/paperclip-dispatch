@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
-# Arma la landing en una carpeta lista para servir o publicar (GitHub Pages): copia las páginas, estilos y
-# scripts de site/, hace desde docs/images las imágenes que nombra la página (docs/images es su única fuente:
-# no se copian al repo) y llena los datos que no se escriben a mano.
+# Arma la landing en una carpeta lista para servir o publicar (GitHub Pages): copia las páginas (inglés en
+# index.html, español en es/index.html), estilos, scripts, sitemap.xml, robots.txt y la imagen para compartir
+# (social/card.jpg) de site/, hace desde docs/images las imágenes que nombran las páginas (docs/images es su
+# única fuente: no se copian al repo) y llena los datos que no se escriben a mano.
+# Es lo mismo que corre .github/workflows/pages.yml antes de publicar.
 #   site/build.sh                           deja la página en _site/ (ignorada por git)
 #   OUTPUT_DIR=/tmp/landing site/build.sh   en otra carpeta (vacía, nueva o armada antes por este script)
 # Para verla: python3 -m http.server 8080 --bind 127.0.0.1 --directory _site
 #
 # Los datos salen de:
+#   %%SITE_URL%%    la dirección pública de la landing, con «/» al final: SITE_URL si está (el workflow le pasa
+#                   la que da GitHub Pages); si no, https://<dueño en minúsculas>.github.io/<repo>/ de RELEASES_REPO.
+#                   Es la única fuente de la URL base: canonical, hreflang, og:, sitemap.xml y robots.txt la usan.
 #   %%REPO_URL%%    REPOSITORY_URL de macos/release.env (vacío: el remoto origin, si está en GitHub)
+#   %%AUTHOR%% y %%AUTHOR_URL%%   APP_AUTHOR y APP_AUTHOR_URL de macos/release.env
 #   %%VERSION%%     el último release publicado en GitHub (tag_name, sin la «v»)
 #   %%DMG_URL%%     el .dmg de ese release
 #   %%BREW_CASK%%   <dueño en minúsculas>/tap/<cask>: el tap <dueño>/homebrew-tap y el cask que nombra
 #                   macos/update-cask.sh (APP_NAME en minúsculas y con guiones). HOMEBREW_TAP y CASK_TOKEN lo cambian.
-# Las imágenes: la página nombra cada una como images/<captura>-<ancho>.webp (o .png) y aquí se hace desde
+#   %%CASK_TOKEN%%  solo el nombre del cask (para brew uninstall)
+# Las imágenes: la página nombra cada una como images/<captura>-<ancho>.webp (o .png; desde es/, con ../ delante)
+# y aquí se hace desde
 # docs/images/<captura>.png, con ese ancho en píxeles (nunca más ancho que la captura). Necesita cwebp y dwebp
 # (brew install webp, apt install webp).
 # Si GitHub no responde (sin red, límite de la API), el botón apunta a releases/latest y la versión se quita.
@@ -49,6 +57,10 @@ OWNER=${RELEASES_REPO%%/*}
 APP_NAME=${APP_NAME:-Paperclip Dispatch}
 HOMEBREW_TAP=${HOMEBREW_TAP:-$(tr '[:upper:]' '[:lower:]' <<<"$OWNER")/tap}
 CASK_TOKEN=${CASK_TOKEN:-$(tr '[:upper:]' '[:lower:]' <<<"$APP_NAME" | tr ' ' '-')}
+REPO_NAME=${RELEASES_REPO#*/}
+SITE_URL=${SITE_URL:-https://$(tr '[:upper:]' '[:lower:]' <<<"$OWNER").github.io/$REPO_NAME/}
+SITE_URL=${SITE_URL%/}/
+[[ $SITE_URL =~ ^https?://[^/]+/ ]] || fail "SITE_URL no es una dirección http(s): $SITE_URL"
 
 # La última versión publicada y su DMG
 VERSION=
@@ -72,21 +84,23 @@ find "$OUTPUT_DIR" -mindepth 1 -delete
 touch "$OUTPUT_DIR/$MARKER"
 mkdir -p "$OUTPUT_DIR/images"
 
-# Solo lo que se publica: páginas, estilos y scripts, sin archivos ocultos ni este script
-(cd "$SITE" && find . -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) ! -path '*/.*' -print0 |
+# Solo lo que se publica: páginas, estilos, scripts, sitemap.xml, robots.txt y la imagen para compartir, sin
+# archivos ocultos, este script ni la página que compone esa imagen (site/social/card.html)
+(cd "$SITE" && find . -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' -o -name '*.xml' -o -name '*.txt' \
+    -o -path './social/card.jpg' \) ! -path '*/.*' ! -path './social/*.html' -print0 |
   while IFS= read -r -d '' file; do
     mkdir -p "$OUTPUT_DIR/$(dirname "$file")"
     cp "$file" "$OUTPUT_DIR/$file"
   done)
 
-# Las imágenes que nombra la página, en el ancho que pide cada una
+# Las imágenes que nombran las páginas, en el ancho que pide cada una
 # (las rutas a docs/images que nombran los comentarios no cuentan; una ruta desde la raíz del dominio, sí falla:
-# en GitHub Pages la página vive en /<repo>/)
+# en GitHub Pages la página vive en /<repo>/. La página en español, en es/, las nombra con ../ delante)
 images=
 for ref in $(grep -rhoE '[A-Za-z0-9._/-]*images/[A-Za-z0-9._-]+\.(webp|png)' "$OUTPUT_DIR" --include='*.html' --include='*.css' | sort -u); do
   case $ref in
     docs/images/*) ;;
-    images/* | ./images/*) images+="${ref#./} " ;;
+    images/* | ./images/* | ../images/*) ref=${ref#./}; images+="${ref#../} " ;;
     *) fail "la página usa $ref; las imágenes van con una ruta relativa: images/<captura>-<ancho>.webp" ;;
   esac
 done
@@ -114,11 +128,11 @@ for image in $images; do
   fi
 done
 
-# Los datos
+# Los datos, en las páginas, sitemap.xml y robots.txt
 escape() { sed -e 's/[\/&|]/\\&/g' <<<"$1"; }
 pages=0
 while IFS= read -r -d '' page; do
-  pages=$((pages + 1))
+  [[ $page == *.html ]] && pages=$((pages + 1))
   if [[ -n $VERSION ]]; then
     sed -i.bak -e "s|%%VERSION%%|$(escape "$VERSION")|g" "$page"
   else
@@ -126,14 +140,19 @@ while IFS= read -r -d '' page; do
     sed -i.bak -E -e 's|<span class="build-version[^"]*">[^<]*</span>||g' "$page"
   fi
   sed -i.bak \
+    -e "s|%%SITE_URL%%|$(escape "$SITE_URL")|g" \
     -e "s|%%REPO_URL%%|$(escape "$REPOSITORY_URL")|g" \
+    -e "s|%%AUTHOR%%|$(escape "${APP_AUTHOR:-}")|g" \
+    -e "s|%%AUTHOR_URL%%|$(escape "${APP_AUTHOR_URL:-$REPOSITORY_URL}")|g" \
+    -e "s|%%CASK_TOKEN%%|$(escape "$CASK_TOKEN")|g" \
     -e "s|%%DMG_URL%%|$(escape "$DMG_URL")|g" \
     -e "s|%%BREW_CASK%%|$(escape "$HOMEBREW_TAP/$CASK_TOKEN")|g" \
     "$page"
   rm -f "$page.bak"
   if grep -n '%%[A-Z_]*%%' "$page" >&2; then fail "quedaron datos sin llenar en ${page#"$OUTPUT_DIR"/}"; fi
-done < <(find "$OUTPUT_DIR" -name '*.html' -print0)
+done < <(find "$OUTPUT_DIR" \( -name '*.html' -o -name '*.xml' -o -name '*.txt' \) -print0)
 (( pages > 0 )) || fail "no quedó ninguna página en $OUTPUT_DIR"
 
 echo "Página armada en $OUTPUT_DIR (versión ${VERSION:-sin número}, $(wc -w <<<"$images" | tr -d ' ') imágenes, $(du -sk "$OUTPUT_DIR/images" | cut -f1) KB)"
 echo "Descarga: $DMG_URL"
+echo "Dirección pública: $SITE_URL"
