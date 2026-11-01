@@ -26,7 +26,7 @@ struct WelcomeNotificationsStep: View {
                     RowText(title: "Abrir al iniciar sesión", detail: "Así los avisos llegan desde que prendes la Mac.")
                     Spacer(minLength: 0)
                     Toggle("Abrir al iniciar sesión", isOn: $model.launchAtLogin)
-                        .toggleStyle(.switch)
+                        .toggleStyle(.greenSwitch)
                         .labelsHidden()
                 }
             }

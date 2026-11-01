@@ -504,13 +504,14 @@ private struct PaperclipPane: View {
 // MARK: - Piezas comunes
 
 /// El formulario de una pestaña: sin fondo propio, para que se vea el color de la pestaña, y desplazable
-/// por debajo de la barra.
+/// por debajo de la barra. Sus interruptores se encienden en verde (`GreenSwitchToggleStyle`).
 struct SettingsForm<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
         Form { content }
             .formStyle(.grouped)
+            .toggleStyle(.greenSwitch)
             .scrollContentBackground(.hidden)
             .contentMargins(.top, SettingsDesign.contentTopSpacing, for: .scrollContent)
     }
