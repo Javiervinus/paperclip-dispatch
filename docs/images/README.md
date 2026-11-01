@@ -17,6 +17,13 @@ with a made-up company. No personal information is on screen (company names, tas
 | `notification.png` | The stuck-task notification with its Wake up button, light | `macos/snapshot.zsh notifications` (`mac-agent-light.png`) |
 | `notification-dark.png` | The same, dark (used by the landing in dark mode) | `macos/snapshot.zsh notifications` (`mac-agent-dark.png`) |
 
+There is no dark version of `window-glass.png` yet: the sample Paperclip instance it was taken from no
+longer exists, and a new one would not match the light capture. The landing uses the light one in both themes.
+
+The landing's share image (`og:image`, 1200 × 630) is composed from these captures by
+`site/social/card.html` and saved as `site/social/card.jpg`; that page explains how to remake it. Remake it
+when `icon.png`, `window-light.png` or `notification.png` change.
+
 The window images use `page` instead of `window` because `page` follows the copy's own Appearance and Liquid
 Glass settings, so light and dark don't depend on the Mac's.
 
