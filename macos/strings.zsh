@@ -42,7 +42,9 @@ fi
 xcrun xcstringstool sync "$TARGET" --stringsdata "$WORK"/strings/*.stringsdata
 
 failed=0
-if $CHECK && ! cmp -s "$CATALOG" "$TARGET"; then
+# Se compara el contenido, no el formato: otra versión de Xcode puede escribir el mismo JSON con otro espaciado.
+if $CHECK && ! python3 -c 'import json, sys; sys.exit(json.load(open(sys.argv[1])) != json.load(open(sys.argv[2])))' \
+  "$CATALOG" "$TARGET"; then
   print -u2 "El catálogo no está al día con el código: corre macos/strings.zsh y traduce lo nuevo."
   failed=1
 fi
