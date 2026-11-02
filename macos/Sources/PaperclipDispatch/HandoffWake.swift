@@ -31,8 +31,8 @@ final class HandoffWaker {
     /// Lo que se espera desde que la app ve el traspaso antes de despertar: un despertar de Paperclip que sí
     /// llega (o su rescate) tarda segundos, y así no se le adelanta.
     static let margin: TimeInterval = 2 * 60
-    /// Un hueco más largo que esto entre dos lecturas de la lista (la Mac durmió, la app estuvo sin sesión): la
-    /// app no vio lo que pasó en medio, y esa lectura solo toma nota.
+    /// Un hueco más largo que esto desde que terminó la vuelta anterior que leyó la lista (la Mac durmió, la app
+    /// estuvo sin sesión): la app no vio lo que pasó en medio, y esa lectura solo toma nota.
     static let maxGap: TimeInterval = 5 * 60
     /// El `reason` de estos despertares, para distinguirlos de los del botón en el historial de Paperclip.
     static let wakeReason = "dispatch_handoff_wake_recovery"
@@ -167,6 +167,9 @@ final class HandoffWaker {
         case settled
         /// Se vuelve a mirar en la vuelta siguiente (va en camino, está pausado…).
         case wait(String)
+        /// Visto antes de que la app dejara de mirar (se cerró o hubo un hueco): no se despierta a nadie, y su
+        /// tarjeta de «no se pudo comprobar» sigue hasta que el agente se ponga en camino o la tarea cambie.
+        case held(String)
         /// Ya no es un traspaso a un agente que haya que mirar (otra persona a cargo, salió de los estados de
         /// trabajo…).
         case drop(String)
@@ -176,8 +179,7 @@ final class HandoffWaker {
 
     /// Lo que la app vio de una company en una lectura de la lista.
     private struct Snapshot {
-        let at: Date
-        /// La misma hora, en el reloj de Paperclip (o en el de la Mac si no vino).
+        /// La hora de la lectura, en el reloj de Paperclip (o en el de la Mac si no vino).
         let serverAt: Date
         let issues: [String: ListedIssue]
     }
@@ -202,6 +204,11 @@ final class HandoffWaker {
     /// Cuánto va adelantado el reloj de Paperclip respecto del de la Mac, por company: las horas de sus
     /// despertares se comparan con las de la app en un mismo reloj.
     private var clockOffset: [String: TimeInterval] = [:]
+    /// Desde cuándo la app sigue cada company sin cortes: solo se despierta en los traspasos vistos desde entonces.
+    private var watchingSince: [String: Date] = [:]
+    /// Cuándo terminó la última vuelta que leyó la lista, por company: el hueco se mide desde ahí, así una
+    /// vuelta lenta no cuenta como hueco.
+    private var lastChecked: [String: Date] = [:]
 
     init(api: PaperclipAPI, resolver: DecisionResolver) {
         self.api = api
@@ -239,11 +246,17 @@ final class HandoffWaker {
         }
         let previous = snapshots[company.id]
         let current = record(listed, of: company, previous: previous, now: now)
-        if let previous, now.timeIntervalSince(previous.at) <= Self.maxGap {
+        defer { lastChecked[company.id] = Date() }
+        if let previous, let last = lastChecked[company.id], now.timeIntervalSince(last) <= Self.maxGap {
             detectHandoffs(listed, in: company, previous: previous, now: now)
         } else {
-            // Al abrir la app, o después de un hueco: solo se toma nota de cómo están las cosas.
+            // Al abrir la app, o después de un hueco: solo se toma nota de cómo están las cosas. Lo que se vio
+            // antes ya no despierta a nadie; solo se sigue mirando lo que tiene una tarjeta a la vista.
             log.notice("\(company.issuePrefix ?? company.id, privacy: .public): taking note of \(current.count) open tasks")
+            watchingSince[company.id] = now
+            pending = pending.filter { _, handoff in
+                handoff.companyId != company.id || unverified[handoff.key]?.showing == true
+            }
         }
 
         var cards: [AttentionItem] = []
@@ -275,7 +288,11 @@ final class HandoffWaker {
                 note(handoff.key, issue, "waiting for the margin")
                 continue
             }
-            if let next = handoff.nextCheck, now < next { continue }
+            if let next = handoff.nextCheck, now < next {
+                // No toca mirarlo en esta vuelta: su tarjeta, si la tiene, sigue igual.
+                if let card = showingUnverifiedCard(handoff, company: company, decisions: decisions) { cards.append(card) }
+                continue
+            }
             let decision: Decision
             if let run = issue.activeRun, run.agentId == handoff.agentId {
                 // La lista ya dice que el agente corre en la tarea: no hace falta leer más.
@@ -293,16 +310,17 @@ final class HandoffWaker {
                 continue
             case .settled:
                 pending[handoff.issueId] = nil
+            case let .held(reason):
+                note(handoff.key, issue, reason)
+                transientFailures[handoff.key] = nil
+                backOff(handoff, now: now)
+                // Su tarjeta sigue a la vista: el agente no va en camino y la app no lo despierta.
+                if let card = showingUnverifiedCard(handoff, company: company, decisions: decisions) { cards.append(card) }
+                continue
             case let .wait(reason):
                 note(handoff.key, issue, reason)
                 // Una corrida en curso según la lista no cuesta lecturas: se mira en cada vuelta.
-                if issue.activeRun?.agentId != handoff.agentId {
-                    var waiting = handoff
-                    waiting.waits += 1
-                    let interval = min(Self.maxWaitInterval, 60 * pow(2, Double(waiting.waits - 1)))
-                    waiting.nextCheck = now.addingTimeInterval(interval)
-                    pending[handoff.issueId] = waiting
-                }
+                if issue.activeRun?.agentId != handoff.agentId { backOff(handoff, now: now) }
             case let .drop(reason):
                 note(handoff.key, issue, reason)
                 pending[handoff.issueId] = nil
@@ -318,6 +336,14 @@ final class HandoffWaker {
         prune(now: now)
         lastCards[company.id] = cards
         return cards
+    }
+
+    /// Un traspaso que tuvo que esperar se vuelve a mirar cada vez más espaciado, hasta `maxWaitInterval`.
+    private func backOff(_ handoff: Pending, now: Date) {
+        var waiting = handoff
+        waiting.waits += 1
+        waiting.nextCheck = now.addingTimeInterval(min(Self.maxWaitInterval, 60 * pow(2, Double(waiting.waits - 1))))
+        pending[handoff.issueId] = waiting
     }
 
     /// Guarda la lista de esta vuelta y la devuelve por tarea. Una tarea que no se pudo leer bien conserva lo
@@ -339,7 +365,7 @@ final class HandoffWaker {
             }
         }
         snapshots[company.id] = Snapshot(
-            at: now, serverAt: now.addingTimeInterval(clockOffset[company.id] ?? 0), issues: issues
+            serverAt: now.addingTimeInterval(clockOffset[company.id] ?? 0), issues: issues
         )
         return issues
     }
@@ -390,6 +416,11 @@ final class HandoffWaker {
     /// Un traspaso pasado el margen y sin intento: lo despierta si el agente de verdad se quedó dormido. Si algo
     /// no se pudo leer, no despierta a nadie.
     private func consider(_ handoff: Pending, issue: ListedIssue, company: PaperclipCompany, now: Date) async -> Decision {
+        // Visto antes de que la app se cerrara o de un hueco: no se despierta a nadie. Solo se mira si el agente ya
+        // va en camino o corrió, para retirar su tarjeta (que la tarea cambió lo dice la lista).
+        if handoff.seenAt < watchingSince[company.id, default: .distantFuture] {
+            return await heldDecision(handoff)
+        }
         let path = "api/issues/\(handoff.issueId)"
         let detail: IssueDetail
         do {
@@ -480,6 +511,28 @@ final class HandoffWaker {
         return .settled
     }
 
+    /// Un traspaso que la app no siguió sin cortes: va en camino o ya corrió (la tarjeta se retira), o sigue
+    /// retenido (la tarjeta sigue, aunque el agente esté pausado: no va en camino).
+    private func heldDecision(_ handoff: Pending) async -> Decision {
+        let runs: [LiveRun]
+        let mine: [WakeEvent]
+        do {
+            runs = try await liveRuns(on: handoff.issueId)
+            mine = try await wakes(of: handoff.agentId, on: handoff.issueId)
+        } catch {
+            return .unreadable(error, agentKnown: true)
+        }
+        if runs.contains(where: { $0.agentId == handoff.agentId }) { return .wait("agent has a queued or running run") }
+        if mine.contains(where: { Self.onItsWay($0, liveRuns: runs) }) { return .wait("agent has a pending wake-up") }
+        if mine.contains(where: { event in
+            Self.ranWakeStatuses.contains(event.status ?? "")
+                && (event.requestedAt.flatMap(Self.date).map { $0 > handoff.since } ?? false)
+        }) {
+            return .settled
+        }
+        return .held("seen before the app last stopped watching; not waking")
+    }
+
     /// La tarjeta de un despertar que falló, mientras el agente siga sin ponerse en camino. Si no se puede leer
     /// si va en camino, la tarjeta sigue.
     private func failedCard(
@@ -567,8 +620,17 @@ final class HandoffWaker {
             saveUnverified()
             log.notice("\(issue.identifier ?? issue.id, privacy: .public): couldn't check the agent, card sent")
         }
+        return showingUnverifiedCard(handoff, company: company, decisions: decisions)
+    }
+
+    /// La tarjeta de «no se pudo comprobar» de un traspaso, si sigue a la vista y Decisions no la muestra ya.
+    private func showingUnverifiedCard(
+        _ handoff: Pending,
+        company: PaperclipCompany,
+        decisions: [AttentionItem]
+    ) -> AttentionItem? {
         // Una sola vez por traspaso: la que ya se retiró no vuelve.
-        guard let entry = unverified[key], entry.showing else { return nil }
+        guard let entry = unverified[handoff.key], entry.showing else { return nil }
         // Decisions ya muestra esa tarea trabada con el mismo agente (o con cualquiera, si no se sabe quién está a
         // cargo).
         if decisions.contains(where: { item in
@@ -576,7 +638,7 @@ final class HandoffWaker {
         }) {
             return nil
         }
-        return Self.unverifiedItem(entry, key: key, issuePrefix: company.issuePrefix)
+        return Self.unverifiedItem(entry, key: handoff.key, issuePrefix: company.issuePrefix)
     }
 
     /// La tarjeta de un traspaso que no se pudo comprobar: no afirma lo que no se leyó, y lleva el botón solo si
