@@ -512,7 +512,7 @@ private struct PaperclipPane: View {
                 .buttonStyle(.glassProminent)
                 .controlSize(.large)
         } else if status.paperclipVersion != nil {
-            StatusBadge(text: String(localized: "Up to date"), symbol: "checkmark.circle.fill", tint: .green, bounce: status.lastCheckedAt)
+            StatusBadge(text: String(localized: "Up to date"), symbol: "checkmark.circle.fill", tint: .primary, bounce: status.lastCheckedAt)
         } else if status.updateCheckError != nil {
             StatusBadge(text: String(localized: "Not checked"), symbol: "exclamationmark.triangle.fill", tint: .orange)
         }

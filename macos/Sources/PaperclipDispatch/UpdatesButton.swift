@@ -199,7 +199,9 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             button.toolTip = String(localized: "\(status.updateCheckError ?? "")\n\nClick for details and to try again.")
         } else {
             let versions = [status.paperclipVersion.map { "Paperclip \($0)" }, "Dispatch \(dispatch)"]
-            show(versions.compactMap(\.self).joined(separator: " · "), symbol: "checkmark.circle.fill", color: .systemGreen)
+            // Al día, la palomita va del color del texto (negra o blanca según el tema): el color queda para
+            // lo que pide algo.
+            show(versions.compactMap(\.self).joined(separator: " · "), symbol: "checkmark.circle.fill")
             button.toolTip = upToDateTip(dispatch: dispatch)
         }
         host.setUpdateButton(accessory)

@@ -431,7 +431,8 @@ struct UpToDateBadge: View {
         Label {
             Text("Up to date").foregroundStyle(.secondary)
         } icon: {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(.white, .green)
+            // Del color del texto, como en el botón de arriba: al día no pide nada.
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.primary)
         }
         .font(.callout)
     }
