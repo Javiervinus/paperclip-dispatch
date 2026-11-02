@@ -14,6 +14,11 @@
   --key: #e3e3e3;
   /* Los avisos: el fondo de escritorio de la captura (NotificationsSnapshot) y el vidrio de macOS 26 */
   --desk: #b4b6e9;
+  /* Color con significado: cada parte lleva el color que tiene en la app, el del resplandor de su pestaña de
+     Ajustes (SettingsPane.color) o de la bienvenida, en un campo plano */
+  --field-telegram: #dcedfa;
+  --field-welcome: #e2e1f8;
+  --field-general: #d8eeec;
   --notice-glass: rgb(248 248 250 / 0.78);
   --notice-glass-on-desk: rgb(255 255 255 / 0.7);
   --notice-solid: #f4f4f6;
@@ -63,6 +68,9 @@
     --badge: #ff453a;
     --key: #2a2a2a;
     --desk: #2f2548;
+    --field-telegram: #0c2131;
+    --field-welcome: #1b1934;
+    --field-general: #0c2526;
     --notice-glass: rgb(44 44 48 / 0.78);
     --notice-glass-on-desk: rgb(8 6 20 / 0.28);
     --notice-solid: #3a3a3e;
@@ -423,7 +431,8 @@ button.notice-action:active { transform: scale(0.95); }
 
 /* ---- Telegram: el mensaje a la izquierda, el texto a la derecha ---- */
 .phone {
-  padding: 0 var(--gutter) var(--section);
+  padding: var(--section) var(--gutter);
+  background: var(--field-telegram);
   display: grid;
   gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem) var(--gap);
   align-items: start;
@@ -487,13 +496,15 @@ button.notice-action:active { transform: scale(0.95); }
 
 /* ---- Primer arranque y actualizaciones: dos pasos iguales, lado a lado ---- */
 .setup {
-  padding: 0 var(--gutter) var(--section);
+  padding: var(--section) var(--gutter);
   display: grid;
   gap: clamp(3rem, 2rem + 3vw, 5rem) var(--gap);
   align-items: start;
 }
 .setup-step { display: grid; gap: 1.5rem; }
 .tile-shot { aspect-ratio: 6 / 5; }
+.setup-welcome .tile-shot { background: var(--field-welcome); }
+.setup-settings .tile-shot { background: var(--field-general); }
 .tile-shot img { position: absolute; inset: 7%; width: 86%; height: 86%; object-fit: contain; }
 .setup-text { display: grid; gap: 1rem; max-width: 42ch; }
 .setup-close { max-width: 40ch; }
