@@ -3,9 +3,10 @@ import Observation
 import SwiftUI
 
 /// El botón de arriba a la derecha: uno solo para todo lo que se actualiza, esta app (Dispatch), Paperclip
-/// (el servidor) y sus plugins. Al día muestra las versiones de la app y de Paperclip; con algo nuevo se
-/// pinta del color de acento y dice de quién es. Un clic abre el panel, que los separa y dice qué hace cada
-/// uno.
+/// (el servidor) y sus plugins. Al día muestra las versiones de la app y de Paperclip; con una versión nueva
+/// de una de las dos se pinta del color de acento y dice de quién es. Los plugins sacan versiones seguido y
+/// no apuran: con uno nuevo el botón no cambia de color ni de texto, solo la palomita pasa a una pieza gris.
+/// Un clic abre el panel, que los separa y dice qué hace cada uno.
 @MainActor
 final class UpdatesButton: NSObject, NSPopoverDelegate {
     private let button = NSButton()
@@ -123,8 +124,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         case .available(let release), .ready(let release): release
         default: nil
         }
-        let pluginUpdates = plugins.available
-        let pending = (appRelease == nil ? 0 : 1) + (paperclipLatest == nil ? 0 : 1) + pluginUpdates.count
+        let pending = (appRelease == nil ? 0 : 1) + (paperclipLatest == nil ? 0 : 1)
         button.tintProminence = .none
 
         if let progress = status.updateProgress {
@@ -132,8 +132,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             button.tintProminence = .primary
             button.toolTip = String(localized: "Updating Paperclip. Don’t quit the app until it finishes.")
         } else if let plugin = plugins.updating {
-            show(String(localized: "Updating \(plugin.name)…"), symbol: "arrow.down.circle.fill")
-            button.tintProminence = .primary
+            show(String(localized: "Updating \(plugin.name)…"), symbol: "arrow.down.circle")
             button.toolTip = String(localized: "Paperclip is updating the \(plugin.name) plugin. Your agents keep working.")
         } else if case .installing = app.phase {
             show(String(localized: "Restarting…"), symbol: "arrow.clockwise")
@@ -148,9 +147,6 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             var lines = [String(localized: "New versions are available:")]
             if let appRelease { lines.append(String(localized: "• Dispatch \(appRelease.version), this app")) }
             if let paperclipLatest { lines.append(String(localized: "• Paperclip \(paperclipLatest), the server")) }
-            for plugin in pluginUpdates {
-                lines.append(String(localized: "• \(plugin.name) \(plugin.latest ?? ""), a plugin"))
-            }
             lines.append(String(localized: "Click to see what each one does."))
             button.toolTip = lines.joined(separator: "\n")
         } else if let appRelease {
@@ -174,13 +170,6 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
                 \(status.paperclipVersion.map { String(localized: " (you have \($0))") } ?? "").
                 Updating it pauses your agents while it restarts, so you choose when.
                 """)
-        } else if let plugin = pluginUpdates.first {
-            show(String(localized: "Update \(plugin.name)"), symbol: "puzzlepiece.extension.fill")
-            button.tintProminence = .primary
-            button.toolTip = String(localized: """
-                A new version of the \(plugin.name) plugin is available: \(plugin.latest ?? "") (you have \
-                \(plugin.version)). Updating it doesn’t stop your agents.
-                """)
         } else if status.checkingUpdate || app.phase == .checking || plugins.checking {
             show(String(localized: "Checking…"), symbol: "arrow.clockwise")
             button.toolTip = nil
@@ -192,21 +181,34 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             button.toolTip = String(localized: "\(status.updateCheckError ?? "")\n\nClick for details and to try again.")
         } else {
             let versions = [status.paperclipVersion.map { "Paperclip \($0)" }, "Dispatch \(dispatch)"]
-            show(versions.compactMap(\.self).joined(separator: " · "), symbol: "checkmark.circle.fill", color: .systemGreen)
+            let title = versions.compactMap(\.self).joined(separator: " · ")
+            if plugins.available.isEmpty {
+                show(title, symbol: "checkmark.circle.fill", color: .systemGreen)
+            } else {
+                show(title, symbol: "puzzlepiece.extension.fill", tint: .secondaryLabelColor)
+            }
             button.toolTip = upToDateTip(dispatch: dispatch)
         }
         host.setUpdateButton(button)
     }
 
     private func upToDateTip(dispatch: String) -> String {
-        var lines = [String(localized: "Everything is up to date.")]
+        var lines = [plugins.available.isEmpty
+            ? String(localized: "Everything is up to date.")
+            : String(localized: "This app and Paperclip are up to date.")]
         if let version = status.paperclipVersion {
             lines.append(String(localized: "Paperclip \(version): the server, where your agents work."))
         } else if let unavailable = status.updatesUnavailable {
             lines.append("Paperclip: \(unavailable)")
         }
         lines.append(String(localized: "Dispatch \(dispatch): this app, the window you use Paperclip from."))
-        if !plugins.plugins.isEmpty {
+        let available = plugins.available
+        if !available.isEmpty {
+            let list = available.map { "\($0.name) \($0.latest ?? "")" }.formatted(.list(type: .and))
+            lines.append(available.count == 1
+                ? String(localized: "A plugin has a new version: \(list). Update it from here whenever you like.")
+                : String(localized: "Some plugins have new versions: \(list). Update them from here whenever you like."))
+        } else if !plugins.plugins.isEmpty {
             let list = plugins.plugins.map { "\($0.name) \($0.version)" }.formatted(.list(type: .and))
             lines.append(String(localized: "Plugins: \(list)."))
         }

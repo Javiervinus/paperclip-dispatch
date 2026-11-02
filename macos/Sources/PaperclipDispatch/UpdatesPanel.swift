@@ -28,6 +28,8 @@ struct UpdatesPanel: View {
     let status: AppStatus
     let plugins: PluginUpdates
     let actions: UpdatesPanelActions
+    /// Para los ensayos: la lista de plugins ya abierta.
+    var showsAllPlugins = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -42,14 +44,7 @@ struct UpdatesPanel: View {
             PaperclipUpdateRow(status: status, update: actions.updatePaperclip)
             Divider().padding(.horizontal, UpdatesDesign.rowPadding)
             if !plugins.plugins.isEmpty {
-                ForEach(plugins.plugins) { plugin in
-                    PluginUpdateRow(plugin: plugin, plugins: plugins)
-                }
-                if let error = plugins.checkError {
-                    WarningRow(text: String(localized: "Couldn’t check the plugins: \(error)"))
-                        .padding(.horizontal, UpdatesDesign.rowPadding)
-                        .padding(.bottom, 8)
-                }
+                PluginsRow(plugins: plugins, showsAll: showsAllPlugins)
                 Divider().padding(.horizontal, UpdatesDesign.rowPadding)
             }
             footer
@@ -265,18 +260,25 @@ private struct PaperclipUpdateRow: View {
 
 // MARK: - Plugins
 
-/// Un plugin de Paperclip. Los de npm se actualizan aquí; los que salen de una carpeta, en esa carpeta.
-private struct PluginUpdateRow: View {
-    let plugin: PluginUpdates.Plugin
+/// Los plugins de Paperclip en una sola fila, para que el panel no crezca con cada uno: dice cuántos hay y si
+/// están al día, y solo los que tienen versión nueva suman una línea corta con su botón. «Ver todos» muestra
+/// la lista entera. Los de npm se actualizan aquí; los que salen de una carpeta, en esa carpeta.
+private struct PluginsRow: View {
     let plugins: PluginUpdates
 
+    @State private var showsAll: Bool
+
+    init(plugins: PluginUpdates, showsAll: Bool = false) {
+        self.plugins = plugins
+        _showsAll = State(initialValue: showsAll)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: UpdatesDesign.iconSpacing) {
                 PaperclipGlyph(size: UpdatesDesign.iconSize, symbol: "puzzlepiece.extension")
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(verbatim: "\(plugin.name) \(plugin.latest ?? plugin.version)")
-                        .font(.body.weight(.semibold))
+                    Text("Plugins").font(.body.weight(.semibold))
                     Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -285,25 +287,35 @@ private struct PluginUpdateRow: View {
                 Spacer(minLength: 8)
                 trailing
             }
-            Group {
-                if plugin.latest != nil, !updating {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(showsAll ? plugins.plugins : plugins.available) { plugin in
+                    PluginLine(plugin: plugin, plugins: plugins)
+                }
+                if !plugins.available.isEmpty {
                     Group {
                         if plugins.canUpdate {
-                            Text("Your agents keep working: Paperclip swaps only this plugin, and the page reloads with the new version.")
+                            Text("Your agents keep working: Paperclip swaps only the plugin, and the page reloads.")
                         } else {
                             Text("Only whoever runs this Paperclip can update its plugins.")
                         }
                     }
-                    .font(.callout)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    if let link = plugin.packageURL {
-                        Link(destination: link) { Label("See It on npm", systemImage: "arrow.up.right") }
-                            .font(.callout)
-                    }
                 }
-                if let error = plugins.updateErrors[plugin.id] {
-                    WarningRow(text: String(localized: "Couldn’t update \(plugin.name): \(error)"))
+                ForEach(plugins.plugins.filter { plugins.updateErrors[$0.id] != nil }) { plugin in
+                    WarningRow(text: String(localized: "Couldn’t update \(plugin.name): \(plugins.updateErrors[plugin.id] ?? "")"))
+                        .font(.caption)
+                }
+                if let error = plugins.checkError {
+                    WarningRow(text: String(localized: "Couldn’t check the plugins: \(error)")).font(.caption)
+                }
+                if plugins.plugins.count > plugins.available.count {
+                    Button(showsAll ? String(localized: "Show Fewer") : String(localized: "Show All (\(plugins.plugins.count))")) {
+                        withAnimation(.snappy) { showsAll.toggle() }
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
                 }
             }
             .padding(.leading, UpdatesDesign.textInset)
@@ -311,27 +323,62 @@ private struct PluginUpdateRow: View {
         .padding(UpdatesDesign.rowPadding)
     }
 
-    private var updating: Bool { plugins.updatingID == plugin.id }
-
     private var subtitle: String {
-        if plugin.source == .folder { return String(localized: "Plugin · from a folder: it updates there") }
-        if updating { return String(localized: "Plugin · updating…") }
-        if plugin.latest != nil { return String(localized: "Plugin · you have \(plugin.version)") }
-        return String(localized: "Plugin · up to date")
+        let count = plugins.plugins.count
+        if let updating = plugins.updating { return String(localized: "Updating \(updating.name)…") }
+        if plugins.checking { return String(localized: "\(count) in Paperclip · checking…") }
+        let available = plugins.available.count
+        // Con versiones nuevas, solo cuántas: el total ya está en «Ver todos».
+        if available > 0 { return String(localized: "\(available) with a new version") }
+        return String(localized: "\(count) in Paperclip · up to date")
     }
 
     @ViewBuilder private var trailing: some View {
-        if updating {
+        if plugins.checking {
             ProgressView().controlSize(.small)
-        } else if plugin.latest != nil {
-            if plugins.canUpdate {
+        } else if plugins.available.isEmpty, plugins.lastCheckedAt != nil {
+            UpToDateBadge()
+        } else if plugins.available.count > 1, plugins.canUpdate, plugins.updatingID == nil {
+            Button("Update All", action: plugins.updateAll)
+                .buttonStyle(.glass)
+        }
+    }
+}
+
+/// Un plugin en una línea: nombre, versión (con la nueva, si hay) y su botón. Los que salen de una carpeta
+/// llevan el ícono de carpeta, sin botón.
+private struct PluginLine: View {
+    let plugin: PluginUpdates.Plugin
+    let plugins: PluginUpdates
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(verbatim: plugin.name)
+                .lineLimit(1)
+            if plugin.source == .folder {
+                Image(systemName: "folder")
+                    .foregroundStyle(.secondary)
+                    .help("From a folder: it updates there")
+            }
+            Spacer(minLength: 8)
+            Text(verbatim: plugin.latest.map { "\(plugin.version) → \($0)" } ?? plugin.version)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+            if let link = plugin.packageURL, plugin.latest != nil {
+                Link(destination: link) { Image(systemName: "arrow.up.right.square") }
+                    .foregroundStyle(.secondary)
+                    .help("See It on npm")
+            }
+            if plugins.updatingID == plugin.id {
+                ProgressView().controlSize(.mini)
+            } else if plugin.latest != nil, plugins.canUpdate {
                 Button("Update") { plugins.update(plugin) }
-                    .buttonStyle(.glass)
+                    .controlSize(.small)
                     .disabled(plugins.updatingID != nil)
             }
-        } else if plugin.source != .folder {
-            UpToDateBadge()
         }
+        .font(.callout)
+        .frame(minHeight: 22)
     }
 }
 

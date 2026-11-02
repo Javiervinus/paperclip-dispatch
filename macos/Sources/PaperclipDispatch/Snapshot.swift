@@ -246,7 +246,7 @@ enum MainWindowSnapshot {
         case upToDate, dispatch, both, plugin, all, whatsNew
     }
 
-    /// Plugins de muestra: uno de npm con versión nueva y otro que sale de una carpeta.
+    /// Plugins de muestra: dos de npm con versión nueva, dos al día y uno que sale de una carpeta.
     static let samplePlugins = [
         PluginUpdates.Plugin(
             id: "sample-office",
@@ -256,7 +256,26 @@ enum MainWindowSnapshot {
             latest: "0.13.0"
         ),
         PluginUpdates.Plugin(id: "sample-usage", name: "Consumo de agentes", version: "0.6.0", source: .folder),
+        PluginUpdates.Plugin(
+            id: "sample-telegram",
+            name: "Telegram",
+            version: "0.8.0",
+            source: .npm("paperclip-plugin-telegram"),
+            latest: "0.8.1"
+        ),
+        PluginUpdates.Plugin(id: "sample-slack", name: "Slack", version: "2.1.0", source: .npm("paperclip-plugin-slack")),
+        PluginUpdates.Plugin(id: "sample-github", name: "GitHub", version: "0.18.0", source: .npm("paperclip-github-plugin")),
     ]
+
+    /// Los mismos, todos al día.
+    static var samplePluginsUpToDate: [PluginUpdates.Plugin] {
+        samplePlugins.map { plugin in
+            var plugin = plugin
+            if let latest = plugin.latest { plugin.version = latest }
+            plugin.latest = nil
+            return plugin
+        }
+    }
 
     /// Novedades de muestra para el ensayo del botón y el panel.
     static let sampleRelease = AppUpdater.Release(
@@ -305,7 +324,7 @@ enum MainWindowSnapshot {
                 status.latestVersion = "2026.1101.0"
             case .plugin:
                 app = AppUpdater(previewing: .idle)
-                plugins = samplePlugins
+                plugins = [samplePlugins[0], samplePlugins[1]]
             case .all:
                 app = AppUpdater(previewing: .ready(sampleRelease))
                 status.latestVersion = "2026.1101.0"
@@ -334,12 +353,14 @@ enum MainWindowSnapshot {
         withExtendedLifetime(buttons) {}
     }
 
-    /// El panel de actualizaciones solo, en una ventana: con todo por actualizar y con un plugin
-    /// actualizándose.
+    /// El panel de actualizaciones solo, en una ventana: con todo por actualizar, con la lista de plugins
+    /// abierta, con un plugin actualizándose y con los plugins al día.
     private static func panelWindows(paperclip: String) -> [Snapshot.Window] {
-        let cases: [(file: String, updating: String?)] = [
-            ("updates-panel-all", nil),
-            ("updates-panel-plugin-updating", samplePlugins[0].id),
+        let cases: [(file: String, plugins: [PluginUpdates.Plugin], updating: String?, showsAll: Bool)] = [
+            ("updates-panel-all", samplePlugins, nil, false),
+            ("updates-panel-plugins-list", samplePlugins, nil, true),
+            ("updates-panel-plugin-updating", samplePlugins, samplePlugins[0].id, false),
+            ("updates-panel-plugins-up-to-date", samplePluginsUpToDate, nil, false),
         ]
         return cases.map { item in
             let status = AppStatus()
@@ -349,8 +370,9 @@ enum MainWindowSnapshot {
             let panel = UpdatesPanel(
                 app: AppUpdater(previewing: .ready(sampleRelease)),
                 status: status,
-                plugins: PluginUpdates(previewing: samplePlugins, updatingID: item.updating),
-                actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {})
+                plugins: PluginUpdates(previewing: item.plugins, updatingID: item.updating),
+                actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {}),
+                showsAllPlugins: item.showsAll
             )
             let hosting = NSHostingController(rootView: panel)
             hosting.sizingOptions = []

@@ -161,41 +161,64 @@ final class PluginUpdates {
     /// «Actualizar» en el panel: Paperclip baja la versión nueva de npm y cambia solo ese plugin, sin
     /// reiniciarse ni parar a los agentes.
     func update(_ plugin: Plugin) {
-        guard updatingID == nil, case .npm = plugin.source, let latest = plugin.latest else { return }
+        guard updatingID == nil else { return }
+        // Ya, no cuando corra la tarea: así un segundo clic no pide lo mismo dos veces.
+        updatingID = plugin.id
+        Task {
+            if await upgrade(plugin) { await finishUpdates() }
+        }
+    }
+
+    /// «Actualizar todos»: uno tras otro, con una sola recarga de la página al final.
+    func updateAll() {
+        guard updatingID == nil, let first = available.first else { return }
+        let pending = available
+        updatingID = first.id
+        Task {
+            var updated = false
+            for plugin in pending where await upgrade(plugin) {
+                updated = true
+            }
+            if updated { await finishUpdates() }
+        }
+    }
+
+    /// Pide la versión nueva a Paperclip. `true` si quedó instalada.
+    private func upgrade(_ plugin: Plugin) async -> Bool {
+        guard case .npm = plugin.source, let latest = plugin.latest else { return false }
         updatingID = plugin.id
         updateErrors[plugin.id] = nil
-        guard let api else {
-            // Ensayo: nada que actualizar.
-            updatingID = nil
-            return
-        }
-        Task {
-            do {
-                let record: Record = try await api.post(
-                    "api/plugins/\(plugin.id)/upgrade", ["version": latest], returning: Record.self
-                )
-                if record.status != "ready" {
-                    updateErrors[plugin.id] = String(localized: "Paperclip left it as “\(record.status)”.")
-                }
-                Self.log.info("updated \(plugin.name, privacy: .public) to \(record.version, privacy: .public)")
-                if let index = plugins.firstIndex(where: { $0.id == plugin.id }) {
-                    plugins[index].version = record.version
-                    plugins[index].latest = nil
-                }
-                updatingID = nil
-                // Una revisión que empezó antes volvería con la versión vieja: se espera a que termine y se
-                // revisa de nuevo.
-                while running { try? await Task.sleep(for: .milliseconds(200)) }
-                await check()
-                onUpdated?()
-            } catch PaperclipAPI.APIError.signedOut {
-                updatingID = nil
-                updateErrors[plugin.id] = String(localized: "Only whoever runs this Paperclip can update its plugins.")
-            } catch {
-                updatingID = nil
-                updateErrors[plugin.id] = error.localizedDescription
+        defer { updatingID = nil }
+        // Ensayo: nada que actualizar.
+        guard let api else { return false }
+        do {
+            let record: Record = try await api.post(
+                "api/plugins/\(plugin.id)/upgrade", ["version": latest], returning: Record.self
+            )
+            if record.status != "ready" {
+                updateErrors[plugin.id] = String(localized: "Paperclip left it as “\(record.status)”.")
             }
+            Self.log.info("updated \(plugin.name, privacy: .public) to \(record.version, privacy: .public)")
+            if let index = plugins.firstIndex(where: { $0.id == plugin.id }) {
+                plugins[index].version = record.version
+                plugins[index].latest = nil
+            }
+            return true
+        } catch PaperclipAPI.APIError.signedOut {
+            updateErrors[plugin.id] = String(localized: "Only whoever runs this Paperclip can update its plugins.")
+        } catch {
+            updateErrors[plugin.id] = error.localizedDescription
         }
+        return false
+    }
+
+    /// Después de actualizar: vuelve a leer la lista y recarga la página, que no carga sola la versión nueva.
+    private func finishUpdates() async {
+        // Una revisión que empezó antes volvería con la versión vieja: se espera a que termine y se revisa de
+        // nuevo.
+        while running { try? await Task.sleep(for: .milliseconds(200)) }
+        await check()
+        onUpdated?()
     }
 
     /// Compara versiones de npm (semver): `1.10.0` es más nueva que `1.9.2`, y `1.0.0` que `1.0.0-beta.1`.

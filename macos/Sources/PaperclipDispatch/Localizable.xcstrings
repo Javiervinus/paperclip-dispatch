@@ -197,6 +197,26 @@
         }
       }
     },
+    "%lld in Paperclip · checking…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld en Paperclip · revisando…"
+          }
+        }
+      }
+    },
+    "%lld in Paperclip · up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld en Paperclip · al día"
+          }
+        }
+      }
+    },
     "%lld runs a day": {
       "localizations": {
         "en": {
@@ -233,6 +253,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "%lld with a new version": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld con versión nueva"
           }
         }
       }
@@ -387,28 +417,22 @@
         }
       }
     },
-    "A new version of the %@ plugin is available: %@ (you have %@). Updating it doesn’t stop your agents.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "A new version of the %1$@ plugin is available: %2$@ (you have %3$@). Updating it doesn’t stop your agents."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hay una versión nueva del plugin %@: la %@ (tienes la %@). Actualizarlo no detiene a tus agentes."
-          }
-        }
-      }
-    },
     "A new version of this app is available: Dispatch %@ (you have %@).\nClick to see what’s new. %@; Paperclip and your agents keep working.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Hay una versión nueva de esta app: Dispatch %@ (tienes la %@).\nClic para ver qué trae. %@; Paperclip y tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
+    "A plugin has a new version: %@. Update it from here whenever you like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un plugin tiene versión nueva: %@. Actualízalo desde aquí cuando quieras."
           }
         }
       }
@@ -1755,6 +1779,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adelante"
+          }
+        }
+      }
+    },
+    "From a folder: it updates there": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sale de una carpeta: se actualiza ahí"
           }
         }
       }
@@ -3445,42 +3479,12 @@
         }
       }
     },
-    "Plugin · from a folder: it updates there": {
+    "Plugins": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plugin · sale de una carpeta: se actualiza ahí"
-          }
-        }
-      }
-    },
-    "Plugin · up to date": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plugin · al día"
-          }
-        }
-      }
-    },
-    "Plugin · updating…": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plugin · actualizando…"
-          }
-        }
-      }
-    },
-    "Plugin · you have %@": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plugin · tienes la %@"
+            "value": "Plugins"
           }
         }
       }
@@ -4095,6 +4099,26 @@
         }
       }
     },
+    "Show All (%lld)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todos (%lld)"
+          }
+        }
+      }
+    },
+    "Show Fewer": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver menos"
+          }
+        }
+      }
+    },
     "Skip": {
       "localizations": {
         "es": {
@@ -4121,6 +4145,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Así los avisos llegan desde que prendes la Mac."
+          }
+        }
+      }
+    },
+    "Some plugins have new versions: %@. Update them from here whenever you like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algunos plugins tienen versión nueva: %@. Actualízalos desde aquí cuando quieras."
           }
         }
       }
@@ -4677,6 +4711,16 @@
         }
       }
     },
+    "This app and Paperclip are up to date.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app y Paperclip están al día."
+          }
+        }
+      }
+    },
     "This app was built to update with %@, which is no longer there.": {
       "localizations": {
         "es": {
@@ -5017,12 +5061,12 @@
         }
       }
     },
-    "Update %@": {
+    "Update All": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Actualizar %@"
+            "value": "Actualizar todos"
           }
         }
       }
@@ -5597,12 +5641,12 @@
         }
       }
     },
-    "Your agents keep working: Paperclip swaps only this plugin, and the page reloads with the new version.": {
+    "Your agents keep working: Paperclip swaps only the plugin, and the page reloads.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tus agentes siguen trabajando: Paperclip cambia solo este plugin, y la página se recarga con la versión nueva."
+            "value": "Tus agentes siguen trabajando: Paperclip cambia solo el plugin, y la página se recarga."
           }
         }
       }
@@ -6094,22 +6138,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "•"
-          }
-        }
-      }
-    },
-    "• %@ %@, a plugin": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "new",
-            "value": "• %1$@ %2$@, a plugin"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• %@ %@, un plugin"
           }
         }
       }
