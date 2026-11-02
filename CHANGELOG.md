@@ -9,6 +9,14 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Added
+
+- **Update Paperclip’s plugins from the updates panel.** Plugins installed from npm show their new version
+  and an Update button, and Paperclip swaps the plugin without stopping your agents. Plugins installed from
+  a folder are listed too, but they update in that folder.
+
 ## 0.3.0 — 2026-11-02
 
 ### Added

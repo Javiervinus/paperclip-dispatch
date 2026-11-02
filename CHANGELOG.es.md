@@ -10,6 +10,14 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Nuevo
+
+- **Actualiza los plugins de Paperclip desde el panel de actualizaciones.** Los instalados desde npm
+  muestran su versión nueva y un botón «Actualizar», y Paperclip cambia el plugin sin detener a tus
+  agentes. Los que salen de una carpeta también aparecen, pero se actualizan en esa carpeta.
+
 ## 0.3.0 — 2026-11-02
 
 ### Nuevo
