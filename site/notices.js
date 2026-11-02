@@ -2,8 +2,9 @@
 // en la pila caben tres y el más viejo se pliega al fondo. Se cierran con la X, con un clic (como al abrirlos) o
 // deslizándolos a la derecha. «Wake up CEO» cierra el suyo y trae la respuesta de Paperclip, como en la app.
 // Sin JS quedan los tres de la página, quietos. Con «reducir movimiento» no llegan solos: solo se reponen cuando
-// cierras uno. Se detienen con el botón «Pause», con el mouse o el foco encima, fuera de la vista y con la pestaña
-// oculta. Los textos (también la X y el botón de pausa) vienen del HTML, así sirve igual en /es/.
+// cierras uno. Se detienen con el botón «Pause», fuera de la vista y con la pestaña oculta; mientras el mouse está
+// sobre un aviso o el teclado recorre la pila, el que sigue espera. Los textos (también la X y el botón de pausa)
+// vienen del HTML, así sirve igual en /es/.
 const desk = document.querySelector(".desk");
 
 if (desk) {
@@ -11,10 +12,19 @@ if (desk) {
   const deck = desk.querySelector("template.deck");
   const note = desk.querySelector(".desk-note");
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+  // En un teléfono, :hover queda pegado después de un toque: ahí no cuenta
+  const mouse = matchMedia("(hover: hover) and (pointer: fine)");
   const capacity = 3;
-  // Cada cuánto llega uno con la pila llena, y con lugar libre (más rápido, para que se llene)
+  // Cada cuánto llega uno con la pila llena, con lugar libre (más rápido, para que se llene) y con la pila vacía
+  // (enseguida: que no quede el hueco)
   const every = 4200;
   const refill = 1500;
+  const empty = 900;
+  // Después de cerrar uno o despertar a alguien, si quedan avisos, el que sigue espera esto: que no llegue uno justo
+  // donde ibas a tocar
+  const settle = 2500;
+  // Cada cuánto vuelve a mirar si ya puede llegar el que sigue, mientras el mouse o el teclado están encima
+  const recheck = 400;
   // Lo que tarda la respuesta de Paperclip después de «Wake up CEO»
   const replyDelay = 700;
   // Un aviso que se fue no vuelve antes de esto (si hay otro que pueda llegar)
@@ -35,8 +45,6 @@ if (desk) {
   const leftAt = new Map();
   let timer = 0;
   let paused = false;
-  let hovering = false;
-  let focused = false;
   let inView = true;
 
   const closeIcon = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2.75 2.75l4.5 4.5M7.25 2.75l-4.5 4.5"/></svg>';
@@ -67,6 +75,8 @@ if (desk) {
   // Se va: deslizándose a la derecha (cerrar), hundiéndose al fondo de la pila (plegarse, cuando llega uno con la
   // pila llena) o achicándose donde está (abrirlo con un clic)
   const leave = (card, how = "is-leaving") => {
+    // Si lo estabas recorriendo con el teclado, el foco pasa al siguiente (o al botón de pausa) en vez de perderse
+    const keyboard = card.querySelector(":focus-visible");
     live = live.filter((other) => other !== card);
     leftAt.set(card.dataset.kind, performance.now());
     card.inert = true;
@@ -76,6 +86,7 @@ if (desk) {
     card.addEventListener("transitionend", done, { once: true });
     setTimeout(done, 700);
     place();
+    if (keyboard) (live[0]?.querySelector(".notice-close") ?? note.querySelector(".desk-pause"))?.focus({ preventScroll: true });
     if (reduce.matches && !timer) schedule(refill);
   };
 
@@ -113,7 +124,10 @@ if (desk) {
     if (fallback) arrive(fallback.kind);
   };
 
-  const running = () => !paused && !hovering && !focused && inView && !document.hidden;
+  const running = () => !paused && inView && !document.hidden;
+  // El mouse sobre un aviso o el foco del teclado en la pila (el de un clic o un toque no se ve, y no cuenta)
+  const held = () => (mouse.matches && stack.querySelector(".notice.is-live:hover")) || desk.querySelector(":focus-visible");
+  const gap = () => (live.length === 0 ? empty : live.length < capacity ? refill : every);
 
   function schedule(delay) {
     clearTimeout(timer);
@@ -124,30 +138,29 @@ if (desk) {
         if (live.length < capacity) schedule(refill);
         return;
       }
+      // Pausado, fuera de la vista o en otra pestaña: vuelve con resume()
       if (!running()) return;
+      if (held()) return schedule(recheck);
       deliver();
-      schedule(live.length < capacity ? refill : every);
+      schedule(gap());
     }, delay);
   }
 
-  // Al volver (sacar el mouse, quitar la pausa, volver a la pestaña), el que sigue espera media vuelta, y una
-  // entera si acabas de cerrar uno o de despertar a alguien
-  let actedAt = -Infinity;
+  // Al volver (quitar la pausa, volver a la vista o a la pestaña), el que sigue espera media vuelta, o casi nada si
+  // la pila está vacía
   const resume = () => {
     if (timer || !running() || reduce.matches) return;
-    schedule(Math.max(every / 2, actedAt + every - performance.now()));
+    schedule(live.length ? every / 2 : empty);
   };
   const halt = () => {
     if (reduce.matches) return;
     clearTimeout(timer);
     timer = 0;
   };
-  // Después de cerrar uno o despertar a alguien, el que sigue espera una vuelta entera
-  const acted = () => {
+  // Después de cerrar uno o despertar a alguien
+  const acted = (wait = 0) => {
     if (reduce.matches) return;
-    actedAt = performance.now();
-    halt();
-    resume();
+    schedule(Math.max(wait, live.length ? settle : empty));
   };
 
   // Los de la página pasan a ser avisos vivos, sin moverse de su lugar
@@ -160,7 +173,8 @@ if (desk) {
     const action = event.target.closest(".notice-action");
     if (action) {
       leave(card);
-      acted();
+      // La respuesta de Paperclip llega primero; el que sigue, después
+      acted(replyDelay + refill);
       const reply = action.dataset.then;
       if (models.has(reply)) setTimeout(() => arrive(reply), replyDelay);
     } else if (event.target.closest(".notice-close")) {
@@ -210,26 +224,6 @@ if (desk) {
     card.addEventListener("pointercancel", end);
   });
 
-  // Quietos mientras los miras con el mouse o los recorres con el teclado
-  stack.addEventListener("pointerenter", (event) => {
-    if (event.pointerType !== "mouse") return;
-    hovering = true;
-    halt();
-  });
-  stack.addEventListener("pointerleave", (event) => {
-    if (event.pointerType !== "mouse") return;
-    hovering = false;
-    resume();
-  });
-  desk.addEventListener("focusin", () => {
-    focused = true;
-    halt();
-  });
-  desk.addEventListener("focusout", (event) => {
-    if (desk.contains(event.relatedTarget)) return;
-    focused = false;
-    resume();
-  });
   new IntersectionObserver(([entry]) => {
     inView = entry.isIntersecting;
     if (inView) resume();

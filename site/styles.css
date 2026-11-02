@@ -161,6 +161,9 @@ h3 { font-size: var(--step-title); line-height: 1.1; letter-spacing: -0.025em; }
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   padding: clamp(2.5rem, 1rem + 5vw, 6rem) var(--gutter) 0;
+  /* Los avisos entran y salen por el borde de la pantalla. Recortarlos aquí, y no solo en body, evita que Chrome en
+     Android agrande la página para que quepan y deje arrastrarla hacia el lado. */
+  overflow-x: clip;
 }
 .hero-title {
   font-size: var(--step-display);
