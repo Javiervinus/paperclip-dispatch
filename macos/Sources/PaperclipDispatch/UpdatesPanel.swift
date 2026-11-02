@@ -21,11 +21,12 @@ struct UpdatesPanelActions {
     let updatePaperclip: () -> Void
 }
 
-/// El panel que abre el botón de arriba a la derecha: una fila para esta app y otra para Paperclip, cada
-/// una con su versión, lo que pasa al actualizarla y sus novedades.
+/// El panel que abre el botón de arriba a la derecha: una fila para esta app, otra para Paperclip y una por
+/// cada plugin, cada una con su versión, lo que pasa al actualizarla y sus novedades.
 struct UpdatesPanel: View {
     let app: AppUpdater
     let status: AppStatus
+    let plugins: PluginUpdates
     let actions: UpdatesPanelActions
 
     var body: some View {
@@ -40,6 +41,17 @@ struct UpdatesPanel: View {
             Divider().padding(.horizontal, UpdatesDesign.rowPadding)
             PaperclipUpdateRow(status: status, update: actions.updatePaperclip)
             Divider().padding(.horizontal, UpdatesDesign.rowPadding)
+            if !plugins.plugins.isEmpty {
+                ForEach(plugins.plugins) { plugin in
+                    PluginUpdateRow(plugin: plugin, plugins: plugins)
+                }
+                if let error = plugins.checkError {
+                    WarningRow(text: String(localized: "Couldn’t check the plugins: \(error)"))
+                        .padding(.horizontal, UpdatesDesign.rowPadding)
+                        .padding(.bottom, 8)
+                }
+                Divider().padding(.horizontal, UpdatesDesign.rowPadding)
+            }
             footer
         }
         .padding(6)
@@ -62,10 +74,11 @@ struct UpdatesPanel: View {
 
     private var busy: Bool {
         status.checkingUpdate || status.updateProgress != nil || app.phase == .checking
+            || plugins.checking || plugins.updatingID != nil
     }
 
     private var checkedLine: String {
-        let dates = [app.lastCheckedAt, status.lastCheckedAt].compactMap(\.self)
+        let dates = [app.lastCheckedAt, status.lastCheckedAt, plugins.lastCheckedAt].compactMap(\.self)
         guard let last = dates.max() else { return String(localized: "Checks automatically every few hours") }
         // Sin punto final: la hora ya puede terminar en uno («10:37 p. m.»).
         return String(localized: "Last checked: \(last.formatted(date: .omitted, time: .shortened))")
@@ -250,6 +263,78 @@ private struct PaperclipUpdateRow: View {
     }
 }
 
+// MARK: - Plugins
+
+/// Un plugin de Paperclip. Los de npm se actualizan aquí; los que salen de una carpeta, en esa carpeta.
+private struct PluginUpdateRow: View {
+    let plugin: PluginUpdates.Plugin
+    let plugins: PluginUpdates
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: UpdatesDesign.iconSpacing) {
+                PaperclipGlyph(size: UpdatesDesign.iconSize, symbol: "puzzlepiece.extension")
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: "\(plugin.name) \(plugin.latest ?? plugin.version)")
+                        .font(.body.weight(.semibold))
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                trailing
+            }
+            Group {
+                if plugin.latest != nil, !updating {
+                    Group {
+                        if plugins.canUpdate {
+                            Text("Your agents keep working: Paperclip swaps only this plugin, and the page reloads with the new version.")
+                        } else {
+                            Text("Only whoever runs this Paperclip can update its plugins.")
+                        }
+                    }
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    if let link = plugin.packageURL {
+                        Link(destination: link) { Label("See It on npm", systemImage: "arrow.up.right") }
+                            .font(.callout)
+                    }
+                }
+                if let error = plugins.updateErrors[plugin.id] {
+                    WarningRow(text: String(localized: "Couldn’t update \(plugin.name): \(error)"))
+                }
+            }
+            .padding(.leading, UpdatesDesign.textInset)
+        }
+        .padding(UpdatesDesign.rowPadding)
+    }
+
+    private var updating: Bool { plugins.updatingID == plugin.id }
+
+    private var subtitle: String {
+        if plugin.source == .folder { return String(localized: "Plugin · from a folder: it updates there") }
+        if updating { return String(localized: "Plugin · updating…") }
+        if plugin.latest != nil { return String(localized: "Plugin · you have \(plugin.version)") }
+        return String(localized: "Plugin · up to date")
+    }
+
+    @ViewBuilder private var trailing: some View {
+        if updating {
+            ProgressView().controlSize(.small)
+        } else if plugin.latest != nil {
+            if plugins.canUpdate {
+                Button("Update") { plugins.update(plugin) }
+                    .buttonStyle(.glass)
+                    .disabled(plugins.updatingID != nil)
+            }
+        } else if plugin.source != .folder {
+            UpToDateBadge()
+        }
+    }
+}
+
 // MARK: - Piezas
 
 /// Las novedades de una versión: Markdown sencillo (títulos `###` y listas `-`), recortado a unas pocas
@@ -388,16 +473,18 @@ struct AppIconImage: View {
     }
 }
 
-/// El clip de Paperclip (el servidor), para distinguirlo del ícono de esta app.
+/// El clip de Paperclip (el servidor), para distinguirlo del ícono de esta app. Con otro símbolo, lo que vive
+/// dentro de Paperclip (sus plugins).
 struct PaperclipGlyph: View {
     let size: CGFloat
+    var symbol = "paperclip"
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * SettingsDesign.iconCornerRatio, style: .continuous)
             .fill(.fill.secondary)
             .frame(width: size, height: size)
             .overlay {
-                Image(systemName: "paperclip")
+                Image(systemName: symbol)
                     .font(.system(size: size * 0.5, weight: .medium))
                     .foregroundStyle(.primary)
             }

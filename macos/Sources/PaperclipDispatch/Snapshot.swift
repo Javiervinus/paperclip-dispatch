@@ -71,6 +71,7 @@ enum Snapshot {
         return UpdatesButton(
             app: AppUpdater(previewing: .idle),
             status: status,
+            plugins: PluginUpdates(previewing: []),
             host: host,
             checkPaperclip: {},
             updatePaperclip: {}
@@ -242,8 +243,20 @@ enum MainWindowSnapshot {
 
     /// Lo que muestra el botón de actualizaciones en cada captura.
     private enum Updates {
-        case upToDate, dispatch, both, whatsNew
+        case upToDate, dispatch, both, plugin, all, whatsNew
     }
+
+    /// Plugins de muestra: uno de npm con versión nueva y otro que sale de una carpeta.
+    static let samplePlugins = [
+        PluginUpdates.Plugin(
+            id: "sample-office",
+            name: "Oficina global",
+            version: "0.12.1",
+            source: .npm("paperclip-plugin-oficina-global"),
+            latest: "0.13.0"
+        ),
+        PluginUpdates.Plugin(id: "sample-usage", name: "Consumo de agentes", version: "0.6.0", source: .folder),
+    ]
 
     /// Novedades de muestra para el ensayo del botón y el panel.
     static let sampleRelease = AppUpdater.Release(
@@ -264,6 +277,8 @@ enum MainWindowSnapshot {
             ("dispatch-normal", false, false, .dispatch, nil),
             ("dispatch-glass", true, false, .dispatch, nil),
             ("both-glass", true, false, .both, nil),
+            ("plugin-glass", true, false, .plugin, nil),
+            ("all-glass", true, false, .all, nil),
             ("whats-new-glass", true, false, .whatsNew, nil),
             ("notifications-off-normal", false, false, .upToDate, .off),
             ("notifications-partial-glass", true, false, .upToDate, .noBanners),
@@ -281,15 +296,26 @@ enum MainWindowSnapshot {
             status.paperclipVersion = paperclip ?? Snapshot.sampleVersion
             status.lastCheckedAt = .now
             let app: AppUpdater
+            var plugins = [samplePlugins[1]]
             switch item.updates {
             case .upToDate: app = AppUpdater(previewing: .idle)
             case .dispatch: app = AppUpdater(previewing: .ready(sampleRelease))
             case .both:
                 app = AppUpdater(previewing: .ready(sampleRelease))
                 status.latestVersion = "2026.1101.0"
+            case .plugin:
+                app = AppUpdater(previewing: .idle)
+                plugins = samplePlugins
+            case .all:
+                app = AppUpdater(previewing: .ready(sampleRelease))
+                status.latestVersion = "2026.1101.0"
+                plugins = samplePlugins
             case .whatsNew: app = AppUpdater(previewing: .idle, whatsNew: sampleRelease)
             }
-            buttons.append(UpdatesButton(app: app, status: status, host: controller, checkPaperclip: {}, updatePaperclip: {}))
+            buttons.append(UpdatesButton(
+                app: app, status: status, plugins: PluginUpdates(previewing: plugins), host: controller,
+                checkPaperclip: {}, updatePaperclip: {}
+            ))
             if let problem = item.nudge {
                 let nudge = NotificationNudge(previewing: problem, preferences: preferences, notifications: notifications)
                 controller.setBottomOverlay(NotificationNudgeView(model: nudge), padding: NotificationNudgeView.shadowRoom)
@@ -298,6 +324,7 @@ enum MainWindowSnapshot {
             controllers.append((controller, item.switches, item.startsWithGlass))
             windows.append(Snapshot.Window(window: window, file: "\(item.file).png"))
         }
+        windows += panelWindows(paperclip: paperclip ?? Snapshot.sampleVersion)
         try? await Task.sleep(for: loadTime)
         for entry in controllers where entry.switches {
             entry.controller.setLiquidGlass(!entry.glass)
@@ -305,6 +332,37 @@ enum MainWindowSnapshot {
         try? await Task.sleep(for: loadTime)
         await Snapshot.capture(windows, in: directory)
         withExtendedLifetime(buttons) {}
+    }
+
+    /// El panel de actualizaciones solo, en una ventana: con todo por actualizar y con un plugin
+    /// actualizándose.
+    private static func panelWindows(paperclip: String) -> [Snapshot.Window] {
+        let cases: [(file: String, updating: String?)] = [
+            ("updates-panel-all", nil),
+            ("updates-panel-plugin-updating", samplePlugins[0].id),
+        ]
+        return cases.map { item in
+            let status = AppStatus()
+            status.paperclipVersion = paperclip
+            status.latestVersion = "2026.1101.0"
+            status.lastCheckedAt = .now
+            let panel = UpdatesPanel(
+                app: AppUpdater(previewing: .ready(sampleRelease)),
+                status: status,
+                plugins: PluginUpdates(previewing: samplePlugins, updatingID: item.updating),
+                actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {})
+            )
+            let hosting = NSHostingController(rootView: panel)
+            hosting.sizingOptions = []
+            let window = SnapshotableWindow(contentViewController: hosting)
+            window.styleMask = [.titled, .fullSizeContentView]
+            window.setContentSize(hosting.sizeThatFits(in: MainWindowController.unboundedSize))
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.isReleasedWhenClosed = false
+            Snapshot.hide(window)
+            return Snapshot.Window(window: window, file: "\(item.file).png")
+        }
     }
 }
 

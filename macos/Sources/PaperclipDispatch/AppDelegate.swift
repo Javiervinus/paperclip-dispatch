@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var config: AppConfig?
     private var windowController: MainWindowController?
     private var updates: UpdateController?
+    private var plugins: PluginUpdates?
     /// Las versiones de esta app. Existe desde el arranque: busca aunque todavía no haya Paperclip elegido.
     private let appUpdater = AppUpdater()
     private var updatesButton: UpdatesButton?
@@ -81,14 +82,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             status: status
         )
         self.updates = updates
+        let api = PaperclipAPI(serverURL: config.serverURL)
+        let plugins = PluginUpdates(api: api)
+        plugins.onUpdated = { [weak windowController] in windowController?.reload() }
+        self.plugins = plugins
         updatesButton = UpdatesButton(
             app: appUpdater,
             status: status,
+            plugins: plugins,
             host: windowController,
             checkPaperclip: { [weak updates] in updates?.checkNow() },
             updatePaperclip: { [weak updates] in updates?.requestUpdate() }
         )
-        let api = PaperclipAPI(serverURL: config.serverURL)
         let decisions = DecisionsMonitor(api: api, preferences: preferences, notifications: notifications) {
             [weak windowController] in windowController?.isInFront ?? false
         }
@@ -158,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowController.showWindow(nil)
         notifications.start()
         updates.start()
+        plugins.start()
         telegram.start()
         decisions.start()
     }

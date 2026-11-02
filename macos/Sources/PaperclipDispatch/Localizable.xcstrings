@@ -187,6 +187,16 @@
         }
       }
     },
+    "%lld Updates": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld actualizaciones"
+          }
+        }
+      }
+    },
     "%lld runs a day": {
       "localizations": {
         "en": {
@@ -307,16 +317,6 @@
         }
       }
     },
-    "2 Updates": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2 actualizaciones"
-          }
-        }
-      }
-    },
     "<i>Reply to this message to comment on the task.</i>": {
       "localizations": {
         "es": {
@@ -383,6 +383,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hay una versión nueva de Paperclip, el servidor donde trabajan tus agentes: la %@%@.\nActualizarlo pausa a los agentes mientras se reinicia: tú eliges cuándo."
+          }
+        }
+      }
+    },
+    "A new version of the %@ plugin is available: %@ (you have %@). Updating it doesn’t stop your agents.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "A new version of the %1$@ plugin is available: %2$@ (you have %3$@). Updating it doesn’t stop your agents."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hay una versión nueva del plugin %@: la %@ (tienes la %@). Actualizarlo no detiene a tus agentes."
           }
         }
       }
@@ -1017,6 +1033,16 @@
         }
       }
     },
+    "Click to see what each one does.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clic para ver qué hace cada una."
+          }
+        }
+      }
+    },
     "Close Window": {
       "localizations": {
         "es": {
@@ -1227,6 +1253,16 @@
         }
       }
     },
+    "Couldn’t check the plugins: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude revisar los plugins: %@"
+          }
+        }
+      }
+    },
     "Couldn’t comment: %@": {
       "localizations": {
         "es": {
@@ -1353,6 +1389,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "No pude mandar una decisión: %@"
+          }
+        }
+      }
+    },
+    "Couldn’t update %@: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Couldn’t update %1$@: %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude actualizar %@: %@"
           }
         }
       }
@@ -2487,12 +2539,12 @@
         }
       }
     },
-    "New versions of this app (Dispatch %@) and of Paperclip, the server (%@), are available. Click to see what each one does.": {
+    "New versions are available:": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hay versiones nuevas de esta app (Dispatch %@) y de Paperclip, el servidor (%@). Clic para ver qué hace cada una."
+            "value": "Hay versiones nuevas:"
           }
         }
       }
@@ -2847,6 +2899,16 @@
         }
       }
     },
+    "Only whoever runs this Paperclip can update its plugins.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo quien administra este Paperclip puede actualizar sus plugins."
+          }
+        }
+      }
+    },
     "Open @BotFather": {
       "localizations": {
         "es": {
@@ -3177,6 +3239,16 @@
         }
       }
     },
+    "Paperclip is updating the %@ plugin. Your agents keep working.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está actualizando el plugin %@. Tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
     "Paperclip isn’t responding.": {
       "localizations": {
         "es": {
@@ -3203,6 +3275,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "El issue #18315 de Paperclip en GitHub"
+          }
+        }
+      }
+    },
+    "Paperclip left it as “%@”.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip lo dejó en «%@»."
           }
         }
       }
@@ -3359,6 +3441,56 @@
           "stringUnit": {
             "state": "translated",
             "value": "Persona"
+          }
+        }
+      }
+    },
+    "Plugin · from a folder: it updates there": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin · sale de una carpeta: se actualiza ahí"
+          }
+        }
+      }
+    },
+    "Plugin · up to date": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin · al día"
+          }
+        }
+      }
+    },
+    "Plugin · updating…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin · actualizando…"
+          }
+        }
+      }
+    },
+    "Plugin · you have %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugin · tienes la %@"
+          }
+        }
+      }
+    },
+    "Plugins: %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plugins: %@."
           }
         }
       }
@@ -3779,6 +3911,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ver todas en GitHub"
+          }
+        }
+      }
+    },
+    "See It on npm": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verlo en npm"
           }
         }
       }
@@ -4875,6 +5017,16 @@
         }
       }
     },
+    "Update %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar %@"
+          }
+        }
+      }
+    },
     "Update Dispatch": {
       "localizations": {
         "es": {
@@ -4961,6 +5113,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Actualizando %@/%@…"
+          }
+        }
+      }
+    },
+    "Updating %@…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizando %@…"
           }
         }
       }
@@ -5431,6 +5593,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tus agentes de Paperclip, en una app de Mac."
+          }
+        }
+      }
+    },
+    "Your agents keep working: Paperclip swaps only this plugin, and the page reloads with the new version.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus agentes siguen trabajando: Paperclip cambia solo este plugin, y la página se recarga con la versión nueva."
           }
         }
       }
@@ -5922,6 +6094,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "•"
+          }
+        }
+      }
+    },
+    "• %@ %@, a plugin": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "• %1$@ %2$@, a plugin"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %@ %@, un plugin"
+          }
+        }
+      }
+    },
+    "• Dispatch %@, this app": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Dispatch %@, esta app"
+          }
+        }
+      }
+    },
+    "• Paperclip %@, the server": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Paperclip %@, el servidor"
           }
         }
       }

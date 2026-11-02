@@ -2,15 +2,17 @@ import AppKit
 import Observation
 import SwiftUI
 
-/// El botón de arriba a la derecha: uno solo para las dos cosas que se actualizan, esta app (Dispatch) y
-/// Paperclip (el servidor). Al día muestra las dos versiones; con algo nuevo se pinta del color de acento
-/// y dice de quién es. Un clic abre el panel, que separa las dos y dice qué hace cada una.
+/// El botón de arriba a la derecha: uno solo para todo lo que se actualiza, esta app (Dispatch), Paperclip
+/// (el servidor) y sus plugins. Al día muestra las versiones de la app y de Paperclip; con algo nuevo se
+/// pinta del color de acento y dice de quién es. Un clic abre el panel, que los separa y dice qué hace cada
+/// uno.
 @MainActor
 final class UpdatesButton: NSObject, NSPopoverDelegate {
     private let button = NSButton()
     private let popover = NSPopover()
     private let app: AppUpdater
     private let status: AppStatus
+    private let plugins: PluginUpdates
     private unowned let host: MainWindowController
     private let checkPaperclip: () -> Void
     /// Las novedades se dan por vistas al cerrar el panel en que se mostraron.
@@ -24,12 +26,14 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     init(
         app: AppUpdater,
         status: AppStatus,
+        plugins: PluginUpdates,
         host: MainWindowController,
         checkPaperclip: @escaping () -> Void,
         updatePaperclip: @escaping () -> Void
     ) {
         self.app = app
         self.status = status
+        self.plugins = plugins
         self.host = host
         self.checkPaperclip = checkPaperclip
         super.init()
@@ -44,6 +48,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         let panel = NSHostingController(rootView: UpdatesPanel(
             app: app,
             status: status,
+            plugins: plugins,
             actions: UpdatesPanelActions(
                 checkAll: { [weak self] in self?.checkAll() },
                 updatePaperclip: { [weak self] in
@@ -57,7 +62,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         observe()
     }
 
-    /// Desde el menú «Buscar actualizaciones…»: abre el panel y revisa las dos.
+    /// Desde el menú «Buscar actualizaciones…»: abre el panel y revisa todo.
     func showPanelAndCheck() {
         showPanel()
         checkAll()
@@ -82,6 +87,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     private func checkAll() {
         checkPaperclip()
         app.checkNow()
+        plugins.checkNow()
     }
 
     @objc private func toggle() {
@@ -117,12 +123,18 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         case .available(let release), .ready(let release): release
         default: nil
         }
+        let pluginUpdates = plugins.available
+        let pending = (appRelease == nil ? 0 : 1) + (paperclipLatest == nil ? 0 : 1) + pluginUpdates.count
         button.tintProminence = .none
 
         if let progress = status.updateProgress {
             show(progress, symbol: "arrow.down.circle.fill")
             button.tintProminence = .primary
             button.toolTip = String(localized: "Updating Paperclip. Don’t quit the app until it finishes.")
+        } else if let plugin = plugins.updating {
+            show(String(localized: "Updating \(plugin.name)…"), symbol: "arrow.down.circle.fill")
+            button.tintProminence = .primary
+            button.toolTip = String(localized: "Paperclip is updating the \(plugin.name) plugin. Your agents keep working.")
         } else if case .installing = app.phase {
             show(String(localized: "Restarting…"), symbol: "arrow.clockwise")
             button.toolTip = nil
@@ -130,13 +142,17 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             let percent = progress.map { " " + String(localized: "\(Int(($0 * 100).rounded()))%") } ?? ""
             show(String(localized: "Downloading Dispatch…\(percent)"), symbol: "arrow.down.circle")
             button.toolTip = String(localized: "Downloading the new version of this app. It restarts on its own when it’s done, as you asked.")
-        } else if let appRelease, let paperclipLatest {
-            show(String(localized: "2 Updates"), symbol: "arrow.down.circle.fill")
+        } else if pending > 1 {
+            show(String(localized: "\(pending) Updates"), symbol: "arrow.down.circle.fill")
             button.tintProminence = .primary
-            button.toolTip = String(localized: """
-                New versions of this app (Dispatch \(appRelease.version)) and of Paperclip, the server \
-                (\(paperclipLatest)), are available. Click to see what each one does.
-                """)
+            var lines = [String(localized: "New versions are available:")]
+            if let appRelease { lines.append(String(localized: "• Dispatch \(appRelease.version), this app")) }
+            if let paperclipLatest { lines.append(String(localized: "• Paperclip \(paperclipLatest), the server")) }
+            for plugin in pluginUpdates {
+                lines.append(String(localized: "• \(plugin.name) \(plugin.latest ?? ""), a plugin"))
+            }
+            lines.append(String(localized: "Click to see what each one does."))
+            button.toolTip = lines.joined(separator: "\n")
         } else if let appRelease {
             show(String(localized: "Update Dispatch"), image: AppIcon.image(size: Self.iconSize))
             button.tintProminence = .primary
@@ -158,7 +174,14 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
                 \(status.paperclipVersion.map { String(localized: " (you have \($0))") } ?? "").
                 Updating it pauses your agents while it restarts, so you choose when.
                 """)
-        } else if status.checkingUpdate || app.phase == .checking {
+        } else if let plugin = pluginUpdates.first {
+            show(String(localized: "Update \(plugin.name)"), symbol: "puzzlepiece.extension.fill")
+            button.tintProminence = .primary
+            button.toolTip = String(localized: """
+                A new version of the \(plugin.name) plugin is available: \(plugin.latest ?? "") (you have \
+                \(plugin.version)). Updating it doesn’t stop your agents.
+                """)
+        } else if status.checkingUpdate || app.phase == .checking || plugins.checking {
             show(String(localized: "Checking…"), symbol: "arrow.clockwise")
             button.toolTip = nil
         } else if let news = app.whatsNew {
@@ -183,7 +206,11 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             lines.append("Paperclip: \(unavailable)")
         }
         lines.append(String(localized: "Dispatch \(dispatch): this app, the window you use Paperclip from."))
-        if let checked = [app.lastCheckedAt, status.lastCheckedAt].compactMap(\.self).max() {
+        if !plugins.plugins.isEmpty {
+            let list = plugins.plugins.map { "\($0.name) \($0.version)" }.formatted(.list(type: .and))
+            lines.append(String(localized: "Plugins: \(list)."))
+        }
+        if let checked = [app.lastCheckedAt, status.lastCheckedAt, plugins.lastCheckedAt].compactMap(\.self).max() {
             lines.append(String(localized: "Last checked: \(checked.formatted(date: .omitted, time: .shortened))"))
         }
         lines.append(String(localized: "Click to see more or check again."))
