@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowController: MainWindowController?
     private var updates: UpdateController?
     private var plugins: PluginUpdates?
+    private var updateNotices: UpdateNotices?
     /// Las versiones de esta app. Existe desde el arranque: busca aunque todavía no haya Paperclip elegido.
     private let appUpdater = AppUpdater()
     private var updatesButton: UpdatesButton?
@@ -90,10 +91,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             app: appUpdater,
             status: status,
             plugins: plugins,
+            preferences: preferences,
             host: windowController,
             checkPaperclip: { [weak updates] in updates?.checkNow() },
             updatePaperclip: { [weak updates] in updates?.requestUpdate() }
         )
+        let updateNotices = UpdateNotices(
+            app: appUpdater,
+            status: status,
+            plugins: plugins,
+            preferences: preferences,
+            notifications: notifications,
+            isInFront: { [weak windowController] in windowController?.isInFront ?? false },
+            canPresent: { [weak self, weak windowController] in
+                (windowController?.canPresentOverlay ?? false) && self?.nudge?.isVisible != true
+            },
+            isPanelOpen: { [weak self] in self?.updatesButton?.isPanelShown ?? false },
+            openPanel: { [weak self] in self?.showUpdatesPanel() }
+        )
+        self.updateNotices = updateNotices
+        updatesButton?.onPanelShown = { [weak updateNotices] in updateNotices?.panelOpened() }
         let decisions = DecisionsMonitor(api: api, preferences: preferences, notifications: notifications) {
             [weak windowController] in windowController?.isInFront ?? false
         }
@@ -121,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         decisions.onAttention = { [weak telegram] companyId, items, complete in
             telegram?.update(companyId: companyId, items: items, complete: complete)
         }
-        connectGuidance(window: windowController, decisions: decisions, telegram: telegram)
+        connectGuidance(window: windowController, decisions: decisions, telegram: telegram, pill: updateNotices.pill)
 
         preferences.onChange = { [weak self] in self?.applyPreferences() }
         windowController.onThemeChosen = { [weak self] dark in
@@ -142,6 +159,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         notifications.onPageClick = { [weak windowController] id in
             windowController?.openPageNotification(id: id)
+        }
+        notifications.onUpdatesClick = { [weak self] in self?.showUpdatesPanel() }
+        // Lo que se avisó con la app atrás sale también en la ventana al volver.
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification, object: windowController.window, queue: .main
+        ) { [weak updateNotices] _ in
+            MainActor.assumeIsolated { updateNotices?.cameToFront() }
         }
         notifications.onWake = { [weak decisions] id, wake, href, preview in
             decisions?.wake(wake, notificationId: id, href: href, preview: preview)
@@ -164,24 +188,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.start()
         updates.start()
         plugins.start()
+        updateNotices.start()
         telegram.start()
         decisions.start()
     }
 
     /// Las sugerencias (como conectar Telegram) y el recordatorio de avisos: esperan a que se esté usando
     /// Paperclip con la sesión iniciada y nunca salen a la vez.
-    private func connectGuidance(window: MainWindowController, decisions: DecisionsMonitor, telegram: TelegramChannel) {
+    private func connectGuidance(
+        window: MainWindowController, decisions: DecisionsMonitor, telegram: TelegramChannel, pill: UpdatePill
+    ) {
         let tips = TipCenter(host: window) { [weak telegram] tip in
             switch tip {
             case .telegram: telegram.map { !$0.hasToken } ?? false
             }
         }
-        let nudge = NotificationNudge(preferences: preferences, notifications: notifications) { [weak window] in
-            window?.canPresentOverlay ?? false
+        // En el mismo lugar que la píldora de versiones nuevas: espera a que se vaya.
+        let nudge = NotificationNudge(preferences: preferences, notifications: notifications) { [weak window, weak pill] in
+            (window?.canPresentOverlay ?? false) && pill?.isVisible != true
         }
         self.tips = tips
         self.nudge = nudge
-        window.setBottomOverlay(NotificationNudgeView(model: nudge), padding: NotificationNudgeView.shadowRoom)
+        window.setBottomOverlay(BottomPills(nudge: nudge, updates: pill), padding: NotificationNudgeView.shadowRoom)
         tips.onAction = { [weak self] tip in
             switch tip {
             case .telegram: self?.openSettings(at: .telegram)
@@ -340,6 +368,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func openLink(_ sender: NSMenuItem) {
         guard let url = sender.representedObject as? URL else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    /// Un clic en el aviso de una versión nueva o «Ver» en su píldora: la ventana al frente y el panel.
+    private func showUpdatesPanel() {
+        guard let windowController else { return }
+        windowController.showWindow(nil)
+        NSApp.activate()
+        updatesButton?.showPanel()
     }
 
     /// «Buscar actualizaciones…» del menú: la ventana al frente y el panel con las dos, revisando.

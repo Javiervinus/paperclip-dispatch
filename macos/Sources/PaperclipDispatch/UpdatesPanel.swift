@@ -28,6 +28,8 @@ struct UpdatesPanel: View {
     let status: AppStatus
     let plugins: PluginUpdates
     let actions: UpdatesPanelActions
+    /// La campana de abajo: avisar de las versiones nuevas (`Preferences.updateNotifications`).
+    @Binding var notifiesOfNewVersions: Bool
     /// Para los ensayos: la lista de plugins ya abierta.
     var showsAllPlugins = false
 
@@ -59,6 +61,22 @@ struct UpdatesPanel: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
+            Button {
+                notifiesOfNewVersions.toggle()
+            } label: {
+                Label(
+                    "Notify me of new versions",
+                    systemImage: notifiesOfNewVersions ? "bell" : "bell.slash"
+                )
+                .labelStyle(.iconOnly)
+                .contentTransition(.symbolEffect(.replace))
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .help(notifiesOfNewVersions
+                ? String(localized: "Notifies you of new versions, without sound. Click to stop.")
+                : String(localized: "Doesn’t notify you of new versions. Click to turn it on."))
+            .accessibilityValue(notifiesOfNewVersions ? Text("On") : Text("Off"))
             Button("Check Now", action: actions.checkAll)
                 .buttonStyle(.glass)
                 .disabled(busy)

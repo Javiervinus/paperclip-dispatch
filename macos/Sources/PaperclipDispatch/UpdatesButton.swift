@@ -16,6 +16,8 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
     private let plugins: PluginUpdates
     private unowned let host: MainWindowController
     private let checkPaperclip: () -> Void
+    /// Al abrir el panel: ahí se ven las versiones nuevas que se avisaron (`UpdateNotices`).
+    var onPanelShown: (() -> Void)?
     /// Las novedades se dan por vistas al cerrar el panel en que se mostraron.
     private var showedWhatsNew = false
     /// Con el panel abierto el botón no se angosta (al pasar a «Revisando…», por ejemplo): el panel cuelga
@@ -28,6 +30,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         app: AppUpdater,
         status: AppStatus,
         plugins: PluginUpdates,
+        preferences: Preferences,
         host: MainWindowController,
         checkPaperclip: @escaping () -> Void,
         updatePaperclip: @escaping () -> Void
@@ -56,6 +59,10 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
                     self?.popover.performClose(nil)
                     updatePaperclip()
                 }
+            ),
+            notifiesOfNewVersions: Binding(
+                get: { preferences.updateNotifications },
+                set: { preferences.updateNotifications = $0 }
             )
         ))
         panel.sizingOptions = [.preferredContentSize]
@@ -68,6 +75,8 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
         showPanel()
         checkAll()
     }
+
+    var isPanelShown: Bool { popover.isShown }
 
     func showPanel() {
         guard !popover.isShown else { return }
@@ -83,6 +92,7 @@ final class UpdatesButton: NSObject, NSPopoverDelegate {
             popover.show(relativeTo: corner, of: content, preferredEdge: .minY)
         }
         showedWhatsNew = app.whatsNew != nil && app.phase.release == nil
+        onPanelShown?()
     }
 
     private func checkAll() {

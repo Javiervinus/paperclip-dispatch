@@ -12,6 +12,8 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     var onClick: ((_ href: String?) -> Void)?
     /// Un clic en un aviso de la página (PageNotifications), con el `id` que le dio la página.
     var onPageClick: ((_ id: String) -> Void)?
+    /// Un clic en el aviso de una versión nueva (`UpdateNotices`): abre el panel de actualizaciones.
+    var onUpdatesClick: (() -> Void)?
     /// Se apretó «Despertar a …» en el aviso de una tarea trabada. `id` es el del aviso, para reemplazarlo
     /// con lo que respondió Paperclip; `preview`, su «Ver en vivo», para que el aviso nuevo lo conserve.
     var onWake: ((_ id: String, _ wake: WakeButton, _ href: String?, _ preview: URL?) -> Void)?
@@ -54,9 +56,11 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     /// botones, en este orden: con `wake`, el que despierta al agente; con `preview`, «Ver en vivo», que abre esa
     /// dirección; con `openLabel`, uno con ese texto que abre `href` (lo mismo que un clic en el aviso). Sin
     /// `sound`, llega callado (p. ej. la respuesta a «Despertar»). Con `pageNotification`, es un aviso de la
-    /// página: el clic va a `onPageClick` con ese id.
+    /// página: el clic va a `onPageClick` con ese id. Con `opensUpdates`, el clic abre el panel de
+    /// actualizaciones (`onUpdatesClick`).
     func show(id: String, tag: String?, title: String, body: String, href: String?, wake: WakeButton? = nil,
-              preview: URL? = nil, openLabel: String? = nil, pageNotification: String? = nil, sound: Bool = true) {
+              preview: URL? = nil, openLabel: String? = nil, pageNotification: String? = nil,
+              opensUpdates: Bool = false, sound: Bool = true) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -65,6 +69,7 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         if let wake { info.merge(wake.userInfo) { _, new in new } }
         if let preview { info["previewURL"] = preview.absoluteString }
         if let pageNotification { info["pageNotification"] = pageNotification }
+        if opensUpdates { info["opensUpdates"] = true }
         content.userInfo = info
         let identifier = tag.flatMap { $0.isEmpty ? nil : $0 } ?? id
         var buttons: [Button] = []
@@ -155,6 +160,8 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         default:
             if let page = info["pageNotification"] as? String {
                 await MainActor.run { onPageClick?(page) }
+            } else if info["opensUpdates"] as? Bool == true {
+                await MainActor.run { onUpdatesClick?() }
             } else {
                 await MainActor.run { onClick?(href) }
             }

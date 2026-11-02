@@ -156,6 +156,7 @@ enum NotificationsSnapshot {
         cases += assignedTaskCases(channel: channel)
         cases += livePreviewCases(channel: channel, stuck: agentItem, wake: button)
         cases += runLimitCases(channel: channel)
+        cases += updateCases()
         var windows: [Snapshot.Window] = []
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
@@ -167,6 +168,20 @@ enum NotificationsSnapshot {
         }
         try? await Task.sleep(for: drawTime)
         await Snapshot.capture(windows, in: directory)
+    }
+
+    /// Los avisos de versiones nuevas (`UpdateNotices`), con la app atrás: sin botones, un clic abre el panel.
+    private static func updateCases() -> [(file: String, view: AnyView)] {
+        let plugins = MainWindowSnapshot.samplePlugins.filter { $0.latest != nil }
+        func scene(_ notice: UpdateNotices.Notice) -> AnyView {
+            AnyView(MacScene(notices: [MacNoticePreview(title: notice.title, body: notice.body, action: nil)]))
+        }
+        return [
+            ("mac-update-dispatch", scene(UpdateNotices.dispatchNotice(MainWindowSnapshot.sampleRelease.version, ready: true))),
+            ("mac-update-paperclip", scene(UpdateNotices.paperclipNotice("2026.1101.0"))),
+            ("mac-update-plugin", scene(UpdateNotices.pluginsNotice([plugins[0]]))),
+            ("mac-update-plugins", scene(UpdateNotices.pluginsNotice(plugins))),
+        ]
     }
 
     /// Un `blocker_attention` como lo manda Paperclip 2026.1023.0 para una tarea trabada: `subject` es la tarea

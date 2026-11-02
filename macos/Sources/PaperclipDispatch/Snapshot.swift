@@ -72,6 +72,7 @@ enum Snapshot {
             app: AppUpdater(previewing: .idle),
             status: status,
             plugins: PluginUpdates(previewing: []),
+            preferences: Preferences(),
             host: host,
             checkPaperclip: {},
             updatePaperclip: {}
@@ -246,6 +247,13 @@ enum MainWindowSnapshot {
         case upToDate, dispatch, both, plugin, all, whatsNew
     }
 
+    /// Lo que va abajo en la ventana.
+    private enum Overlay {
+        case nudge(NotificationNudge.Problem)
+        /// La píldora de versiones nuevas, con esas.
+        case updates([UpdatePill.Item])
+    }
+
     /// Plugins de muestra: dos de npm con versión nueva, dos al día y uno que sale de una carpeta.
     static let samplePlugins = [
         PluginUpdates.Plugin(
@@ -288,7 +296,9 @@ enum MainWindowSnapshot {
     )
 
     static func run(config: AppConfig, to directory: URL) async {
-        let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates, nudge: NotificationNudge.Problem?)] = [
+        let paperclipItem = UpdateNotices.paperclipItem("2026.1101.0")
+        let pluginsItem = UpdateNotices.pluginsItem(samplePlugins.filter { $0.latest != nil })
+        let cases: [(file: String, startsWithGlass: Bool, switches: Bool, updates: Updates, overlay: Overlay?)] = [
             ("normal", false, false, .upToDate, nil),
             ("glass", true, false, .upToDate, nil),
             ("normal-to-glass", false, true, .upToDate, nil),
@@ -299,8 +309,15 @@ enum MainWindowSnapshot {
             ("plugin-glass", true, false, .plugin, nil),
             ("all-glass", true, false, .all, nil),
             ("whats-new-glass", true, false, .whatsNew, nil),
-            ("notifications-off-normal", false, false, .upToDate, .off),
-            ("notifications-partial-glass", true, false, .upToDate, .noBanners),
+            ("notifications-off-normal", false, false, .upToDate, .nudge(.off)),
+            ("notifications-partial-glass", true, false, .upToDate, .nudge(.noBanners)),
+            ("update-pill-paperclip-glass", true, false, .both, .updates([paperclipItem])),
+            ("update-pill-several-glass", true, false, .all, .updates([
+                UpdateNotices.dispatchItem(sampleRelease.version, ready: true), paperclipItem, pluginsItem,
+            ])),
+            ("update-pill-plugins-normal", false, false, .plugin, .updates([
+                UpdateNotices.pluginsItem([samplePlugins[0]]),
+            ])),
         ]
         let preferences = Preferences()
         let notifications = NotificationBridge()
@@ -332,12 +349,17 @@ enum MainWindowSnapshot {
             case .whatsNew: app = AppUpdater(previewing: .idle, whatsNew: sampleRelease)
             }
             buttons.append(UpdatesButton(
-                app: app, status: status, plugins: PluginUpdates(previewing: plugins), host: controller,
-                checkPaperclip: {}, updatePaperclip: {}
+                app: app, status: status, plugins: PluginUpdates(previewing: plugins), preferences: preferences,
+                host: controller, checkPaperclip: {}, updatePaperclip: {}
             ))
-            if let problem = item.nudge {
+            switch item.overlay {
+            case .nudge(let problem):
                 let nudge = NotificationNudge(previewing: problem, preferences: preferences, notifications: notifications)
                 controller.setBottomOverlay(NotificationNudgeView(model: nudge), padding: NotificationNudgeView.shadowRoom)
+            case .updates(let items):
+                controller.setBottomOverlay(UpdatePillView(model: UpdatePill(previewing: items)), padding: NotificationNudgeView.shadowRoom)
+            case nil:
+                break
             }
             Snapshot.hide(window, contentSize: contentSize)
             controllers.append((controller, item.switches, item.startsWithGlass))
@@ -356,11 +378,11 @@ enum MainWindowSnapshot {
     /// El panel de actualizaciones solo, en una ventana: con todo por actualizar, con la lista de plugins
     /// abierta, con un plugin actualizándose y con los plugins al día.
     private static func panelWindows(paperclip: String) -> [Snapshot.Window] {
-        let cases: [(file: String, plugins: [PluginUpdates.Plugin], updating: String?, showsAll: Bool)] = [
-            ("updates-panel-all", samplePlugins, nil, false),
-            ("updates-panel-plugins-list", samplePlugins, nil, true),
-            ("updates-panel-plugin-updating", samplePlugins, samplePlugins[0].id, false),
-            ("updates-panel-plugins-up-to-date", samplePluginsUpToDate, nil, false),
+        let cases: [(file: String, plugins: [PluginUpdates.Plugin], updating: String?, showsAll: Bool, notifies: Bool)] = [
+            ("updates-panel-all", samplePlugins, nil, false, true),
+            ("updates-panel-plugins-list", samplePlugins, nil, true, true),
+            ("updates-panel-plugin-updating", samplePlugins, samplePlugins[0].id, false, true),
+            ("updates-panel-plugins-up-to-date", samplePluginsUpToDate, nil, false, false),
         ]
         return cases.map { item in
             let status = AppStatus()
@@ -372,6 +394,7 @@ enum MainWindowSnapshot {
                 status: status,
                 plugins: PluginUpdates(previewing: item.plugins, updatingID: item.updating),
                 actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {}),
+                notifiesOfNewVersions: .constant(item.notifies),
                 showsAllPlugins: item.showsAll
             )
             let hosting = NSHostingController(rootView: panel)

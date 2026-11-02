@@ -38,6 +38,7 @@ final class Preferences {
         static let dockBadge = "dockBadge"
         static let liquidGlassPage = "liquidGlassPage"
         static let wakeMissedHandoffs = "wakeMissedHandoffs"
+        static let updateNotifications = "updateNotifications"
     }
 
     var appearance: Appearance {
@@ -63,6 +64,12 @@ final class Preferences {
     /// (PageNotifications). Apagado hasta que una página lo pide, como en un navegador.
     var pageNotifications: Bool {
         didSet { save(pageNotifications, Key.pageNotifications) }
+    }
+
+    /// Un aviso de macOS, sin sonido, cuando sale una versión nueva de esta app, de Paperclip o de un plugin
+    /// (`UpdateNotices`). Se cambia también con la campana del panel de actualizaciones.
+    var updateNotifications: Bool {
+        didSet { save(updateNotifications, Key.updateNotifications) }
     }
 
     /// Avisar también con la ventana de Paperclip al frente, donde la barra lateral ya lo muestra.
@@ -103,6 +110,7 @@ final class Preferences {
             Key.dockBadge: true,
             Key.liquidGlassPage: false,
             Key.wakeMissedHandoffs: true,
+            Key.updateNotifications: true,
         ])
         appearance = defaults.string(forKey: Key.appearance).flatMap(Appearance.init) ?? .system
         decisionNotifications = defaults.bool(forKey: Key.decisionNotifications)
@@ -113,6 +121,7 @@ final class Preferences {
         dockBadge = defaults.bool(forKey: Key.dockBadge)
         liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
         wakeMissedHandoffs = defaults.bool(forKey: Key.wakeMissedHandoffs)
+        updateNotifications = defaults.bool(forKey: Key.updateNotifications)
     }
 
     private func save(_ value: Any, _ key: String) {

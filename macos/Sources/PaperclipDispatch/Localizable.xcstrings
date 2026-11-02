@@ -147,6 +147,16 @@
         }
       }
     },
+    "%@ is out": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salió %@"
+          }
+        }
+      }
+    },
     "%@ isn’t responding.": {
       "localizations": {
         "es": {
@@ -187,6 +197,16 @@
         }
       }
     },
+    "%@. Update them whenever you like: your agents keep working.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. Actualízalos cuando quieras: tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
     "%lld Updates": {
       "localizations": {
         "es": {
@@ -213,6 +233,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld en Paperclip · al día"
+          }
+        }
+      }
+    },
+    "%lld plugins": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld plugins"
+          }
+        }
+      }
+    },
+    "%lld plugins have new versions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld plugins tienen versión nueva"
           }
         }
       }
@@ -403,6 +443,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Un agente de Paperclip le pide una decisión a la persona que lo dirige, que la está viendo en el teléfono. Con el contexto de abajo, explícale en español claro y en 4 a 6 líneas cortas: de qué trata la tarea, qué hizo el agente hasta ahora, qué le pide exactamente y qué pasa con cada opción. No decidas por ella ni inventes nada que no esté en el contexto. Solo texto, con **negritas** como mucho; sin títulos ni listas largas."
+          }
+        }
+      }
+    },
+    "A Paperclip plugin. Update it whenever you like: your agents keep working.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es un plugin de Paperclip. Actualízalo cuando quieras: tus agentes siguen trabajando."
           }
         }
       }
@@ -833,6 +883,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Banners, sonido y el número en el Dock: todo encendido."
+          }
+        }
+      }
+    },
+    "Best updated at a quiet moment: it restarts.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mejor actualizarlo en un momento tranquilo: se reinicia."
           }
         }
       }
@@ -1553,6 +1613,26 @@
         }
       }
     },
+    "Dispatch %@ is out": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salió Dispatch %@"
+          }
+        }
+      }
+    },
+    "Dispatch %@ is ready": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispatch %@ está lista"
+          }
+        }
+      }
+    },
     "Dispatch %@: this app, the window you use Paperclip from.": {
       "localizations": {
         "es": {
@@ -1593,6 +1673,16 @@
         }
       }
     },
+    "Doesn’t notify you of new versions. Click to turn it on.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No te avisa de las versiones nuevas. Clic para activarlo."
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "es": {
@@ -1629,6 +1719,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Descargar y reiniciar"
+          }
+        }
+      }
+    },
+    "Download it from the updates button whenever you like. Paperclip and your agents keep working.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descárgala desde el botón de actualizaciones cuando quieras. Paperclip y tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
+    "Download it whenever you like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descárgala cuando quieras."
           }
         }
       }
@@ -2043,6 +2153,26 @@
         }
       }
     },
+    "It installs when you restart or quit the app. Paperclip and your agents keep working.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instala cuando reinicias o cierras la app. Paperclip y tus agentes siguen trabajando."
+          }
+        }
+      }
+    },
+    "It installs when you restart the app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se instala cuando reinicias la app."
+          }
+        }
+      }
+    },
     "It isn’t accepting connections: Paperclip may not be running.": {
       "localizations": {
         "es": {
@@ -2323,6 +2453,26 @@
         }
       }
     },
+    "Later": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más tarde"
+          }
+        }
+      }
+    },
+    "Later: they stay in the updates button": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más tarde: siguen en el botón de actualizaciones"
+          }
+        }
+      }
+    },
     "Latest comments, oldest to newest:": {
       "localizations": {
         "es": {
@@ -2583,6 +2733,16 @@
         }
       }
     },
+    "New versions:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versiones nuevas:"
+          }
+        }
+      }
+    },
     "Next": {
       "localizations": {
         "es": {
@@ -2793,6 +2953,16 @@
         }
       }
     },
+    "Notifies you of new versions, without sound. Click to stop.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te avisa de las versiones nuevas, sin sonido. Clic para dejar de avisarte."
+          }
+        }
+      }
+    },
     "Notifies you when a decision is waiting for you, even if you’re in another app.": {
       "localizations": {
         "es": {
@@ -2819,6 +2989,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Avisar también si estoy mirando Paperclip"
+          }
+        }
+      }
+    },
+    "Notify me of new versions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisarme de versiones nuevas"
           }
         }
       }
@@ -2863,12 +3043,42 @@
         }
       }
     },
+    "Of this app, Paperclip and its plugins, once per version and without sound: in the window if you’re looking at it, otherwise as a macOS notification. Plugins together, at most once a day.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De esta app, de Paperclip y de sus plugins, una vez por versión y sin sonido: en la ventana si la estás mirando y, si no, en un aviso de macOS. Los plugins, juntos y como mucho una vez al día."
+          }
+        }
+      }
+    },
+    "Off": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivado"
+          }
+        }
+      }
+    },
     "Off. You can turn them on anytime; the app will remind you.": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Apagados. Puedes activarlos cuando quieras; la app te lo recordará."
+          }
+        }
+      }
+    },
+    "On": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activado"
           }
         }
       }
@@ -3139,6 +3349,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otra respuesta…"
+          }
+        }
+      }
+    },
+    "Paperclip %@ is out": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salió Paperclip %@"
           }
         }
       }
@@ -3905,6 +4125,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sección"
+          }
+        }
+      }
+    },
+    "See": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver"
           }
         }
       }
@@ -5111,6 +5341,26 @@
         }
       }
     },
+    "Update it whenever you like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualízalo cuando quieras."
+          }
+        }
+      }
+    },
+    "Update them whenever you like.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualízalos cuando quieras."
+          }
+        }
+      }
+    },
     "Update to %@": {
       "localizations": {
         "es": {
@@ -5187,6 +5437,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Actualizando Paperclip. No cierres la app hasta que termine."
+          }
+        }
+      }
+    },
+    "Updating it restarts it and pauses your agents in the meantime: best done at a quiet moment.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizarlo lo reinicia y pausa a tus agentes mientras tanto: mejor en un momento tranquilo."
           }
         }
       }

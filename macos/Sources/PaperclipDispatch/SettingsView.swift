@@ -322,6 +322,10 @@ private struct NotificationsPane: View {
                     Text("Notify when an agent hits its daily run limit")
                     Text("On this Mac and in Telegram, once a day per agent: until the count resets, Paperclip skips everything that would wake it.")
                 }
+                Toggle(isOn: $preferences.updateNotifications) {
+                    Text("Notify me of new versions")
+                    Text("Of this app, Paperclip and its plugins, once per version and without sound: in the window if you’re looking at it, otherwise as a macOS notification. Plugins together, at most once a day.")
+                }
                 Toggle(isOn: $preferences.pageNotifications) {
                     Text("Let plugins notify me")
                     Text("As in a browser, the plugin asks first, like Oficina global’s system notice. They come on top of the app’s own.")
