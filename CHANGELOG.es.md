@@ -15,8 +15,8 @@ manda aquí.
 ### Nuevo
 
 - **Actualiza los plugins de Paperclip desde el panel de actualizaciones.** Los instalados desde npm
-  muestran su versión nueva y un botón «Actualizar», y Paperclip cambia el plugin sin detener a tus
-  agentes. Los que salen de una carpeta también aparecen, pero se actualizan en esa carpeta.
+  muestran su versión nueva con un botón «Actualizar», y Paperclip cambia el plugin sin detener a tus
+  agentes. Una versión nueva de un plugin no pinta el botón de arriba: su palomita solo pasa a una pieza gris.
 
 ## 0.3.0 — 2026-11-02
 

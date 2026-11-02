@@ -14,8 +14,8 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
 ### Added
 
 - **Update Paperclip’s plugins from the updates panel.** Plugins installed from npm show their new version
-  and an Update button, and Paperclip swaps the plugin without stopping your agents. Plugins installed from
-  a folder are listed too, but they update in that folder.
+  with an Update button, and Paperclip swaps the plugin without stopping your agents. A new plugin version
+  doesn’t color the top button: its check mark just turns into a gray puzzle piece.
 
 ## 0.3.0 — 2026-11-02
 
