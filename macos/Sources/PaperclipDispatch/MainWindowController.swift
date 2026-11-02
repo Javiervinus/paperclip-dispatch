@@ -62,6 +62,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private let sidebarPanel = GlassPanel(edge: .leading)
     private let inspectorPanel = GlassPanel(edge: .trailing)
     private let downloads = DownloadHandler()
+    /// La IA integrada de Chrome que buscan algunos plugins, con el modelo de Apple (language-model.js).
+    private let languageModel: LanguageModelBridge
     private var webView: PaperclipWebView!
     /// La flecha del gesto de atrás y adelante, sobre la página.
     private let swipeIndicator = SwipeIndicator()
@@ -113,6 +115,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false, initialURL: URL? = nil) {
         self.config = config
         glass = liquidGlass
+        languageModel = LanguageModelBridge(allows: { [config] in Self.isPaperclip($0, config: config) })
         let window = SnapshotableWindow(
             contentRect: NSRect(origin: .zero, size: Self.defaultContentSize),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
@@ -171,6 +174,9 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         configuration.websiteDataStore = .default()
         configuration.preferences.isElementFullscreenEnabled = true
         configuration.userContentController.add(self, name: Self.messageHandlerName)
+        configuration.userContentController.addScriptMessageHandler(
+            languageModel, contentWorld: .page, name: LanguageModelBridge.handlerName
+        )
 
         let webView = PaperclipWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true
@@ -568,11 +574,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     // MARK: - Mensajes de la página
 
+    /// Si un mensaje viene de este Paperclip: un iframe de otro sitio no le habla a la app.
+    private static func isPaperclip(_ origin: WKSecurityOrigin, config: AppConfig) -> Bool {
+        origin.protocol == config.serverURL.scheme && origin.host == config.serverURL.host()
+            && origin.port == (config.serverURL.port ?? 0)
+    }
+
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-        // Solo desde este Paperclip: un iframe de otro sitio no le habla a la app.
-        let origin = message.frameInfo.securityOrigin
-        guard origin.protocol == config.serverURL.scheme, origin.host == config.serverURL.host(),
-              origin.port == (config.serverURL.port ?? 0),
+        guard Self.isPaperclip(message.frameInfo.securityOrigin, config: config),
               let body = message.body as? [String: Any], let type = body["type"] as? String
         else { return }
 
@@ -670,6 +679,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        languageModel.reset()
         refreshDocumentKind()
     }
 

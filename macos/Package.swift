@@ -27,6 +27,7 @@ let package = Package(
                 .linkedFramework("WebKit"),
                 .linkedFramework("UserNotifications"),
                 .linkedFramework("Security"),
+                .linkedFramework("FoundationModels"),
             ]
         ),
     ]

@@ -2,20 +2,22 @@ import Foundation
 import WebKit
 
 /// Los archivos de la página que build.sh copia en Contents/Resources, en el orden en que se inyectan:
-/// primero los estilos y después los scripts. Siempre van el puente con la app (tema y avisos) y el
-/// diseño de la ventana sin barra de título (layout.css y layout.js); el vidrio (glass.css), solo si se
-/// activa (Ajustes → General → Experimental), y después de layout.css, cuyas medidas ajusta.
+/// primero los estilos y después los scripts. Siempre van el puente con la app (tema y avisos), el
+/// diseño de la ventana sin barra de título (layout.css y layout.js) y la IA de Chrome con la de Apple
+/// (language-model.js); el vidrio (glass.css), solo si se activa (Ajustes → General → Experimental), y
+/// después de layout.css, cuyas medidas ajusta.
 @MainActor
 enum WebResources {
     private static let bridge = "bridge.js"
     private static let layoutScript = "layout.js"
     private static let layoutStyle = "layout.css"
     private static let glassStyle = "glass.css"
+    private static let languageModelScript = "language-model.js"
 
     /// Los scripts de cada carga de la página.
     static func userScripts(glass: Bool) -> [WKUserScript] {
         let styles = glass ? [layoutStyle, glassStyle] : [layoutStyle]
-        let scripts = [bridge, layoutScript]
+        let scripts = [bridge, layoutScript, languageModelScript]
         let sources = styles.compactMap(read).map(styleInjection) + scripts.compactMap(read)
         return sources.map {
             WKUserScript(source: $0, injectionTime: .atDocumentStart, forMainFrameOnly: true)
