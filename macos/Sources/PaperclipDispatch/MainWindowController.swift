@@ -64,6 +64,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private let downloads = DownloadHandler()
     /// La IA integrada de Chrome que buscan algunos plugins, con el modelo de Apple (language-model.js).
     private let languageModel: LanguageModelBridge
+    private let pageNotifications: PageNotifications?
     private var webView: PaperclipWebView!
     /// La flecha del gesto de atrás y adelante, sobre la página.
     private let swipeIndicator = SwipeIndicator()
@@ -111,11 +112,13 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     /// `rehearsal`: para los ensayos, que la ponen fuera de la pantalla. No lee ni guarda dónde quedó la
     /// ventana. `initialURL`: la página con que abre (la que estaba al reiniciar para actualizar); sin ella,
-    /// el inicio de Paperclip.
-    init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false, initialURL: URL? = nil) {
+    /// el inicio de Paperclip. `pageNotifications`: los avisos de la página; sin ellos, quedan bloqueados.
+    init(config: AppConfig, liquidGlass: Bool, rehearsal: Bool = false, initialURL: URL? = nil,
+         pageNotifications: PageNotifications? = nil) {
         self.config = config
         glass = liquidGlass
         languageModel = LanguageModelBridge(allows: { [config] in Self.isPaperclip($0, config: config) })
+        self.pageNotifications = pageNotifications
         let window = SnapshotableWindow(
             contentRect: NSRect(origin: .zero, size: Self.defaultContentSize),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
@@ -177,6 +180,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         configuration.userContentController.addScriptMessageHandler(
             languageModel, contentWorld: .page, name: LanguageModelBridge.handlerName
         )
+        if let pageNotifications {
+            configuration.userContentController.addScriptMessageHandler(
+                pageNotifications, contentWorld: .page, name: PageNotifications.handlerName
+            )
+        }
 
         let webView = PaperclipWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true
@@ -241,10 +249,29 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         topBarHeight = 0
         pageIsDesktop = true
         pointerOverDragArea = false
+        installUserScripts()
+        refreshUpdateButton()
+    }
+
+    private func installUserScripts() {
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
-        WebResources.userScripts(glass: glass).forEach(controller.addUserScript)
-        refreshUpdateButton()
+        WebResources.userScripts(glass: glass, notificationPermission: pageNotifications?.permission)
+            .forEach(controller.addUserScript)
+    }
+
+    /// El permiso de los avisos de la página cambió (Ajustes, macOS): la página abierta y las que vengan.
+    func refreshPageNotifications() {
+        guard let permission = pageNotifications?.permission else { return }
+        installUserScripts()
+        evaluate("window.__paperclipDispatchNotifications?.permission(\(WebResources.jsonLiteral(permission)))")
+    }
+
+    /// Un clic en un aviso de la página: la ventana al frente y el `click` en la página, si sigue abierta.
+    func openPageNotification(id: String) {
+        showWindow(nil)
+        NSApp.activate()
+        evaluate("window.__paperclipDispatchNotifications?.click(\(WebResources.jsonLiteral(id)))")
     }
 
     /// El botón de la versión flota sobre la página, a la derecha de la barra de la ruta de Paperclip, que le
@@ -575,7 +602,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     // MARK: - Mensajes de la página
 
     /// Si un mensaje viene de este Paperclip: un iframe de otro sitio no le habla a la app.
-    private static func isPaperclip(_ origin: WKSecurityOrigin, config: AppConfig) -> Bool {
+    static func isPaperclip(_ origin: WKSecurityOrigin, config: AppConfig) -> Bool {
         origin.protocol == config.serverURL.scheme && origin.host == config.serverURL.host()
             && origin.port == (config.serverURL.port ?? 0)
     }

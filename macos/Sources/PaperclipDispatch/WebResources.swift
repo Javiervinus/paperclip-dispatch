@@ -3,9 +3,9 @@ import WebKit
 
 /// Los archivos de la página que build.sh copia en Contents/Resources, en el orden en que se inyectan:
 /// primero los estilos y después los scripts. Siempre van el puente con la app (tema y avisos), el
-/// diseño de la ventana sin barra de título (layout.css y layout.js) y la IA de Chrome con la de Apple
-/// (language-model.js); el vidrio (glass.css), solo si se activa (Ajustes → General → Experimental), y
-/// después de layout.css, cuyas medidas ajusta.
+/// diseño de la ventana sin barra de título (layout.css y layout.js), la IA de Chrome con la de Apple
+/// (language-model.js) y la API web de avisos con los de macOS (notifications.js); el vidrio (glass.css),
+/// solo si se activa (Ajustes → General → Experimental), y después de layout.css, cuyas medidas ajusta.
 @MainActor
 enum WebResources {
     private static let bridge = "bridge.js"
@@ -13,12 +13,17 @@ enum WebResources {
     private static let layoutStyle = "layout.css"
     private static let glassStyle = "glass.css"
     private static let languageModelScript = "language-model.js"
+    private static let notificationsScript = "notifications.js"
 
-    /// Los scripts de cada carga de la página.
-    static func userScripts(glass: Bool) -> [WKUserScript] {
+    /// Los scripts de cada carga de la página. `notificationPermission`: con el que empieza la página
+    /// (PageNotifications); sin él, los avisos de la página quedan en "default".
+    static func userScripts(glass: Bool, notificationPermission: String? = nil) -> [WKUserScript] {
         let styles = glass ? [layoutStyle, glassStyle] : [layoutStyle]
-        let scripts = [bridge, layoutScript, languageModelScript]
-        let sources = styles.compactMap(read).map(styleInjection) + scripts.compactMap(read)
+        let scripts = [bridge, layoutScript, languageModelScript, notificationsScript]
+        var sources = styles.compactMap(read).map(styleInjection) + scripts.compactMap(read)
+        if let notificationPermission {
+            sources.append("window.__paperclipDispatchNotifications?.permission(\(jsonLiteral(notificationPermission)));")
+        }
         return sources.map {
             WKUserScript(source: $0, injectionTime: .atDocumentStart, forMainFrameOnly: true)
         }

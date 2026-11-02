@@ -687,6 +687,16 @@
         }
       }
     },
+    "As in a browser, the plugin asks first, like Oficina global’s system notice. They come on top of the app’s own.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como en un navegador, el plugin lo pide primero, como el aviso del sistema de Oficina global. Se suman a los de la app."
+          }
+        }
+      }
+    },
     "Assigned by %@": {
       "localizations": {
         "es": {
@@ -2243,6 +2253,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lanzar los planes de precios nuevos"
+          }
+        }
+      }
+    },
+    "Let plugins notify me": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dejar que los plugins me avisen"
           }
         }
       }

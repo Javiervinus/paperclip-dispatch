@@ -10,6 +10,8 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     private(set) var permission = "default"
     private(set) var access: NotificationAccess?
     var onClick: ((_ href: String?) -> Void)?
+    /// Un clic en un aviso de la página (PageNotifications), con el `id` que le dio la página.
+    var onPageClick: ((_ id: String) -> Void)?
     /// Se apretó «Despertar a …» en el aviso de una tarea trabada. `id` es el del aviso, para reemplazarlo
     /// con lo que respondió Paperclip; `preview`, su «Ver en vivo», para que el aviso nuevo lo conserve.
     var onWake: ((_ id: String, _ wake: WakeButton, _ href: String?, _ preview: URL?) -> Void)?
@@ -51,9 +53,10 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     /// `tag` reemplaza el aviso anterior con la misma etiqueta; sin ella, el aviso se identifica con `id`. Los
     /// botones, en este orden: con `wake`, el que despierta al agente; con `preview`, «Ver en vivo», que abre esa
     /// dirección; con `openLabel`, uno con ese texto que abre `href` (lo mismo que un clic en el aviso). Sin
-    /// `sound`, llega callado (p. ej. la respuesta a «Despertar»).
+    /// `sound`, llega callado (p. ej. la respuesta a «Despertar»). Con `pageNotification`, es un aviso de la
+    /// página: el clic va a `onPageClick` con ese id.
     func show(id: String, tag: String?, title: String, body: String, href: String?, wake: WakeButton? = nil,
-              preview: URL? = nil, openLabel: String? = nil, sound: Bool = true) {
+              preview: URL? = nil, openLabel: String? = nil, pageNotification: String? = nil, sound: Bool = true) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -61,6 +64,7 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
         var info: [String: Any] = ["href": href ?? ""]
         if let wake { info.merge(wake.userInfo) { _, new in new } }
         if let preview { info["previewURL"] = preview.absoluteString }
+        if let pageNotification { info["pageNotification"] = pageNotification }
         content.userInfo = info
         let identifier = tag.flatMap { $0.isEmpty ? nil : $0 } ?? id
         var buttons: [Button] = []
@@ -76,6 +80,11 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
             content.categoryIdentifier = await category(buttons)
             try? await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: nil))
         }
+    }
+
+    /// Quita un aviso de la lista de macOS (y de la pantalla, si sigue ahí).
+    func remove(identifier: String) {
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
     }
 
     private struct Button {
@@ -144,7 +153,11 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
             guard let preview else { return }
             await MainActor.run { _ = NSWorkspace.shared.open(preview) }
         default:
-            await MainActor.run { onClick?(href) }
+            if let page = info["pageNotification"] as? String {
+                await MainActor.run { onPageClick?(page) }
+            } else {
+                await MainActor.run { onClick?(href) }
+            }
         }
     }
 

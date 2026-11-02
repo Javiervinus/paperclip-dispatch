@@ -63,10 +63,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Arma todo alrededor del Paperclip elegido: la ventana, las versiones, los avisos y el bot.
     private func connect(_ config: AppConfig) {
         self.config = config
+        let pageNotifications = PageNotifications(notifications: notifications, preferences: preferences) {
+            MainWindowController.isPaperclip($0, config: config)
+        }
         let windowController = MainWindowController(
             config: config,
             liquidGlass: preferences.liquidGlassPage,
-            initialURL: AppUpdater.takeRememberedPage(on: config.serverURL)
+            initialURL: AppUpdater.takeRememberedPage(on: config.serverURL),
+            pageNotifications: pageNotifications
         )
         self.windowController = windowController
         let updates = UpdateController(
@@ -131,11 +135,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onClick = { [weak windowController] href in
             windowController?.openNotification(href: href)
         }
+        notifications.onPageClick = { [weak windowController] id in
+            windowController?.openPageNotification(id: id)
+        }
         notifications.onWake = { [weak decisions] id, wake, href, preview in
             decisions?.wake(wake, notificationId: id, href: href, preview: preview)
         }
         notifications.onPermissionChange = { [weak self] permission in
             self?.status.notificationPermission = permission
+            self?.windowController?.refreshPageNotifications()
         }
         notifications.onAccessChange = { [weak self] access in
             self?.status.notificationAccess = access
@@ -260,6 +268,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.appearance = preferences.appearance.nsAppearance
         decisions?.applyBadge()
         windowController?.setLiquidGlass(preferences.liquidGlassPage)
+        windowController?.refreshPageNotifications()
         nudge?.preferencesChanged()
     }
 

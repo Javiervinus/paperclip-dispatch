@@ -34,6 +34,7 @@ final class Preferences {
         static let notifyWhileLooking = "notifyWhileLooking"
         static let taskNotifications = "taskNotifications"
         static let runLimitNotifications = "runLimitNotifications"
+        static let pageNotifications = "pageNotifications"
         static let dockBadge = "dockBadge"
         static let liquidGlassPage = "liquidGlassPage"
         static let wakeMissedHandoffs = "wakeMissedHandoffs"
@@ -56,6 +57,12 @@ final class Preferences {
     /// Un aviso de macOS y un mensaje de Telegram cuando un agente llega a su tope diario de corridas.
     var runLimitNotifications: Bool {
         didSet { save(runLimitNotifications, Key.runLimitNotifications) }
+    }
+
+    /// Las páginas de Paperclip (sus plugins) pueden mostrar avisos de macOS con la API web de avisos
+    /// (PageNotifications). Apagado hasta que una página lo pide, como en un navegador.
+    var pageNotifications: Bool {
+        didSet { save(pageNotifications, Key.pageNotifications) }
     }
 
     /// Avisar también con la ventana de Paperclip al frente, donde la barra lateral ya lo muestra.
@@ -92,6 +99,7 @@ final class Preferences {
             Key.notifyWhileLooking: false,
             Key.taskNotifications: true,
             Key.runLimitNotifications: true,
+            Key.pageNotifications: false,
             Key.dockBadge: true,
             Key.liquidGlassPage: false,
             Key.wakeMissedHandoffs: true,
@@ -101,6 +109,7 @@ final class Preferences {
         notifyWhileLooking = defaults.bool(forKey: Key.notifyWhileLooking)
         taskNotifications = defaults.bool(forKey: Key.taskNotifications)
         runLimitNotifications = defaults.bool(forKey: Key.runLimitNotifications)
+        pageNotifications = defaults.bool(forKey: Key.pageNotifications)
         dockBadge = defaults.bool(forKey: Key.dockBadge)
         liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
         wakeMissedHandoffs = defaults.bool(forKey: Key.wakeMissedHandoffs)
