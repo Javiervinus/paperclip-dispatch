@@ -23,6 +23,11 @@ manda aquí.
   te lo muestra al volver. Los plugins van juntos y como mucho una vez al día; la campana del panel de
   actualizaciones lo apaga.
 
+### Cambios
+
+- **La palomita de lo que está al día va en negro o en blanco, según el tema.** El color queda para lo que te
+  necesita.
+
 ## 0.3.0 — 2026-11-02
 
 ### Nuevo

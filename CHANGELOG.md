@@ -22,6 +22,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   and the window shows it again when you come back. Plugins come together, at most once a day; the bell in
   the updates panel turns it off.
 
+### Changed
+
+- **An up-to-date check mark is black or white, following the theme.** Color is left for what needs you.
+
 ## 0.3.0 — 2026-11-02
 
 ### Added
