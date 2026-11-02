@@ -18,10 +18,10 @@ manda aquí.
   las aprobaciones de board, las corridas fallidas, los errores de agentes y los topes de presupuesto traen
   sus propios botones, y «Despertar» solo aparece si el agente no va en camino: si tiene una corrida en
   cola o en curso, el mensaje y el aviso de la Mac lo dicen en su lugar.
-- **Se despierta al revisor que Paperclip olvida.** Cuando Paperclip 2026.1023.0 no despierta al agente que
-  debe revisar una tarea, la app lo despierta una vez, sin avisar, a los dos minutos; si eso falla, o si no
-  puede leer lo que contesta Paperclip, te llega el aviso de la tarea trabada. Viene activado y se apaga en
-  Ajustes → Paperclip.
+- **Se despierta al agente que Paperclip olvida.** Cuando Paperclip 2026.1023.0 le pasa una tarea a un agente
+  (a revisión, de vuelta a quien la hizo o a alguien nuevo) y pierde su despertar, la app lo despierta una
+  vez, sin avisar, a los dos minutos; si eso falla, o si no puede leer lo que contesta Paperclip, te llega el
+  aviso de la tarea trabada. Viene activado y se apaga en Ajustes → Paperclip.
 
 ## 0.1.0 — 2026-11-01
 
