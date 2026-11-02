@@ -5,9 +5,10 @@ import Sparkle
 /// Las versiones nuevas de la propia app (Paperclip Dispatch), con Sparkle y una interfaz propia: el botón
 /// de arriba a la derecha y Ajustes, en vez de las ventanas de Sparkle.
 ///
-/// Busca sola cada tantas horas y, si está activado (por defecto), descarga en silencio. Nunca se reinicia
-/// sin permiso: la versión descargada se instala cuando la persona aprieta «Reiniciar» o cuando cierra la
-/// app (Cmd+Q, apagar la Mac). Paperclip y sus agentes no se enteran, porque corren aparte.
+/// Busca sola cada `SUScheduledCheckInterval` (`UPDATE_CHECK_INTERVAL` en release.env) y, si está activado
+/// (por defecto), descarga en silencio. Nunca se reinicia sin permiso: la versión descargada se instala
+/// cuando la persona aprieta «Reiniciar» o cuando cierra la app (Cmd+Q, apagar la Mac). Paperclip y sus
+/// agentes no se enteran, porque corren aparte.
 ///
 /// Sparkle lee de Info.plist la dirección del appcast (`SUFeedURL`) y la llave para verificar la firma
 /// (`SUPublicEDKey`); sin ellas, la app no busca versiones (un build de prueba, por ejemplo).
