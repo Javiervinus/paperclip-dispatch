@@ -13,7 +13,8 @@ private final class FlippedView: NSView {
 /// las partes vacías de sus barras de arriba (layout.js). La barra de herramientas va vacía: da las
 /// esquinas de ventana de macOS 26. El botón de la versión flota sobre la barra de la ruta de Paperclip,
 /// solo en el Dashboard. El gesto de atrás y adelante es el de la app (`PaperclipWebView`): la página no
-/// se mueve y entra una flecha desde el borde.
+/// se mueve y entra una flecha desde el borde. Con un archivo abierto en vez de Paperclip (un PDF adjunto),
+/// junto a los botones de la ventana sale uno de atrás.
 ///
 /// Con **Liquid Glass** (experimental, Ajustes → General), además, la barra lateral y el panel de propiedades
 /// de una tarea van sobre vidrio, en capas:
@@ -31,8 +32,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private static let minimumContentSize = NSSize(width: 520, height: 420)
     private static let zoomRange: ClosedRange<CGFloat> = 0.5...2
     private static let zoomStep: CGFloat = 0.1
-    /// Separación del botón de la versión con el borde derecho.
+    /// Separación del botón de la versión con el borde derecho, y del de atrás con lo que tiene a la izquierda.
     private static let accessoryMargin: CGFloat = 16
+    /// Lo que la ventana muestra como página web; lo demás (un PDF, una imagen, un texto) es un archivo.
+    private static let webPageTypes: Set<String> = ["text/html", "application/xhtml+xml"]
     /// Aire sobre el texto al que se desplaza el ensayo de páginas, en píxeles de la página.
     private static let anchorMargin = 24
     /// Lo que responde un proxy cuando Paperclip no está detrás.
@@ -67,6 +70,13 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     private var updateButton: NSButton?
     private var updateButtonCenterY: NSLayoutConstraint?
+    /// Atrás, junto a los botones de la ventana. Solo con un archivo abierto (un adjunto en PDF, por
+    /// ejemplo): WebKit lo muestra en la ventana entera, sin Paperclip alrededor ni cómo volver.
+    private let backButton = NSButton()
+    private var backButtonLeading: NSLayoutConstraint?
+    private var backButtonCenterY: NSLayoutConstraint?
+    /// La ventana muestra un archivo y no una página (`refreshDocumentKind`).
+    private var showingFile = false
     private var titleObservation: NSKeyValueObservation?
     private var urlObservation: NSKeyValueObservation?
     /// Lo que flota abajo y al centro, sobre la página (el recordatorio de avisos).
@@ -121,6 +131,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         urlObservation = webView.observe(\.url) { [weak self] _, _ in
             MainActor.assumeIsolated {
                 self?.refreshUpdateButton()
+                self?.refreshDocumentKind()
                 self?.onPageChange?()
             }
         }
@@ -190,6 +201,21 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         indicator.frame = container.bounds
         indicator.autoresizingMask = [.width, .height]
         container.addSubview(indicator)
+
+        backButton.bezelStyle = .glass
+        backButton.controlSize = .large
+        backButton.image = NSImage(systemSymbolName: "chevron.backward", accessibilityDescription: String(localized: "Back"))
+        backButton.toolTip = String(localized: "Back")
+        backButton.target = self
+        backButton.action = #selector(navigateBack(_:))
+        backButton.isHidden = true
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(backButton)
+        let leading = backButton.leadingAnchor.constraint(equalTo: container.leadingAnchor)
+        let centerY = backButton.centerYAnchor.constraint(equalTo: container.topAnchor)
+        NSLayoutConstraint.activate([leading, centerY])
+        backButtonLeading = leading
+        backButtonCenterY = centerY
     }
 
     /// Lo que cambia con Liquid Glass. La página toma los scripts nuevos al recargar.
@@ -253,11 +279,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         }
     }
 
+    /// Con un archivo abierto, la franja de arriba (la de los botones) hace de barra de título.
     private func shouldDragWindow(for event: NSEvent) -> Bool {
-        guard pointerOverDragArea, event.window === window,
-              let contentView = window?.contentView,
+        guard event.window === window, let contentView = window?.contentView,
               let frameView = contentView.superview
         else { return false }
+        let overFileStrip = showingFile
+            && contentView.convert(event.locationInWindow, from: nil).y < webView.obscuredContentInsets.top
+        guard pointerOverDragArea || overFileStrip else { return false }
         // Solo si el clic cae en la página: no en los botones de la ventana ni en el de la versión.
         let hit = frameView.hitTest(frameView.convert(event.locationInWindow, from: nil))
         return hit.map { $0 === webView || $0.isDescendant(of: webView) } ?? false
@@ -362,6 +391,56 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         }
     }
 
+    /// Dónde están los botones de la ventana, en puntos desde arriba a la izquierda; `nil` en pantalla completa,
+    /// donde no se ven.
+    private var windowButtonsFrame: CGRect? {
+        guard let window, !window.styleMask.contains(.fullScreen), let container = window.contentView,
+              let close = window.standardWindowButton(.closeButton),
+              let zoom = window.standardWindowButton(.zoomButton)
+        else { return nil }
+        let frame = close.convert(close.bounds, to: nil).union(zoom.convert(zoom.bounds, to: nil))
+        return container.convert(frame, from: nil)
+    }
+
+    /// Si la ventana muestra un archivo en vez de una página. WebKit abre ahí mismo lo que Paperclip enlaza y
+    /// sabe mostrar (un adjunto en PDF, una imagen o un texto), y eso no trae cómo volver: se ofrece el botón
+    /// de atrás. Se pregunta al documento porque al volver desde la caché de páginas no hay respuesta que mirar.
+    private func refreshDocumentKind() {
+        webView.evaluateJavaScript("document.contentType") { [weak self] result, _ in
+            guard let type = result as? String else { return }
+            MainActor.assumeIsolated { self?.setShowingFile(!Self.webPageTypes.contains(type)) }
+        }
+    }
+
+    private func setShowingFile(_ value: Bool) {
+        showingFile = value
+        // Un archivo no tiene layout.js: no hay barras desde donde mover la ventana.
+        if value { pointerOverDragArea = false }
+        refreshBackButton()
+    }
+
+    /// Junto a los botones de la ventana y a su altura; en pantalla completa, en la esquina. Con un archivo, la
+    /// franja de esos botones queda fuera de lo que WebKit muestra (`obscuredContentInsets`), para que el
+    /// archivo no empiece debajo de ellos. Paperclip va hasta arriba: él les hace lugar (layout.css).
+    private func refreshBackButton() {
+        backButton.isHidden = !showingFile || offlineView != nil
+        var insets = NSEdgeInsetsZero
+        if showingFile {
+            if let buttons = windowButtonsFrame {
+                backButtonLeading?.constant = buttons.maxX + Self.accessoryMargin
+                backButtonCenterY?.constant = buttons.midY
+            } else {
+                backButtonLeading?.constant = Self.accessoryMargin
+                backButtonCenterY?.constant = Self.accessoryMargin + backButton.fittingSize.height / 2
+            }
+            insets.top = (backButtonCenterY?.constant ?? 0) * 2
+        }
+        // Cambiarlas hace que WebKit vuelva a acomodar la página: solo si cambian.
+        if !NSEdgeInsetsEqual(webView.obscuredContentInsets, insets) {
+            webView.obscuredContentInsets = insets
+        }
+    }
+
     /// Hasta que layout.js informa el alto de la barra, el botón no tiene dónde centrarse.
     private func refreshUpdateButton() {
         guard let updateButton else { return }
@@ -463,17 +542,22 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     // MARK: - Estado que la página necesita saber
 
-    /// Pantalla completa (sin botones de ventana) y espacio para el botón de la versión.
+    /// Pantalla completa (sin botones de ventana), dónde están esos botones y espacio para el botón de la
+    /// versión.
     private func syncPageState() {
         let fullscreen = window?.styleMask.contains(.fullScreen) == true
         let updateWidth = updateButton.flatMap { $0.isHidden ? nil : $0.fittingSize.width + Self.accessoryMargin * 2 }
         let zoom = max(webView.pageZoom, 0.01)
+        let css = { (points: CGFloat) in "\(Int((points / zoom).rounded()))px" }
+        let buttons = windowButtonsFrame ?? .zero
         evaluate("""
             (() => {
               const root = document.documentElement;
               root.toggleAttribute("data-paperclip-dispatch-fullscreen", \(fullscreen));
               root.toggleAttribute("data-paperclip-dispatch-version", \(updateWidth != nil));
-              root.style.setProperty("--paperclip-dispatch-version-width", "\(Int(((updateWidth ?? 0) / zoom).rounded()))px");
+              root.style.setProperty("--paperclip-dispatch-version-width", "\(css(updateWidth ?? 0))");
+              root.style.setProperty("--paperclip-dispatch-window-buttons-end", "\(css(buttons.maxX))");
+              root.style.setProperty("--paperclip-dispatch-window-buttons-middle", "\(css(buttons.midY))");
             })();
             """)
     }
@@ -585,9 +669,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         download.delegate = downloads
     }
 
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        refreshDocumentKind()
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         hideOffline()
         syncPageState()
+        refreshDocumentKind()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -617,6 +706,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
             container.addSubview(hosting, positioned: .above, relativeTo: webView)
             offlineView = hosting
             bottomOverlay?.isHidden = true
+            refreshBackButton()
             // Sin página cargada, WKWebView se queda con los atajos (⌘, ⌘R…) y no se los pasa al menú.
             window?.makeFirstResponder(nil)
             webView.isHidden = true
@@ -665,6 +755,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         offlineView.removeFromSuperview()
         self.offlineView = nil
         bottomOverlay?.isHidden = false
+        refreshBackButton()
         failedURL = nil
         webView.isHidden = false
         window?.makeFirstResponder(webView)
@@ -741,6 +832,43 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         return await present(alert) == .alertFirstButtonReturn ? field.stringValue : nil
     }
 
+    // MARK: - Lo que WebKit solo le pide a Safari
+
+    // WKUIDelegate no tiene métodos públicos para esto: son los de WKUIDelegatePrivate, que usa Safari. WebKit
+    // pregunta si la app los tiene (respondsToSelector) antes de llamarlos, así que si un día cambian de
+    // nombre, la app vuelve a lo de antes (sin capturar el puntero, sin guardar el PDF) y nada se rompe.
+
+    /// Capturar el puntero (Pointer Lock), como la vista 3D de un plugin: sin este método WebKit siempre dice
+    /// que no, y la página tiene que mirar arrastrando. Solo para Paperclip. La página lo pide con un clic y
+    /// Esc lo suelta.
+    @objc(_webViewDidRequestPointerLock:completionHandler:)
+    func webViewDidRequestPointerLock(_ webView: WKWebView, completionHandler: @escaping (Bool) -> Void) {
+        completionHandler(webView.url.map(config.isInternal) ?? false)
+    }
+
+    /// El botón de descargar del visor de PDF. Se pregunta dónde guardarlo, empezando por Descargas.
+    @objc(_webView:saveDataToFile:suggestedFilename:mimeType:originatingURL:)
+    func webView(
+        _ webView: WKWebView,
+        saveDataToFile data: Data?,
+        suggestedFilename: String?,
+        mimeType: String?,
+        originatingURL: URL?
+    ) {
+        guard let data, let window else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = suggestedFilename ?? ""
+        panel.directoryURL = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+        Task {
+            guard await panel.beginSheetModal(for: window) == .OK, let url = panel.url else { return }
+            do {
+                try data.write(to: url, options: .atomic)
+            } catch {
+                _ = await present(NSAlert(error: error))
+            }
+        }
+    }
+
     // MARK: - Ventana
 
     /// Cerrar esconde la ventana: la app sigue contando y avisando. Cmd+Q la cierra del todo.
@@ -768,7 +896,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         inspectorPanel.setBlendsWithinWindow(true)
     }
 
-    func windowDidEnterFullScreen(_ notification: Notification) { syncPageState() }
+    func windowDidEnterFullScreen(_ notification: Notification) {
+        syncPageState()
+        refreshBackButton()
+    }
 
     func windowWillExitFullScreen(_ notification: Notification) {
         sidebarPanel.setBlendsWithinWindow(false)
@@ -780,5 +911,6 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     func windowDidExitFullScreen(_ notification: Notification) {
         window?.toolbar?.isVisible = true
         syncPageState()
+        refreshBackButton()
     }
 }

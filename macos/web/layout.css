@@ -12,6 +12,9 @@
   --paperclip-dispatch-titlebar: 40px;
   /* Aire debajo del selector de company, ya sin el alto fijo de su fila: el mismo px-3 de la barra. */
   --paperclip-dispatch-sidebar-gap: 12px;
+  /* Aire entre los botones de la ventana y lo que va a su derecha en un visor de Paperclip (el nombre del
+     archivo): el mismo px-3. */
+  --paperclip-dispatch-title-gap: 12px;
   /* Margen de la barra lateral con el borde de la ventana: ninguno, salvo con Liquid Glass (glass.css). */
   --paperclip-dispatch-sidebar-inset: 0px;
 }
@@ -34,6 +37,16 @@
   :root[data-paperclip-dispatch-version] .flex-col.min-w-0 > div:first-child [class*="h-(--sz-60px)"] {
     padding-right: var(--paperclip-dispatch-version-width) !important;
   }
+}
+
+/* Los visores que tapan la ventana entera, como el de las imágenes adjuntas (un Dialog fijo de borde a
+   borde, con su fila de arriba de primera: nombre, contador, descargar y cerrar). Esa fila se corre a la
+   derecha de los botones de la ventana y se centra con ellos, como el título de una ventana de macOS. La
+   app dice dónde están los botones (--paperclip-dispatch-window-buttons-*). */
+:root:not([data-paperclip-dispatch-fullscreen]) [role="dialog"].fixed.inset-0.flex-col > .shrink-0:first-child {
+  min-height: calc(var(--paperclip-dispatch-window-buttons-middle) * 2);
+  padding-block: 0;
+  padding-left: calc(var(--paperclip-dispatch-window-buttons-end) + var(--paperclip-dispatch-title-gap));
 }
 
 /* Ventana angosta (Paperclip pasa a su vista móvil): toda la página baja la franja, con el fondo de
