@@ -14,9 +14,10 @@ manda aquí.
 
 ### Nuevo
 
-- **Actualiza los plugins de Paperclip desde el panel de actualizaciones.** Los instalados desde npm
-  muestran su versión nueva con un botón «Actualizar», y Paperclip cambia el plugin sin detener a tus
-  agentes. Una versión nueva de un plugin no pinta el botón de arriba: su palomita solo pasa a una pieza gris.
+- **Actualiza los plugins de Paperclip desde su propio botón.** Un botón chico con una pieza, al lado del de
+  actualizaciones, lista todos los plugins, y los instalados desde npm muestran su versión nueva con un botón
+  «Actualizar»: Paperclip cambia el plugin sin detener a tus agentes. Una versión nueva de un plugin solo le
+  pone un punto a ese botón, y la lista se desplaza en vez de crecer, por muchos plugins que tengas.
 - **La app te avisa cuando sale una versión nueva.** De la app, de Paperclip o de un plugin, una vez por
   versión y sin sonido: abajo en la ventana si la estás mirando y, si no, en un aviso de la Mac, y la ventana
   te lo muestra al volver. Los plugins van juntos y como mucho una vez al día; la campana del panel de

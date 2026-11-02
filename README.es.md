@@ -68,7 +68,8 @@ corriendo por su cuenta, y cerrar la app no detiene nada.
   pedir el permiso.
 - **Actualizaciones en un solo lugar.** Un solo botón muestra la versión de la app y la de Paperclip. La
   app descarga sus versiones nuevas en segundo plano y las instala solo cuando la reinicias o la cierras.
-  Paperclip se actualiza solo cuando lo pides, igual que sus plugins instalados desde npm. Cuando sale una
+  Paperclip se actualiza solo cuando lo pides, igual que sus plugins instalados desde npm, desde un botón
+  chico propio a su lado. Cuando sale una
   versión nueva, la app te avisa una vez y sin sonido: en la ventana si la estás mirando y, si no, con un
   aviso de la Mac.
 - **Sin conexión, sin pantalla en blanco.** Si Paperclip deja de responder, la ventana lo dice, sigue
@@ -167,7 +168,7 @@ sin barra de título.
 | Bienvenida | `WelcomeView.swift`, `WelcomeIntroStep.swift`, `WelcomeNotificationsStep.swift` |
 | Decisiones, avisos y número del Dock | `DecisionsMonitor.swift`, `Attention.swift`, `NotificationBridge.swift` |
 | Telegram | `TelegramChannel.swift`, `TelegramBotAPI.swift`, `DecisionResolver.swift`, `DecisionExplainer.swift`, `Keychain.swift` |
-| Actualizaciones de la app (Sparkle), de Paperclip y de sus plugins | `AppUpdater.swift`, `UpdateController.swift`, `PluginUpdates.swift`, `UpdateNotices.swift`, `UpdatePill.swift`, `UpdatesButton.swift`, `UpdatesPanel.swift` |
+| Actualizaciones de la app (Sparkle), de Paperclip y de sus plugins | `AppUpdater.swift`, `UpdateController.swift`, `PluginUpdates.swift`, `PluginsButton.swift`, `PluginsPanel.swift`, `UpdateNotices.swift`, `UpdatePill.swift`, `UpdatesButton.swift`, `UpdatesPanel.swift` |
 | Ajustes | `SettingsWindowController.swift`, `SettingsView.swift`, `TelegramSettings.swift` |
 
 Todos los archivos de Swift están en `macos/Sources/PaperclipDispatch`. Como la app retoca las páginas de

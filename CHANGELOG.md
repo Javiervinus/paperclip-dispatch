@@ -13,9 +13,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
 
 ### Added
 
-- **Update Paperclip’s plugins from the updates panel.** Plugins installed from npm show their new version
-  with an Update button, and Paperclip swaps the plugin without stopping your agents. A new plugin version
-  doesn’t color the top button: its check mark just turns into a gray puzzle piece.
+- **Update Paperclip’s plugins from their own button.** A small puzzle-piece button next to the updates
+  button lists every plugin, and the ones installed from npm show their new version with an Update button:
+  Paperclip swaps the plugin without stopping your agents. A new plugin version only puts a dot on that
+  button, and the list scrolls instead of growing however many plugins you have.
 - **The app tells you when a new version is out.** Of the app, of Paperclip or of a plugin, once per version
   and without sound: at the bottom of the window if you’re looking at it, otherwise in a Mac notification,
   and the window shows it again when you come back. Plugins come together, at most once a day; the bell in
