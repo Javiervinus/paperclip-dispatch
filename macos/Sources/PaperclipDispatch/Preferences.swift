@@ -36,6 +36,7 @@ final class Preferences {
         static let runLimitNotifications = "runLimitNotifications"
         static let dockBadge = "dockBadge"
         static let liquidGlassPage = "liquidGlassPage"
+        static let wakeMissedHandoffs = "wakeMissedHandoffs"
     }
 
     var appearance: Appearance {
@@ -73,6 +74,12 @@ final class Preferences {
         didSet { save(liquidGlassPage, Key.liquidGlassPage) }
     }
 
+    /// Despertar al agente al que Paperclip le pasa una tarea y no despierta (`HandoffWaker`). Encendido por
+    /// defecto: es un bug de Paperclip y, sin esto, la tarea queda a cargo de alguien que no está trabajando en ella.
+    var wakeMissedHandoffs: Bool {
+        didSet { save(wakeMissedHandoffs, Key.wakeMissedHandoffs) }
+    }
+
     /// La app aplica los cambios aquí (tema, número del Dock, vidrio).
     @ObservationIgnored var onChange: (() -> Void)?
     @ObservationIgnored private let defaults: UserDefaults
@@ -87,6 +94,7 @@ final class Preferences {
             Key.runLimitNotifications: true,
             Key.dockBadge: true,
             Key.liquidGlassPage: false,
+            Key.wakeMissedHandoffs: true,
         ])
         appearance = defaults.string(forKey: Key.appearance).flatMap(Appearance.init) ?? .system
         decisionNotifications = defaults.bool(forKey: Key.decisionNotifications)
@@ -95,6 +103,7 @@ final class Preferences {
         runLimitNotifications = defaults.bool(forKey: Key.runLimitNotifications)
         dockBadge = defaults.bool(forKey: Key.dockBadge)
         liquidGlassPage = defaults.bool(forKey: Key.liquidGlassPage)
+        wakeMissedHandoffs = defaults.bool(forKey: Key.wakeMissedHandoffs)
     }
 
     private func save(_ value: Any, _ key: String) {

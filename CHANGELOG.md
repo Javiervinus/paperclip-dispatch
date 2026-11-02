@@ -24,6 +24,10 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
   runs, agent errors and budget stops now come with their own buttons, and “Wake up” only shows when the
   agent isn’t already on its way: if it has a run queued or in progress, the message and the Mac
   notification say so instead.
+- **Agents that Paperclip forgets to wake up get woken up.** When Paperclip 2026.1023.0 hands a task to an
+  agent (for review, back to whoever did it, or to someone new) and loses its wake-up, the app wakes it once,
+  quietly, two minutes later; if that fails, or if Paperclip’s answer can’t be read, you get the stuck-task
+  notification instead. It’s on by default and can be turned off in Settings → Paperclip.
 - **“Open preview” on the cards whose task has something served to look at.** When an agent registers a
   preview of its work in the task (a page, a web app), the Mac notification brings an action that opens it,
   and the Telegram message of its decision or assigned task, a link next to the description, in every step of

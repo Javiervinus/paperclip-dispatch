@@ -34,7 +34,7 @@ struct SettingsPaneView: View {
         case .general: GeneralPane(preferences: preferences, updater: actions.appUpdater)
         case .notifications: NotificationsPane(preferences: preferences, status: status, actions: actions)
         case .telegram: TelegramPane(telegram: telegram)
-        case .paperclip: PaperclipPane(status: status, actions: actions)
+        case .paperclip: PaperclipPane(preferences: preferences, status: status, actions: actions)
         }
     }
 }
@@ -404,6 +404,7 @@ private struct NotificationsPane: View {
 // MARK: - Paperclip
 
 private struct PaperclipPane: View {
+    let preferences: Preferences
     let status: AppStatus
     let actions: SettingsActions
 
@@ -468,6 +469,7 @@ private struct PaperclipPane: View {
                         .settingsFootnote()
                 }
             }
+            HandoffWakeSection(preferences: preferences)
         }
     }
 

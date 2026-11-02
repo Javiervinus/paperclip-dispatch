@@ -1747,6 +1747,16 @@
         }
       }
     },
+    "Handoffs": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traspasos"
+          }
+        }
+      }
+    },
     "Help": {
       "localizations": {
         "es": {
@@ -1997,6 +2007,36 @@
         }
       }
     },
+    "It went to %@, but Paperclip didn’t wake it up, and the app’s automatic wake-up didn’t work either.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasó a %@, pero Paperclip no lo despertó, y el despertar automático de la app tampoco funcionó."
+          }
+        }
+      }
+    },
+    "It went to %@, but the app couldn’t check whether it’s on its way: Paperclip’s answer couldn’t be read. Check the task in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasó a %@, pero la app no pudo comprobar si va en camino: no pudo leer lo que contestó Paperclip. Revisa la tarea en Paperclip."
+          }
+        }
+      }
+    },
+    "It went to an agent, but Paperclip didn’t wake it up, and the app’s automatic wake-up didn’t work either.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasó a un agente, pero Paperclip no lo despertó, y el despertar automático de la app tampoco funcionó."
+          }
+        }
+      }
+    },
     "Its limit is %@. The count resets %@, and until then anything you ask of it won’t run.": {
       "localizations": {
         "es": {
@@ -2063,6 +2103,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ya está en la %@."
+          }
+        }
+      }
+    },
+    "It’s on by default because it’s a known Paperclip bug: without it, those tasks wait until someone notices. It only looks at handoffs it sees while it’s open and works quietly; only if the wake-up fails do you get the stuck-task notification with its button. It will go away once Paperclip fixes the bug.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Viene activado porque es un bug conocido de Paperclip: sin esto, esas tareas esperan hasta que alguien se dé cuenta. Solo mira los traspasos que ve pasar mientras está abierta y trabaja en silencio; solo si el despertar falla te llega el aviso de la tarea trabada con su botón. Desaparecerá cuando Paperclip arregle el bug."
           }
         }
       }
@@ -3057,6 +3107,16 @@
         }
       }
     },
+    "Paperclip didn’t wake up the agent it handed this task to.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no despertó al agente al que le pasó esta tarea."
+          }
+        }
+      }
+    },
     "Paperclip is installed, but not running": {
       "localizations": {
         "es": {
@@ -3103,6 +3163,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paperclip está apagado en esta Mac."
+          }
+        }
+      }
+    },
+    "Paperclip issue #18315 on GitHub": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El issue #18315 de Paperclip en GitHub"
           }
         }
       }
@@ -3609,6 +3679,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Revisar el contrato con el cliente"
+          }
+        }
+      }
+    },
+    "Review the onboarding emails": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar los correos de bienvenida"
           }
         }
       }
@@ -4191,6 +4271,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "El agente %@ pide entrar a la company."
+          }
+        }
+      }
+    },
+    "The app couldn’t check whether the agent in charge is on its way.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app no pudo comprobar si el agente a cargo va en camino."
+          }
+        }
+      }
+    },
+    "The app couldn’t check whether the agent in charge of this task is on its way: Paperclip’s answer couldn’t be read. Check the task in Paperclip.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app no pudo comprobar si el agente a cargo de esta tarea va en camino: no pudo leer lo que contestó Paperclip. Revisa la tarea en Paperclip."
           }
         }
       }
@@ -4975,6 +5075,16 @@
         }
       }
     },
+    "Wake up agents Paperclip forgets": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Despertar a los agentes que Paperclip olvida"
+          }
+        }
+      }
+    },
     "Wake up the agent": {
       "localizations": {
         "es": {
@@ -5121,6 +5231,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Novedades de la %@"
+          }
+        }
+      }
+    },
+    "When a task goes to an agent (for review, back to whoever did it, or to someone new), Paperclip sometimes loses its wake-up, and the task sits with no one working on it. If %lld minutes go by and that agent still isn’t on it, the app wakes it up, once.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando una tarea pasa a un agente (a revisión, de vuelta a quien la hizo o a alguien nuevo), a veces Paperclip pierde su despertar y la tarea se queda sin nadie trabajando en ella. Si pasan %lld minutos y ese agente sigue sin ponerse a trabajar, la app lo despierta, una sola vez."
           }
         }
       }

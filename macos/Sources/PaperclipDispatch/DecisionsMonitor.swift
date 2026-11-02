@@ -37,6 +37,7 @@ final class DecisionsMonitor {
 
     private let api: PaperclipAPI
     private let resolver: DecisionResolver
+    private let handoffWaker: HandoffWaker
     private let preferences: Preferences
     private let notifications: NotificationBridge
     private let isLooking: () -> Bool
@@ -55,6 +56,7 @@ final class DecisionsMonitor {
     ) {
         self.api = api
         resolver = DecisionResolver(api: api)
+        handoffWaker = HandoffWaker(api: api, resolver: resolver)
         self.preferences = preferences
         self.notifications = notifications
         self.isLooking = isLooking
@@ -103,15 +105,21 @@ final class DecisionsMonitor {
                     query: [URLQueryItem(name: "limit", value: String(Attention.pageLimit))]
                 )
                 total += attention.deskBadgeCount ?? attention.totalCount ?? attention.items.count
-                let review = Self.review(attention, previous: seen[company.id])
+                // El agente al que Paperclip le pasó una tarea sin despertarlo: si no se pudo despertar, su tarjeta
+                // va con las de Decisions.
+                let stranded = preferences.wakeMissedHandoffs
+                    ? await handoffWaker.check(company, decisions: attention.items) : []
+                let items = attention.items + stranded
+                let complete = attention.nextCursor == nil
+                let review = Self.review(items, complete: complete, previous: seen[company.id])
                 await announce(review.fresh, in: company, firstTime: review.firstTime)
                 if review.seen != seen[company.id] {
                     seen[company.id] = review.seen
                     // Se guarda por company: si falla la siguiente, lo que ya se avisó de esta no se repite.
                     UserDefaults.standard.set(seen, forKey: Self.seenKey)
                 }
-                onAttention?(company.id, attention.items, attention.nextCursor == nil)
-                await assignedTasks?.review(company, covered: Set(attention.items.flatMap { item in
+                onAttention?(company.id, items, complete)
+                await assignedTasks?.review(company, covered: Set(items.flatMap { item in
                     [item.subject?.metadata?.issueId, item.subject?.id].compactMap { $0 }
                 }))
                 // Aparte: sus lecturas de corridas no retrasan la próxima company ni el número del Dock.
@@ -136,14 +144,15 @@ final class DecisionsMonitor {
     /// olvida: si vuelve (p. ej. una tarea que se destraba y se vuelve a trabar), se avisa otra vez. Una
     /// revisión que falla no llega aquí, así que no cuenta como que algo dejó de estar pendiente.
     static func review(
-        _ attention: Attention,
+        _ items: [AttentionItem],
+        complete: Bool,
         previous: [String]?
     ) -> (fresh: [AttentionItem], firstTime: Bool, seen: [String]) {
         let known = Set(previous ?? [])
-        let fresh = attention.items.filter { !known.contains($0.id) }
-        let current = attention.items.map(\.id)
+        let fresh = items.filter { !known.contains($0.id) }
+        let current = items.map(\.id)
         let currentSet = Set(current)
-        let otherPages = attention.nextCursor == nil ? [] : (previous ?? []).filter { !currentSet.contains($0) }
+        let otherPages = complete ? [] : (previous ?? []).filter { !currentSet.contains($0) }
         return (fresh, previous == nil, Array((current + otherPages).prefix(seenLimit)))
     }
 
