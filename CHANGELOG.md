@@ -9,7 +9,7 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
-## Unreleased
+## 0.4.0 — 2026-11-02
 
 ### Added
 

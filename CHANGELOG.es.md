@@ -10,7 +10,7 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
-## Unreleased
+## 0.4.0 — 2026-11-02
 
 ### Nuevo
 
