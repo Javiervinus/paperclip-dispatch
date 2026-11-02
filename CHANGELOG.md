@@ -16,6 +16,9 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
 - **Paperclip plugins that write with Chrome’s built-in AI work in the app, with Apple Intelligence.** The
   ones that use it, like Oficina global’s conversations, get this Mac’s on-device model, with nothing to
   download. It needs Apple Intelligence turned on in System Settings.
+- **Plugins can notify you on the Mac, if you let them.** A plugin that asks to show notifications, like
+  Oficina global’s system notice, now gets Mac notifications instead of a “Blocked”; a click brings you
+  back to it. Settings → Notifications can turn them off.
 
 ### Fixed
 

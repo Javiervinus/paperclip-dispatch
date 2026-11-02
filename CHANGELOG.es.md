@@ -17,6 +17,9 @@ manda aquí.
 - **Los plugins de Paperclip que escriben con la IA de Chrome funcionan en la app, con Apple Intelligence.**
   Los que la usan, como las conversaciones de Oficina global, reciben el modelo de esta Mac, sin bajar nada.
   Necesita Apple Intelligence activado en Ajustes del Sistema.
+- **Los plugins te pueden avisar en la Mac, si los dejas.** Un plugin que pide mostrar avisos, como el aviso
+  del sistema de Oficina global, ahora manda avisos de la Mac en vez de quedar «Bloqueado», y un clic te lleva
+  a él. Se apagan en Ajustes → Avisos.
 
 ### Arreglado
 

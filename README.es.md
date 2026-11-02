@@ -46,8 +46,9 @@ corriendo por su cuenta, y cerrar la app no detiene nada.
 - **Paperclip en una ventana de la Mac.** Paperclip ocupa la ventana entera, sin barra de título. La app
   suma los menús y atajos de la Mac (atrás, adelante, inicio, copiar enlace), la navegación con dos dedos
   y, si quieres, una barra lateral con Liquid Glass.
-- **Plugins con IA en la Mac.** Los plugins de Paperclip que escriben con la IA integrada de Chrome (su
-  Prompt API) funcionan en la app con Apple Intelligence, el modelo que corre en esta Mac.
+- **Plugins con IA y avisos en la Mac.** Los plugins de Paperclip que escriben con la IA integrada de
+  Chrome (su Prompt API) funcionan en la app con Apple Intelligence, el modelo que corre en esta Mac. Los que
+  avisan con la API web de avisos mandan avisos de la Mac, cuando los permites como en un navegador.
 - **Avisos de decisiones.** Cuando un agente hace una pregunta, pide una aprobación, falla o llega a una
   alerta de presupuesto, recibes un aviso de macOS. Al tocarlo se abre esa decisión. La app revisa cada
   minuto por su cuenta, así que sigue avisando con la ventana cerrada.
@@ -159,7 +160,7 @@ sin barra de título.
 | --- | --- |
 | Ciclo de vida y menús | `AppDelegate.swift`, `MainMenu.swift`, `AboutPanel.swift` |
 | Ventana y vista web | `MainWindowController.swift`, `PaperclipWebView.swift`, `GlassPanel.swift`, `OfflineView.swift` |
-| Scripts y estilos que se inyectan en Paperclip | `macos/web/` (`layout.css`, `layout.js`, `glass.css`, `bridge.js`, `language-model.js`), listados en `WebResources.swift` |
+| Scripts y estilos que se inyectan en Paperclip | `macos/web/` (`layout.css`, `layout.js`, `glass.css`, `bridge.js`, `language-model.js`, `notifications.js`), listados en `WebResources.swift` |
 | Encontrar, encender y comprobar Paperclip | `PaperclipLocator.swift`, `PaperclipAPI.swift` |
 | Bienvenida | `WelcomeView.swift`, `WelcomeIntroStep.swift`, `WelcomeNotificationsStep.swift` |
 | Decisiones, avisos y número del Dock | `DecisionsMonitor.swift`, `Attention.swift`, `NotificationBridge.swift` |
