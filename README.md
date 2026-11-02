@@ -7,6 +7,7 @@
 **A native macOS app for [Paperclip](https://paperclip.ing): your Paperclip in its own window, with decision
 notifications, a Dock badge and answers from Telegram.**
 
+[Website](https://javiervinus.github.io/paperclip-dispatch/) ·
 [Download](https://github.com/Javiervinus/paperclip-dispatch/releases/latest) ·
 [Install with Homebrew](#install) ·
 [Build from source](#build-from-source) ·
@@ -69,12 +70,24 @@ their own, and closing the app stops nothing.
   "Explain it to me" summaries.
 
 <p align="center">
-  <img src="docs/images/window-glass.png" width="32%" alt="Liquid Glass sidebar">
-  <img src="docs/images/welcome.png" width="32%" alt="First-launch setup">
-  <img src="docs/images/settings.png" width="32%" alt="Settings">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/window-glass-dark.png">
+    <img src="docs/images/window-glass.png" width="32%" alt="Liquid Glass sidebar">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/welcome-dark.png">
+    <img src="docs/images/welcome.png" width="32%" alt="First-launch setup">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
+    <img src="docs/images/settings.png" width="32%" alt="Settings">
+  </picture>
 </p>
 <p align="center">
-  <img src="docs/images/notification.png" width="440" alt="A stuck-task notification with a Wake up button">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/notification-dark.png">
+    <img src="docs/images/notification.png" width="440" alt="A stuck-task notification with a Wake up button">
+  </picture>
 </p>
 
 ## Requirements

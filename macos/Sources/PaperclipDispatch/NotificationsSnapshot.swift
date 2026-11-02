@@ -17,18 +17,18 @@ enum NotificationsSnapshot {
     /// Para que se vea el botón «Abrir en Paperclip»: con una dirección local (127.0.0.1) Telegram no lo acepta
     /// y el código no lo pone.
     private static let sampleServerURL = URL(string: "https://paperclip.example.ts.net")!
-    private static let operations = (id: "00000000-0000-4000-8000-000000000001", name: String(localized: "Operations"))
+    private static let ceo = (id: "00000000-0000-4000-8000-000000000001", name: String(localized: "CEO"))
     private static let chief = (id: "00000000-0000-4000-8000-000000000002", name: String(localized: "Chief of Staff"))
     private static let skippedMessage = "The previous execution has not released its environment lease. Wait for "
         + "cleanup before continuing this task."
-    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(operations.name)."
+    private static let deferredMessage = "Wakeup was deferred because this issue is already being executed by \(ceo.name)."
     private static let failure = String(localized: "Paperclip returned 500: Internal server error")
 
     static func run(to directory: URL) async {
         let agentItem = sampleItem(
             issue: ("ACME-220", String(localized: "Redesign the pricing page")),
             blocked: ("ACME-221", String(localized: "Launch the new pricing plans")),
-            agentId: operations.id
+            agentId: ceo.id
         )
         let personItem = sampleItem(
             issue: ("ACME-222", String(localized: "Review the client contract")),
@@ -47,7 +47,7 @@ enum NotificationsSnapshot {
             HandoffWaker.unverifiedItem(
                 HandoffWaker.Unverified(
                     at: .now, showing: true, companyId: "", issueId: UUID().uuidString.lowercased(),
-                    assigneeAgentId: operations.id, seenAt: .now, since: .now, agentId: agent?.id,
+                    assigneeAgentId: ceo.id, seenAt: .now, since: .now, agentId: agent?.id,
                     agentName: agent?.name, identifier: review.0, title: review.1
                 ),
                 key: review.0,
@@ -56,17 +56,17 @@ enum NotificationsSnapshot {
         }
         let reviewFailed = HandoffWaker.failedItem(
             HandoffWaker.Attempt(
-                at: .now, outcome: .failed, companyId: "", issueId: UUID().uuidString.lowercased(), agentId: operations.id,
-                agentName: operations.name, identifier: review.0, title: review.1
+                at: .now, outcome: .failed, companyId: "", issueId: UUID().uuidString.lowercased(), agentId: ceo.id,
+                agentName: ceo.name, identifier: review.0, title: review.1
             ),
             key: review.0,
             issuePrefix: "ACME"
         )
-        guard let reviewFailed, let reviewUnverified = unverified(agent: operations),
+        guard let reviewFailed, let reviewUnverified = unverified(agent: ceo),
               let reviewUnverifiedNoAgent = unverified(agent: nil), let reviewTarget = reviewFailed.wakeTarget
         else { return }
-        let reviewButton = WakeButton(target: reviewTarget, agentName: operations.name)
-        let button = WakeButton(target: target, agentName: operations.name)
+        let reviewButton = WakeButton(target: reviewTarget, agentName: ceo.name)
+        let button = WakeButton(target: target, agentName: ceo.name)
         let channel = TelegramChannel(
             previewing: TelegramChannel.State(),
             hasToken: true,
@@ -81,11 +81,11 @@ enum NotificationsSnapshot {
         }
         func macProgress(_ progress: WakeProgress) -> MacNoticePreview {
             let notice = DecisionsMonitor.notice(for: agentItem)
-            let shown = DecisionsMonitor.wakeNotice(body: notice.body, target: target, agentName: operations.name, progress: progress)
+            let shown = DecisionsMonitor.wakeNotice(body: notice.body, target: target, agentName: ceo.name, progress: progress)
             return MacNoticePreview(title: notice.title, body: shown.body, action: shown.wake?.title)
         }
         func macResult(_ outcome: WakeOutcome) -> MacNoticePreview {
-            let text = WakeText.result(outcome, target: target, agentName: operations.name)
+            let text = WakeText.result(outcome, target: target, agentName: ceo.name)
             return MacNoticePreview(title: text.title, body: text.body, action: outcome.allowsRetry ? button.title : nil)
         }
         /// `running`: el agente ya va en camino, con una corrida en curso (`true`) o en cola (`false`).
@@ -110,8 +110,8 @@ enum NotificationsSnapshot {
             )
         }
         func telegramResult(_ outcome: WakeOutcome) -> [TelegramMessagePreview] {
-            let original = message(agentItem, agentName: operations.name)
-            let status = TelegramFormat.wakeResult(outcome, target: target, agentName: operations.name)
+            let original = message(agentItem, agentName: ceo.name)
+            let status = TelegramFormat.wakeResult(outcome, target: target, agentName: ceo.name)
             guard outcome.allowsRetry else {
                 // El mensaje se edita: suma lo que pasó y pierde los botones.
                 return [TelegramMessagePreview(html: original.html + "\n\n" + status, buttons: [])]
@@ -134,10 +134,10 @@ enum NotificationsSnapshot {
             ("mac-already-running", AnyView(MacScene(notices: [macResult(alreadyRunning)]))),
             ("mac-not-stuck", AnyView(MacScene(notices: [macResult(.notStuck)]))),
             ("mac-failed", AnyView(MacScene(notices: [macResult(failed)]))),
-            ("telegram-agent", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name)]))),
+            ("telegram-agent", AnyView(TelegramScene(messages: [message(agentItem, agentName: ceo.name)]))),
             ("telegram-person", AnyView(TelegramScene(messages: [message(personItem, agentName: nil)]))),
-            ("telegram-on-the-way-queued", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name, running: false)]))),
-            ("telegram-on-the-way-running", AnyView(TelegramScene(messages: [message(agentItem, agentName: operations.name, running: true)]))),
+            ("telegram-on-the-way-queued", AnyView(TelegramScene(messages: [message(agentItem, agentName: ceo.name, running: false)]))),
+            ("telegram-on-the-way-running", AnyView(TelegramScene(messages: [message(agentItem, agentName: ceo.name, running: true)]))),
             ("telegram-accepted", AnyView(TelegramScene(messages: telegramResult(accepted)))),
             ("telegram-skipped", AnyView(TelegramScene(messages: telegramResult(skipped)))),
             ("telegram-already-running", AnyView(TelegramScene(messages: telegramResult(alreadyRunning)))),
@@ -145,11 +145,11 @@ enum NotificationsSnapshot {
             ("mac-handoff-failed", AnyView(MacScene(notices: [mac(reviewFailed, wake: reviewButton)]))),
             ("mac-handoff-unverified", AnyView(MacScene(notices: [mac(reviewUnverified, wake: reviewButton)]))),
             ("mac-handoff-unverified-no-agent", AnyView(MacScene(notices: [mac(reviewUnverifiedNoAgent, wake: nil)]))),
-            ("telegram-handoff-failed", AnyView(TelegramScene(messages: [message(reviewFailed, agentName: operations.name)]))),
-            ("telegram-handoff-unverified", AnyView(TelegramScene(messages: [message(reviewUnverified, agentName: operations.name)]))),
+            ("telegram-handoff-failed", AnyView(TelegramScene(messages: [message(reviewFailed, agentName: ceo.name)]))),
+            ("telegram-handoff-unverified", AnyView(TelegramScene(messages: [message(reviewUnverified, agentName: ceo.name)]))),
             ("telegram-handoff-unverified-no-agent", AnyView(TelegramScene(messages: [message(reviewUnverifiedNoAgent, agentName: nil)]))),
             ("telegram-two-tasks", AnyView(TelegramScene(messages: [
-                message(agentItem, agentName: operations.name),
+                message(agentItem, agentName: ceo.name),
                 message(chiefItem, agentName: chief.name),
             ]))),
         ]
