@@ -10,6 +10,20 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Arreglado
+
+- **Las versiones nuevas te llegan en menos de una hora.** La app las busca cada hora y no cada seis, así
+  que ya no hace falta «Buscar ahora» para tener una el mismo día que sale.
+- **La vista 3D de un plugin sigue al mouse.** Como en Chrome, un clic captura el puntero para mirar
+  alrededor y Esc lo suelta; antes había que arrastrar.
+- **Los PDF tienen cómo volver y su botón de descargar funciona.** Un PDF o cualquier otro archivo que se
+  abre desde Paperclip muestra un botón de atrás junto a los de la ventana, y el de descargar del visor
+  pregunta dónde guardarlo.
+- **El visor de imágenes ya no choca con los botones de la ventana.** El nombre del archivo queda a su
+  derecha, como el título de una ventana.
+
 ## 0.2.0 — 2026-11-01
 
 ### Nuevo

@@ -9,6 +9,19 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Fixed
+
+- **New versions reach you within an hour.** The app now looks for them every hour instead of every six,
+  so you no longer need “Check Now” to get one the day it comes out.
+- **A plugin’s 3D view follows the mouse.** As in Chrome, a click captures the pointer to look around and
+  Esc lets it go; before, you had to drag.
+- **PDFs have a way back, and their download button works.** A PDF or any other file opened from Paperclip
+  shows a back button next to the window buttons, and the viewer’s download button asks where to save it.
+- **The image viewer no longer runs into the window buttons.** The file name sits to their right, like a
+  window title.
+
 ## 0.2.0 — 2026-11-01
 
 ### Added
