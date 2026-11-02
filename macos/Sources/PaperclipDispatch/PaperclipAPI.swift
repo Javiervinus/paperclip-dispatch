@@ -36,8 +36,25 @@ final class PaperclipAPI {
     }
 
     func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
-        try JSONDecoder().decode(T.self, from: await send("GET", path, query: query, body: nil))
+        try JSONDecoder().decode(T.self, from: await send("GET", path, query: query, body: nil).data)
     }
+
+    /// Como `get`, con la hora del servidor (la cabecera `Date`), para comparar con las horas que manda Paperclip
+    /// sin depender del reloj de la Mac. `nil` si no vino o no se entiende.
+    func getWithServerDate<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> (T, Date?) {
+        let (data, response) = try await send("GET", path, query: query, body: nil)
+        let date = response?.value(forHTTPHeaderField: "Date").flatMap(Self.httpDate.date(from:))
+        return (try JSONDecoder().decode(T.self, from: data), date)
+    }
+
+    /// El formato de la cabecera `Date` (RFC 9110).
+    private static let httpDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "GMT")
+        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        return formatter
+    }()
 
     /// Un cambio (aceptar, responder, comentar). Lo que devuelve Paperclip no hace falta.
     func post(_ path: String, _ body: [String: Any] = [:]) async throws {
@@ -51,11 +68,16 @@ final class PaperclipAPI {
 
     /// Un cambio cuya respuesta sí hace falta (p. ej. si Paperclip aceptó o saltó un despertar).
     func post<T: Decodable>(_ path: String, _ body: [String: Any] = [:], returning: T.Type) async throws -> T {
-        let data = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body))
+        let data = try await send("POST", path, query: [], body: JSONSerialization.data(withJSONObject: body)).data
         return try JSONDecoder().decode(T.self, from: data)
     }
 
-    private func send(_ method: String, _ path: String, query: [URLQueryItem], body: Data?) async throws -> Data {
+    private func send(
+        _ method: String,
+        _ path: String,
+        query: [URLQueryItem],
+        body: Data?
+    ) async throws -> (data: Data, response: HTTPURLResponse?) {
         var url = serverURL.appending(path: path)
         if !query.isEmpty { url.append(queryItems: query) }
         var request = URLRequest(url: url)
@@ -77,13 +99,14 @@ final class PaperclipAPI {
             request.setValue(value, forHTTPHeaderField: field)
         }
         let (data, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let http = response as? HTTPURLResponse
+        let status = http?.statusCode ?? 0
         if status == 401 || status == 403 { throw APIError.signedOut }
         guard (200..<300).contains(status) else {
             let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.error
             throw APIError.http(status, message)
         }
-        return data
+        return (data, http)
     }
 
     private var origin: String {
