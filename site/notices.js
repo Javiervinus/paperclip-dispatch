@@ -19,7 +19,7 @@ if (desk) {
   // (enseguida: que no quede el hueco)
   const every = 4200;
   const refill = 1500;
-  const empty = 900;
+  const empty = 700;
   // Después de cerrar uno o despertar a alguien, si quedan avisos, el que sigue espera esto: que no llegue uno justo
   // donde ibas a tocar
   const settle = 2500;
@@ -35,7 +35,11 @@ if (desk) {
   // llegan solos.
   const models = new Map();
   for (const item of [...stack.children, ...deck.content.children]) {
-    models.set(item.dataset.kind, item.cloneNode(true));
+    const model = item.cloneNode(true);
+    // is-first es la entrada de los tres de la página al abrirla (CSS, con un retraso según su lugar). Una copia
+    // que la conserve llega invisible y, al bajar en la pila, el retraso cambia y la entrada salta al final.
+    model.classList.remove("is-first");
+    models.set(item.dataset.kind, model);
   }
   const cycle = [...models.keys()].filter((kind) => !models.get(kind).hasAttribute("data-reply"));
   // El primero que llega es el que sigue a los de la página
@@ -163,8 +167,10 @@ if (desk) {
     schedule(Math.max(wait, live.length ? settle : empty));
   };
 
-  // Los de la página pasan a ser avisos vivos, sin moverse de su lugar
+  // Los de la página pasan a ser avisos vivos, sin moverse de su lugar. Terminada su entrada, dejan is-first: así
+  // su retraso no cuenta cuando bajan en la pila.
   live = [...stack.children].map(upgrade);
+  for (const card of live) card.addEventListener("animationend", () => card.classList.remove("is-first"), { once: true });
   place();
 
   stack.addEventListener("click", (event) => {
