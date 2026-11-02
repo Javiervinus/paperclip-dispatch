@@ -8,9 +8,9 @@ import Observation
 ///   siquiera la que salió con los avisos apagados.
 /// - Los plugins sacan versiones seguido: van todos juntos y, como mucho, una vez al día. Solo si esta cuenta
 ///   puede actualizarlos.
-/// - Se da por visto al abrir el panel de actualizaciones (también con «Ver» o un clic en el aviso) o con la ×
-///   de la píldora: se va la píldora y se quitan los avisos de la lista de macOS. Con el panel ya abierto no
-///   avisa. Cuando ya no hay nada que actualizar, también se quita.
+/// - Se da por visto al abrir su panel (el de actualizaciones o el de plugins; también con «Ver» o un clic en
+///   el aviso) o con la × de la píldora: se va de la píldora y de la lista de macOS. Con su panel ya abierto
+///   no avisa. Cuando ya no hay nada que actualizar, también se quita.
 /// Se apaga en Ajustes → Avisos o con la campana del panel (`Preferences.updateNotifications`).
 @MainActor
 final class UpdateNotices {
@@ -21,9 +21,17 @@ final class UpdateNotices {
         /// El del aviso en macOS: el de una versión nueva reemplaza al anterior del mismo tipo.
         var identifier: String { "update-\(rawValue)" }
 
+        /// Dónde se ve: los plugins tienen su botón y su panel.
+        var panel: Panel { self == .plugins ? .plugins : .updates }
+
         static func < (lhs: Kind, rhs: Kind) -> Bool {
             allCases.firstIndex(of: lhs)! < allCases.firstIndex(of: rhs)!
         }
+    }
+
+    /// Los dos paneles: el del botón de actualizaciones y el del botón de los plugins.
+    enum Panel: String {
+        case updates, plugins
     }
 
     /// Lo que dice el aviso de macOS.
@@ -60,7 +68,7 @@ final class UpdateNotices {
     private let isInFront: () -> Bool
     /// Si la píldora puede salir ya: la ventana al frente, sin hojas ni el recordatorio de avisos.
     private let canPresent: () -> Bool
-    private let isPanelOpen: () -> Bool
+    private let isPanelOpen: (Panel) -> Bool
     /// Lo que espera en la píldora, sin ver todavía.
     private var waiting: [Kind: UpdatePill.Item] = [:]
     /// Los avisos que puede haber en la lista de macOS. Al abrir la app no se sabe: pueden quedar de antes.
@@ -76,8 +84,8 @@ final class UpdateNotices {
         defaults: UserDefaults = .standard,
         isInFront: @escaping () -> Bool,
         canPresent: @escaping () -> Bool,
-        isPanelOpen: @escaping () -> Bool,
-        openPanel: @escaping () -> Void
+        isPanelOpen: @escaping (Panel) -> Bool,
+        openPanel: @escaping (Panel) -> Void
     ) {
         self.app = app
         self.status = status
@@ -88,11 +96,14 @@ final class UpdateNotices {
         self.isInFront = isInFront
         self.canPresent = canPresent
         self.isPanelOpen = isPanelOpen
+        // «Ver»: el panel de actualizaciones si hay algo de la app o de Paperclip; si son solo plugins, el suyo.
         pill.onSee = { [weak self] in
-            self?.acknowledge()
-            openPanel()
+            guard let self else { return }
+            let panel: Panel = waiting.keys.contains { $0.panel == .updates } ? .updates : .plugins
+            acknowledge(Kind.allCases)
+            openPanel(panel)
         }
-        pill.onDismiss = { [weak self] in self?.acknowledge() }
+        pill.onDismiss = { [weak self] in self?.acknowledge(Kind.allCases) }
     }
 
     func start() {
@@ -104,9 +115,9 @@ final class UpdateNotices {
         presentWhenPossible(after: Self.returnDelay)
     }
 
-    /// Se abrió el panel de actualizaciones: ahí se ve todo.
-    func panelOpened() {
-        acknowledge()
+    /// Se abrió uno de los paneles: ahí se ve lo suyo.
+    func panelOpened(_ panel: Panel) {
+        acknowledge(Kind.allCases.filter { $0.panel == panel })
     }
 
     /// Vuelve a mirar cada vez que cambia algo: una revisión (cambia su hora), una versión, los avisos.
@@ -162,7 +173,7 @@ final class UpdateNotices {
     ) {
         guard defaults.string(forKey: key) != version else { return }
         defaults.set(version, forKey: key)
-        guard enabled, !isPanelOpen() else { return }
+        guard enabled, !isPanelOpen(kind.panel) else { return }
         let (notice, item) = content()
         announce(kind, notice, item)
     }
@@ -170,7 +181,7 @@ final class UpdateNotices {
     private func offerPlugins(_ pending: [PluginUpdates.Plugin], enabled: Bool) {
         var notified = defaults.dictionary(forKey: Key.plugins) as? [String: String] ?? [:]
         guard pending.contains(where: { notified[$0.id] != $0.latest }) else { return }
-        if enabled, !isPanelOpen() {
+        if enabled, !isPanelOpen(.plugins) {
             // Si ya hubo uno hoy, espera: una revisión de más adelante (cada hora) lo avisa con todo lo nuevo.
             if let last = defaults.object(forKey: Key.pluginsAt) as? Date,
                Date.now.timeIntervalSince(last) < Self.pluginInterval {
@@ -191,7 +202,7 @@ final class UpdateNotices {
         } else {
             notifications.show(
                 id: kind.identifier, tag: kind.identifier, title: notice.title, body: notice.body, href: nil,
-                opensUpdates: true, sound: false
+                opensPanel: kind.panel, sound: false
             )
             shown.insert(kind)
         }
@@ -218,14 +229,19 @@ final class UpdateNotices {
         waiting.sorted { $0.key < $1.key }.map(\.value)
     }
 
-    /// Visto: se va la píldora y se quitan los avisos de la lista de macOS.
-    private func acknowledge() {
-        presenting?.cancel()
-        presenting = nil
-        waiting = [:]
-        pill.hide()
-        for kind in shown { notifications.remove(identifier: kind.identifier) }
-        shown = []
+    /// Visto: se va de la píldora y de la lista de macOS.
+    private func acknowledge(_ kinds: [Kind]) {
+        for kind in kinds { waiting[kind] = nil }
+        if waiting.isEmpty {
+            presenting?.cancel()
+            presenting = nil
+            pill.hide()
+        } else if pill.isVisible {
+            pill.show(waitingItems)
+        }
+        for kind in kinds where shown.remove(kind) != nil {
+            notifications.remove(identifier: kind.identifier)
+        }
     }
 
     /// Ya no hay nada que actualizar de ese tipo: se quita de la píldora y de la lista de macOS.

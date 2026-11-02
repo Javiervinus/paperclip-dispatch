@@ -217,6 +217,22 @@
         }
       }
     },
+    "%lld in Paperclip · %lld with a new version": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$lld in Paperclip · %2$lld with a new version"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld en Paperclip · %lld con versión nueva"
+          }
+        }
+      }
+    },
     "%lld in Paperclip · checking…": {
       "localizations": {
         "es": {
@@ -293,16 +309,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "%lld with a new version": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld con versión nueva"
           }
         }
       }
@@ -1829,16 +1835,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Escribe una dirección, por ejemplo 192.168.1.20:3100."
-          }
-        }
-      }
-    },
-    "Everything is up to date.": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo al día."
           }
         }
       }
@@ -4325,26 +4321,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mostrar todas"
-          }
-        }
-      }
-    },
-    "Show All (%lld)": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ver todos (%lld)"
-          }
-        }
-      }
-    },
-    "Show Fewer": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ver menos"
           }
         }
       }

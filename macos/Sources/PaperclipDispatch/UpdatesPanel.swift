@@ -21,17 +21,15 @@ struct UpdatesPanelActions {
     let updatePaperclip: () -> Void
 }
 
-/// El panel que abre el botón de arriba a la derecha: una fila para esta app, otra para Paperclip y una por
-/// cada plugin, cada una con su versión, lo que pasa al actualizarla y sus novedades.
+/// El panel que abre el botón de arriba a la derecha: una fila para esta app y otra para Paperclip, cada una
+/// con su versión, lo que pasa al actualizarla y sus novedades. Los plugins tienen su propio botón y su panel
+/// (`PluginsPanel`).
 struct UpdatesPanel: View {
     let app: AppUpdater
     let status: AppStatus
-    let plugins: PluginUpdates
     let actions: UpdatesPanelActions
     /// La campana de abajo: avisar de las versiones nuevas (`Preferences.updateNotifications`).
     @Binding var notifiesOfNewVersions: Bool
-    /// Para los ensayos: la lista de plugins ya abierta.
-    var showsAllPlugins = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -45,10 +43,6 @@ struct UpdatesPanel: View {
             Divider().padding(.horizontal, UpdatesDesign.rowPadding)
             PaperclipUpdateRow(status: status, update: actions.updatePaperclip)
             Divider().padding(.horizontal, UpdatesDesign.rowPadding)
-            if !plugins.plugins.isEmpty {
-                PluginsRow(plugins: plugins, showsAll: showsAllPlugins)
-                Divider().padding(.horizontal, UpdatesDesign.rowPadding)
-            }
             footer
         }
         .padding(6)
@@ -87,11 +81,10 @@ struct UpdatesPanel: View {
 
     private var busy: Bool {
         status.checkingUpdate || status.updateProgress != nil || app.phase == .checking
-            || plugins.checking || plugins.updatingID != nil
     }
 
     private var checkedLine: String {
-        let dates = [app.lastCheckedAt, status.lastCheckedAt, plugins.lastCheckedAt].compactMap(\.self)
+        let dates = [app.lastCheckedAt, status.lastCheckedAt].compactMap(\.self)
         guard let last = dates.max() else { return String(localized: "Checks automatically every few hours") }
         // Sin punto final: la hora ya puede terminar en uno («10:37 p. m.»).
         return String(localized: "Last checked: \(last.formatted(date: .omitted, time: .shortened))")
@@ -276,130 +269,6 @@ private struct PaperclipUpdateRow: View {
     }
 }
 
-// MARK: - Plugins
-
-/// Los plugins de Paperclip en una sola fila, para que el panel no crezca con cada uno: dice cuántos hay y si
-/// están al día, y solo los que tienen versión nueva suman una línea corta con su botón. «Ver todos» muestra
-/// la lista entera. Los de npm se actualizan aquí; los que salen de una carpeta, en esa carpeta.
-private struct PluginsRow: View {
-    let plugins: PluginUpdates
-
-    @State private var showsAll: Bool
-
-    init(plugins: PluginUpdates, showsAll: Bool = false) {
-        self.plugins = plugins
-        _showsAll = State(initialValue: showsAll)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: UpdatesDesign.iconSpacing) {
-                PaperclipGlyph(size: UpdatesDesign.iconSize, symbol: "puzzlepiece.extension")
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Plugins").font(.body.weight(.semibold))
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                trailing
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(showsAll ? plugins.plugins : plugins.available) { plugin in
-                    PluginLine(plugin: plugin, plugins: plugins)
-                }
-                if !plugins.available.isEmpty {
-                    Group {
-                        if plugins.canUpdate {
-                            Text("Your agents keep working: Paperclip swaps only the plugin, and the page reloads.")
-                        } else {
-                            Text("Only whoever runs this Paperclip can update its plugins.")
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-                ForEach(plugins.plugins.filter { plugins.updateErrors[$0.id] != nil }) { plugin in
-                    WarningRow(text: String(localized: "Couldn’t update \(plugin.name): \(plugins.updateErrors[plugin.id] ?? "")"))
-                        .font(.caption)
-                }
-                if let error = plugins.checkError {
-                    WarningRow(text: String(localized: "Couldn’t check the plugins: \(error)")).font(.caption)
-                }
-                if plugins.plugins.count > plugins.available.count {
-                    Button(showsAll ? String(localized: "Show Fewer") : String(localized: "Show All (\(plugins.plugins.count))")) {
-                        withAnimation(.snappy) { showsAll.toggle() }
-                    }
-                    .buttonStyle(.link)
-                    .font(.caption)
-                }
-            }
-            .padding(.leading, UpdatesDesign.textInset)
-        }
-        .padding(UpdatesDesign.rowPadding)
-    }
-
-    private var subtitle: String {
-        let count = plugins.plugins.count
-        if let updating = plugins.updating { return String(localized: "Updating \(updating.name)…") }
-        if plugins.checking { return String(localized: "\(count) in Paperclip · checking…") }
-        let available = plugins.available.count
-        // Con versiones nuevas, solo cuántas: el total ya está en «Ver todos».
-        if available > 0 { return String(localized: "\(available) with a new version") }
-        return String(localized: "\(count) in Paperclip · up to date")
-    }
-
-    @ViewBuilder private var trailing: some View {
-        if plugins.checking {
-            ProgressView().controlSize(.small)
-        } else if plugins.available.isEmpty, plugins.lastCheckedAt != nil {
-            UpToDateBadge()
-        } else if plugins.available.count > 1, plugins.canUpdate, plugins.updatingID == nil {
-            Button("Update All", action: plugins.updateAll)
-                .buttonStyle(.glass)
-        }
-    }
-}
-
-/// Un plugin en una línea: nombre, versión (con la nueva, si hay) y su botón. Los que salen de una carpeta
-/// llevan el ícono de carpeta, sin botón.
-private struct PluginLine: View {
-    let plugin: PluginUpdates.Plugin
-    let plugins: PluginUpdates
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(verbatim: plugin.name)
-                .lineLimit(1)
-            if plugin.source == .folder {
-                Image(systemName: "folder")
-                    .foregroundStyle(.secondary)
-                    .help("From a folder: it updates there")
-            }
-            Spacer(minLength: 8)
-            Text(verbatim: plugin.latest.map { "\(plugin.version) → \($0)" } ?? plugin.version)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-            if let link = plugin.packageURL, plugin.latest != nil {
-                Link(destination: link) { Image(systemName: "arrow.up.right.square") }
-                    .foregroundStyle(.secondary)
-                    .help("See It on npm")
-            }
-            if plugins.updatingID == plugin.id {
-                ProgressView().controlSize(.mini)
-            } else if plugin.latest != nil, plugins.canUpdate {
-                Button("Update") { plugins.update(plugin) }
-                    .controlSize(.small)
-                    .disabled(plugins.updatingID != nil)
-            }
-        }
-        .font(.callout)
-        .frame(minHeight: 22)
-    }
-}
-
 // MARK: - Piezas
 
 /// Las novedades de una versión: Markdown sencillo (títulos `###` y listas `-`), recortado a unas pocas
@@ -557,7 +426,7 @@ struct PaperclipGlyph: View {
     }
 }
 
-private struct UpToDateBadge: View {
+struct UpToDateBadge: View {
     var body: some View {
         Label {
             Text("Up to date").foregroundStyle(.secondary)

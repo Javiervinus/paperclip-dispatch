@@ -71,7 +71,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private var pointerOverDragArea = false
     private var mouseDownMonitor: Any?
 
-    private var updateButton: NSButton?
+    /// Los botones de arriba a la derecha (actualizaciones y plugins), en una sola vista.
+    private var updateButton: NSView?
     private var updateButtonCenterY: NSLayoutConstraint?
     /// Atrás, junto a los botones de la ventana. Solo con un archivo abierto (un adjunto en PDF, por
     /// ejemplo): WebKit lo muestra en la ventana entera, sin Paperclip alrededor ni cómo volver.
@@ -414,7 +415,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     /// Pone el botón de la versión, arriba a la derecha: centrado en la barra de la ruta de Paperclip y visible
     /// solo en el Dashboard (`pageWithFreeCorner`).
-    func setUpdateButton(_ button: NSButton) {
+    func setUpdateButton(_ button: NSView) {
         if updateButton !== button {
             updateButton?.removeFromSuperview()
             updateButton = button

@@ -106,11 +106,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             canPresent: { [weak self, weak windowController] in
                 (windowController?.canPresentOverlay ?? false) && self?.nudge?.isVisible != true
             },
-            isPanelOpen: { [weak self] in self?.updatesButton?.isPanelShown ?? false },
-            openPanel: { [weak self] in self?.showUpdatesPanel() }
+            isPanelOpen: { [weak self] panel in
+                switch panel {
+                case .updates: self?.updatesButton?.isPanelShown ?? false
+                case .plugins: self?.updatesButton?.pluginsButton.isPanelShown ?? false
+                }
+            },
+            openPanel: { [weak self] panel in self?.showUpdatesPanel(panel) }
         )
         self.updateNotices = updateNotices
-        updatesButton?.onPanelShown = { [weak updateNotices] in updateNotices?.panelOpened() }
+        updatesButton?.onPanelShown = { [weak updateNotices] in updateNotices?.panelOpened(.updates) }
+        updatesButton?.pluginsButton.onPanelShown = { [weak updateNotices] in updateNotices?.panelOpened(.plugins) }
         let decisions = DecisionsMonitor(api: api, preferences: preferences, notifications: notifications) {
             [weak windowController] in windowController?.isInFront ?? false
         }
@@ -160,7 +166,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifications.onPageClick = { [weak windowController] id in
             windowController?.openPageNotification(id: id)
         }
-        notifications.onUpdatesClick = { [weak self] in self?.showUpdatesPanel() }
+        notifications.onUpdatesClick = { [weak self] panel in self?.showUpdatesPanel(panel) }
         // Lo que se avisó con la app atrás sale también en la ventana al volver.
         NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification, object: windowController.window, queue: .main
@@ -216,9 +222,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         tips.onClose = { [weak nudge] in nudge?.sheetClosed() }
-        decisions.onSignedIn = { [weak tips, weak nudge] in
+        decisions.onSignedIn = { [weak self, weak tips, weak nudge] in
             tips?.signedIn()
             nudge?.signedIn()
+            self?.plugins?.signedIn()
         }
         // Al iniciar sesión la página cambia de dirección: se revisa ya, sin esperar la vuelta del minuto.
         window.onPageChange = { [weak decisions] in
@@ -370,12 +377,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.open(url)
     }
 
-    /// Un clic en el aviso de una versión nueva o «Ver» en su píldora: la ventana al frente y el panel.
-    private func showUpdatesPanel() {
+    /// Un clic en el aviso de una versión nueva o «Ver» en su píldora: la ventana al frente y ese panel.
+    private func showUpdatesPanel(_ panel: UpdateNotices.Panel) {
         guard let windowController else { return }
         windowController.showWindow(nil)
         NSApp.activate()
-        updatesButton?.showPanel()
+        switch panel {
+        case .updates: updatesButton?.showPanel()
+        case .plugins: updatesButton?.pluginsButton.showPanel()
+        }
     }
 
     /// «Buscar actualizaciones…» del menú: la ventana al frente y el panel con las dos, revisando.

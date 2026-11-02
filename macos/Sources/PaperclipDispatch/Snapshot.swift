@@ -375,39 +375,61 @@ enum MainWindowSnapshot {
         withExtendedLifetime(buttons) {}
     }
 
-    /// El panel de actualizaciones solo, en una ventana: con todo por actualizar, con la lista de plugins
-    /// abierta, con un plugin actualizándose y con los plugins al día.
+    /// Los paneles solos, en una ventana: el de actualizaciones (con la campana encendida y apagada) y el de
+    /// los plugins, con versiones nuevas, con uno actualizándose, al día y con muchos (la lista se desplaza).
     private static func panelWindows(paperclip: String) -> [Snapshot.Window] {
-        let cases: [(file: String, plugins: [PluginUpdates.Plugin], updating: String?, showsAll: Bool, notifies: Bool)] = [
-            ("updates-panel-all", samplePlugins, nil, false, true),
-            ("updates-panel-plugins-list", samplePlugins, nil, true, true),
-            ("updates-panel-plugin-updating", samplePlugins, samplePlugins[0].id, false, true),
-            ("updates-panel-plugins-up-to-date", samplePluginsUpToDate, nil, false, false),
-        ]
-        return cases.map { item in
-            let status = AppStatus()
-            status.paperclipVersion = paperclip
-            status.latestVersion = "2026.1101.0"
-            status.lastCheckedAt = .now
-            let panel = UpdatesPanel(
-                app: AppUpdater(previewing: .ready(sampleRelease)),
-                status: status,
-                plugins: PluginUpdates(previewing: item.plugins, updatingID: item.updating),
-                actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {}),
-                notifiesOfNewVersions: .constant(item.notifies),
-                showsAllPlugins: item.showsAll
+        let status = AppStatus()
+        status.paperclipVersion = paperclip
+        status.latestVersion = "2026.1101.0"
+        status.lastCheckedAt = .now
+        var windows = [true, false].map { notifies in
+            panelWindow(
+                UpdatesPanel(
+                    app: AppUpdater(previewing: .ready(sampleRelease)),
+                    status: status,
+                    actions: UpdatesPanelActions(checkAll: {}, updatePaperclip: {}),
+                    notifiesOfNewVersions: .constant(notifies)
+                ),
+                file: notifies ? "updates-panel" : "updates-panel-notifications-off"
             )
-            let hosting = NSHostingController(rootView: panel)
-            hosting.sizingOptions = []
-            let window = SnapshotableWindow(contentViewController: hosting)
-            window.styleMask = [.titled, .fullSizeContentView]
-            window.setContentSize(hosting.sizeThatFits(in: MainWindowController.unboundedSize))
-            window.titleVisibility = .hidden
-            window.titlebarAppearsTransparent = true
-            window.isReleasedWhenClosed = false
-            Snapshot.hide(window)
-            return Snapshot.Window(window: window, file: "\(item.file).png")
         }
+        let pluginCases: [(file: String, plugins: [PluginUpdates.Plugin], updating: String?)] = [
+            ("plugins-panel", samplePlugins, nil),
+            ("plugins-panel-updating", samplePlugins, samplePlugins[0].id),
+            ("plugins-panel-up-to-date", samplePluginsUpToDate, nil),
+            ("plugins-panel-many", manyPlugins, nil),
+        ]
+        windows += pluginCases.map { item in
+            panelWindow(
+                PluginsPanel(plugins: PluginUpdates(previewing: item.plugins, updatingID: item.updating)),
+                file: item.file
+            )
+        }
+        return windows
+    }
+
+    /// Doce plugins, para ver que el panel no crece con ellos.
+    private static var manyPlugins: [PluginUpdates.Plugin] {
+        let extra = ["Linear", "Notion", "Sentry", "Vercel", "Stripe", "Discord", "Figma"].enumerated().map { index, name in
+            PluginUpdates.Plugin(
+                id: "sample-\(name.lowercased())", name: name, version: "1.\(index).0",
+                source: .npm("paperclip-plugin-\(name.lowercased())")
+            )
+        }
+        return samplePlugins + extra
+    }
+
+    private static func panelWindow(_ view: some View, file: String) -> Snapshot.Window {
+        let hosting = NSHostingController(rootView: view)
+        hosting.sizingOptions = []
+        let window = SnapshotableWindow(contentViewController: hosting)
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.setContentSize(hosting.sizeThatFits(in: MainWindowController.unboundedSize))
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isReleasedWhenClosed = false
+        Snapshot.hide(window)
+        return Snapshot.Window(window: window, file: "\(file).png")
     }
 }
 

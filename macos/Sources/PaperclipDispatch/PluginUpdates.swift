@@ -97,6 +97,13 @@ final class PluginUpdates {
         }
     }
 
+    /// La página ya tiene sesión: si todavía no se pudieron leer los plugins (la app abrió antes de iniciar
+    /// sesión), se leen ya, sin esperar la vuelta de la hora.
+    func signedIn() {
+        guard api != nil, lastCheckedAt == nil, !running else { return }
+        Task { await check() }
+    }
+
     /// Desde el panel o el menú: el resultado se ve en el panel.
     func checkNow() {
         guard api != nil, !running else { return }
