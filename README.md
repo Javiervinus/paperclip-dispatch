@@ -45,6 +45,8 @@ their own, and closing the app stops nothing.
 - **Paperclip in a Mac window.** Paperclip fills the whole window, with no title bar. The app adds the
   Mac's menus, shortcuts (back, forward, home, copy link), two-finger swipe navigation and an optional
   Liquid Glass sidebar.
+- **Plugins with on-device AI.** Paperclip plugins that write with Chrome's built-in AI (its Prompt API) work
+  in the app with Apple Intelligence, the model that runs on this Mac.
 - **Decision notifications.** When an agent asks a question, needs an approval, fails or hits a budget
   alert, you get a macOS notification. Clicking it opens that decision. The app checks every minute on
   its own, so it keeps working with the window closed.
@@ -155,7 +157,7 @@ pages load in a `WKWebView`; a few small scripts and styles fit them to a window
 | --- | --- |
 | App lifecycle and menus | `AppDelegate.swift`, `MainMenu.swift`, `AboutPanel.swift` |
 | Window and web view | `MainWindowController.swift`, `PaperclipWebView.swift`, `GlassPanel.swift`, `OfflineView.swift` |
-| Scripts and styles injected into Paperclip | `macos/web/` (`layout.css`, `layout.js`, `glass.css`, `bridge.js`), listed in `WebResources.swift` |
+| Scripts and styles injected into Paperclip | `macos/web/` (`layout.css`, `layout.js`, `glass.css`, `bridge.js`, `language-model.js`), listed in `WebResources.swift` |
 | Finding, starting and checking Paperclip | `PaperclipLocator.swift`, `PaperclipAPI.swift` |
 | Welcome and setup | `WelcomeView.swift`, `WelcomeIntroStep.swift`, `WelcomeNotificationsStep.swift` |
 | Decisions, notifications and Dock badge | `DecisionsMonitor.swift`, `Attention.swift`, `NotificationBridge.swift` |

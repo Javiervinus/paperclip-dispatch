@@ -11,6 +11,12 @@ stands on its own and adds one or two more at most. Past the fifth item, the pan
 
 ## Unreleased
 
+### Added
+
+- **Paperclip plugins that write with Chrome’s built-in AI work in the app, with Apple Intelligence.** The
+  ones that use it, like Oficina global’s conversations, get this Mac’s on-device model, with nothing to
+  download. It needs Apple Intelligence turned on in System Settings.
+
 ### Fixed
 
 - **New versions reach you within an hour.** The app now looks for them every hour instead of every six,
