@@ -2,41 +2,59 @@ import Foundation
 import os
 import SwiftUI
 
-// Despertar automático del agente revisor que Paperclip se salta.
+// Despertar automático del agente al que Paperclip le pasa una tarea y se olvida de despertar.
 //
 // Es un bug de Paperclip 2026.1023.0 (https://github.com/paperclipai/paperclip/issues/18315): cuando un agente
-// pasa a revisión una tarea con etapa de revisión desde su propia corrida, Paperclip descarta el despertar
-// del agente revisor (`skipped`, «The previous execution has not released its environment lease») y nada lo
-// reintenta. La tarea queda en revisión sin que nadie la revise.
+// pasa una tarea a otro desde su propia corrida, Paperclip descarta el despertar del que la recibe (`skipped`,
+// «The previous execution has not released its environment lease»). Pasa en los dos sentidos: en la ida al
+// revisor nada lo reintenta, y en la vuelta al ejecutor (cuando el revisor pide cambios) Paperclip suele
+// rescatarlo solo (`issue_continuation_needed`), pero no siempre. La tarea queda con alguien a cargo que no
+// está trabajando en ella.
 //
 // Todo vive en este archivo para quitarlo de una vez cuando Paperclip publique el arreglo (VIN-242). Lo demás
-// son enganches: el ajuste (`Preferences.wakeStrandedReviewers`), la llamada en cada revisión de Decisions
-// (`DecisionsMonitor`), la sección de Ajustes (`ReviewWakeSection` en la pestaña Paperclip) y los parámetros
-// de `DecisionResolver.wake`.
+// son enganches: el ajuste (`Preferences.wakeMissedHandoffs`), la llamada en cada revisión de Decisions
+// (`DecisionsMonitor`), la sección de Ajustes (`HandoffWakeSection` en la pestaña Paperclip), las escenas de
+// `NotificationsSnapshot` y los parámetros de `DecisionResolver.wake`.
 //
-// Lo que se lee de Paperclip se lee estricto, con lectores propios (no con los de la parte C, que descartan lo
-// que no entienden): si una respuesta no se puede leer bien, no se sabe si el revisor va en camino, y no se
-// despierta a nadie. Pasado el margen llega la tarjeta de la tarea trabada, que dice que no se pudo comprobar.
+// Solo cuenta un traspaso que la app vio pasar entre dos revisiones seguidas: así, al abrirse, no despierta a
+// nadie en tareas viejas paradas (esas siguen llegando por Decisions). Lo que se lee de Paperclip se lee
+// estricto, con lectores propios (no con los de la parte C, que descartan lo que no entienden): si una
+// respuesta no se puede leer bien, no se sabe si el agente va en camino, y no se despierta a nadie. Pasado el
+// margen llega la tarjeta de la tarea trabada, que dice que no se pudo comprobar.
 
-/// Revisa en cada vuelta las tareas en revisión de una company y despierta, una sola vez por traspaso, al
-/// agente revisor que se quedó dormido. Si lo despierta, no avisa nada. Si Paperclip lo salta o falla, o si
-/// lo que contesta Paperclip no se puede leer, devuelve la tarjeta de «Tarea trabada», que el monitor suma a
-/// lo de Decisions para que llegue a la Mac y a Telegram como cualquier otra.
+/// Mira en cada vuelta las tareas abiertas de una company y, cuando ve que una pasó a un agente, lo despierta
+/// una sola vez si pasado el margen sigue sin ponerse en camino. Si lo despierta, no avisa nada. Si Paperclip
+/// lo salta o falla, o si lo que contesta Paperclip no se puede leer, devuelve la tarjeta de «Tarea trabada»,
+/// que el monitor suma a lo de Decisions para que llegue a la Mac y a Telegram como cualquier otra.
 @MainActor
-final class ReviewWaker {
-    /// Lo que se espera desde el traspaso antes de despertar: un despertar de Paperclip que sí llega tarda
-    /// segundos, y así no se le adelanta.
+final class HandoffWaker {
+    /// Lo que se espera desde que la app ve el traspaso antes de despertar: un despertar de Paperclip que sí
+    /// llega (o su rescate) tarda segundos, y así no se le adelanta.
     static let margin: TimeInterval = 2 * 60
+    /// Un hueco más largo que esto entre dos lecturas de la lista (la Mac durmió, la app estuvo sin sesión): la
+    /// app no vio lo que pasó en medio, y esa lectura solo toma nota.
+    static let maxGap: TimeInterval = 5 * 60
     /// El `reason` de estos despertares, para distinguirlos de los del botón en el historial de Paperclip.
-    static let wakeReason = "dispatch_review_wake_recovery"
+    static let wakeReason = "dispatch_handoff_wake_recovery"
     /// Lo intentado, por traspaso. Sobrevive a un reinicio para no gastar corridas en bucle.
-    private static let attemptsKey = "reviewWakeAttempts"
+    private static let attemptsKey = "handoffWakeAttempts"
     /// Las tarjetas de «no se pudo comprobar», por traspaso: una sola vez cada una, también tras un reinicio.
-    private static let unverifiedKey = "reviewWakeUnverified"
+    private static let unverifiedKey = "handoffWakeUnverified"
+    /// Lo que guardaba la primera versión de esta función, que no llegó a publicarse (también su ajuste).
+    private static let retiredKeys = ["reviewWakeAttempts", "reviewWakeUnverified", "wakeStrandedReviewers"]
+    /// Entre dos vueltas en que un traspaso tuvo que esperar, se espera cada vez el doble, hasta esto: un agente
+    /// pausado o sin presupuesto puede tardar horas, y cada vuelta son cuatro lecturas.
+    private static let maxWaitInterval: TimeInterval = 10 * 60
     /// Cuánto se recuerda un intento.
     private static let keepAttempts: TimeInterval = 30 * 24 * 60 * 60
     /// Las veces seguidas que tiene que fallar una lectura por red o por un 5xx antes de mandar la tarjeta.
     private static let transientFailuresForCard = 2
+    /// Los estados de trabajo: lo que se lee de cada company en cada vuelta.
+    private static let workStatuses = ["todo", "in_progress", "in_review"]
+    /// Tareas por página de la lista (el máximo que acepta Paperclip es 1000).
+    private static let pageLimit = 500
+    /// Más páginas que esto no es una company real: la lista no se da por leída.
+    private static let maxPages = 20
 
     // Los valores que conoce la app, según Paperclip 2026.1023.0. Otro cualquiera es una respuesta cambiada.
     /// `diagnostics/wakes`: `kind` de cada evento.
@@ -49,8 +67,17 @@ final class ReviewWaker {
     nonisolated private static let pendingWakeStatuses: Set<String> = ["queued", "claimed", "deferred_issue_execution"]
     /// Despertares que ya terminaron en una corrida del agente.
     nonisolated private static let ranWakeStatuses: Set<String> = ["completed", "coalesced"]
-    /// `live-runs`: solo trae corridas en cola o en curso.
+    /// Despertares que Paperclip descarta a propósito (`reason`): la tarea espera a otras, su árbol está en pausa
+    /// o el agente no acepta despertares. Despertarlo también se descartaría. El del bug llega como `other`.
+    nonisolated private static let heldWakeReasons: Set<String> = [
+        "issue_dependencies_blocked", "issue_tree_hold_active", "heartbeat.disabled", "heartbeat.wakeOnDemand.disabled",
+    ]
+    /// `live-runs` y `activeRun`: solo traen corridas en cola o en curso.
     nonisolated private static let liveRunStatuses: Set<String> = ["queued", "running"]
+    /// `status` de una tarea.
+    nonisolated private static let issueStatuses: Set<String> = [
+        "backlog", "todo", "in_progress", "in_review", "blocked", "done", "cancelled",
+    ]
     /// `executionState.status`.
     nonisolated private static let stageStatuses: Set<String> = ["idle", "pending", "changes_requested", "completed"]
     /// `executionState.currentParticipant.type`.
@@ -65,16 +92,15 @@ final class ReviewWaker {
     /// Un intento de despertar, guardado en la Mac.
     struct Attempt: Codable, Equatable {
         enum Outcome: String, Codable {
-            /// Se guarda antes de pedirlo: si la app se cierra a mitad, no se vuelve a intentar y, si el revisor
+            /// Se guarda antes de pedirlo: si la app se cierra a mitad, no se vuelve a intentar y, si el agente
             /// no se puso en camino, sale la tarjeta como si hubiera fallado.
             case requested
             /// Paperclip lo aceptó, o ya no hacía falta.
             case done
-            /// No hizo falta: el revisor ya había corrido en la tarea después del traspaso.
-            case notNeeded
             /// Paperclip lo saltó o falló: va la tarjeta con el botón.
             case failed
-            /// La tarjeta ya no hace falta: el agente se puso en camino (p. ej. con el botón).
+            /// La tarjeta ya no hace falta: el agente se puso en camino (p. ej. con el botón) o la tarea pasó a
+            /// otra cosa.
             case recovered
         }
 
@@ -98,7 +124,13 @@ final class ReviewWaker {
         var showing: Bool
         var companyId: String
         var issueId: String
-        /// Solo si se leyó bien al participante de la etapa: sin él, la tarjeta no lleva el botón.
+        /// El agente a cargo según la lista: mientras la tarea siga a su nombre, se vuelve a mirar.
+        var assigneeAgentId: String
+        /// Cuándo vio la app el traspaso, y la lectura anterior (con la hora de Paperclip): sobreviven a un
+        /// reinicio con la tarjeta.
+        var seenAt: Date
+        var since: Date
+        /// Solo si se leyó bien quién está a cargo: sin él, la tarjeta no lleva el botón.
         var agentId: String?
         var agentName: String?
         var identifier: String?
@@ -113,22 +145,63 @@ final class ReviewWaker {
         let transient: Bool
     }
 
+    /// Un traspaso que la app vio pasar y que todavía no se resolvió.
+    private struct Pending {
+        let key: String
+        let companyId: String
+        let issueId: String
+        let agentId: String
+        /// La revisión en que la app lo vio: desde aquí corre el margen.
+        let seenAt: Date
+        /// La revisión anterior, con la hora de Paperclip: el traspaso pasó después. Una corrida del agente
+        /// pedida desde entonces cuenta como que ya pasó por la tarea.
+        let since: Date
+        /// Las vueltas seguidas en que tuvo que esperar, y cuándo se vuelve a mirar.
+        var waits = 0
+        var nextCheck: Date?
+    }
+
+    /// Lo que se decidió de un traspaso en una vuelta.
+    private enum Decision {
+        /// Resuelto: se despertó al agente (queda el intento guardado) o no hacía falta.
+        case settled
+        /// Se vuelve a mirar en la vuelta siguiente (va en camino, está pausado…).
+        case wait(String)
+        /// Ya no es un traspaso a un agente que haya que mirar (otra persona a cargo, salió de los estados de
+        /// trabajo…).
+        case drop(String)
+        /// No se pudo leer. `agentKnown`: si se leyó bien quién está a cargo.
+        case unreadable(ReadProblem, agentKnown: Bool)
+    }
+
+    /// Lo que la app vio de una company en una lectura de la lista.
+    private struct Snapshot {
+        let at: Date
+        /// La misma hora, en el reloj de Paperclip (o en el de la Mac si no vino).
+        let serverAt: Date
+        let issues: [String: ListedIssue]
+    }
+
     private let api: PaperclipAPI
     private let resolver: DecisionResolver
-    private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PaperclipDispatch", category: "review-wake")
+    private let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PaperclipDispatch", category: "handoff-wake")
     private var attempts: [String: Attempt]
     private var unverified: [String: Unverified]
+    /// La última lista que se leyó bien, por company.
+    private var snapshots: [String: Snapshot] = [:]
+    /// Los traspasos vistos que siguen sin resolver, por tarea.
+    private var pending: [String: Pending] = [:]
+    /// Las tarjetas de la última vuelta, por company: si la lista no se puede leer, siguen las mismas.
+    private var lastCards: [String: [AttentionItem]] = [:]
     /// Las lecturas seguidas que fallaron por red o por un 5xx, por traspaso.
     private var transientFailures: [String: Int] = [:]
     /// Lo último que se decidió de cada traspaso, para anotarlo en el registro solo cuando cambia.
     private var lastDecision: [String: String] = [:]
     /// Lo último que falló al leer la lista de cada company, por lo mismo.
     private var listProblem: [String: String] = [:]
-    /// Cuándo vio la app cada tarea, para medir el margen si la lista no trae un `updatedAt` legible.
-    private var firstSeen: [String: Date] = [:]
-    /// La etapa de cada tarea en revisión, con el `updatedAt` con que se leyó: la lista de tareas no la trae, y
-    /// la tarea se vuelve a leer solo si cambió.
-    private var stages: [String: (updatedAt: String?, reading: StageReading)] = [:]
+    /// Cuánto va adelantado el reloj de Paperclip respecto del de la Mac, por company: las horas de sus
+    /// despertares se comparan con las de la app en un mismo reloj.
+    private var clockOffset: [String: TimeInterval] = [:]
 
     init(api: PaperclipAPI, resolver: DecisionResolver) {
         self.api = api
@@ -137,214 +210,277 @@ final class ReviewWaker {
             .flatMap { try? JSONDecoder().decode([String: Attempt].self, from: $0) } ?? [:]
         unverified = UserDefaults.standard.data(forKey: Self.unverifiedKey)
             .flatMap { try? JSONDecoder().decode([String: Unverified].self, from: $0) } ?? [:]
+        Self.retiredKeys.forEach(UserDefaults.standard.removeObject(forKey:))
     }
 
     /// Una company en una vuelta del monitor. `decisions`: lo que ya trae Decisions, para no duplicar la tarjeta
     /// de una tarea que ya está ahí. Devuelve las tarjetas de los despertares que fallaron y de los traspasos
     /// que no se pudieron comprobar.
     func check(_ company: PaperclipCompany, decisions: [AttentionItem]) async -> [AttentionItem] {
-        // Una lectura por company: las tareas en revisión. Lo demás se lee solo de las candidatas.
-        let list: [Lossy<ReviewIssue>]
-        do {
-            list = try await read("api/companies/\(company.id)/issues", query: [URLQueryItem(name: "status", value: "in_review")])
-        } catch {
-            // Sin la lista no se sabe qué tareas mirar: no hay tarjeta posible, solo la línea en el registro.
-            noteList(company, "couldn't read \(error.path): \(error.detail)")
-            return []
-        }
-        let read = list.compactMap(\.value)
-        noteList(company, Self.listProblem(read, unreadable: list.count - read.count))
         let now = Date()
-        var cards: [AttentionItem] = []
-        // Lo que no vino se da por bueno: la lista ya es de las tareas en revisión, y la tarea se lee entera.
-        let issues = read.filter { ($0.status ?? "in_review") == "in_review" && ($0.assigneeAgentId != nil || !$0.assigneeKnown) }
-        let ids = Set(issues.map(\.id))
-        func ofListed(_ key: String) -> Bool { ids.contains(String(key.prefix { $0 != ":" })) }
-        stages = stages.filter { ids.contains($0.key) }
-        firstSeen = firstSeen.filter { ids.contains($0.key) }
-        lastDecision = lastDecision.filter { ofListed($0.key) }
-        transientFailures = transientFailures.filter { ofListed($0.key) }
-        // Una tarjeta con partes sin leer (`?`) no distingue un traspaso de otro: cuando la tarea sale de
-        // revisión se olvida, para que el traspaso siguiente tenga la suya.
-        let guesses = unverified.filter { !ids.contains($0.value.issueId) && $0.key.contains(":?") }
-        if !guesses.isEmpty {
-            unverified = unverified.filter { guesses[$0.key] == nil }
-            saveUnverified()
+        // Una lectura por company (con sus páginas): las tareas en los estados de trabajo. Lo demás se lee solo
+        // de los traspasos vistos, pasado el margen.
+        let listed: [ListedIssue]
+        do {
+            let serverDate: Date?
+            (listed, serverDate) = try await openIssues(of: company)
+            if let serverDate {
+                let offset = serverDate.timeIntervalSince(now)
+                if abs(offset - (clockOffset[company.id] ?? 0)) > 5 {
+                    log.notice("\(company.issuePrefix ?? company.id, privacy: .public): Paperclip's clock is \(Int(offset)) s off the Mac's")
+                }
+                clockOffset[company.id] = offset
+            }
+        } catch {
+            // Sin la lista no se sabe qué cambió: siguen las tarjetas de la vuelta anterior, sin volver a mirar,
+            // y la lectura siguiente se compara con la última que salió bien.
+            noteList(company, "couldn't read \(error.path): \(error.detail)")
+            return lastCards[company.id] ?? []
         }
-        for summary in issues {
-            // Lo que acaba de cambiar espera el margen sin leer nada más, salvo que ya tenga su tarjeta.
-            let hasCard = attempts.values.contains { $0.issueId == summary.id && $0.showsCard }
-                || unverified.values.contains { $0.issueId == summary.id && $0.showing }
-            if !hasCard, recent(summary, now: now) {
-                note(summary.id, summary, "waiting for the margin")
+        let previous = snapshots[company.id]
+        let current = record(listed, of: company, previous: previous, now: now)
+        if let previous, now.timeIntervalSince(previous.at) <= Self.maxGap {
+            detectHandoffs(listed, in: company, previous: previous, now: now)
+        } else {
+            // Al abrir la app, o después de un hueco: solo se toma nota de cómo están las cosas.
+            log.notice("\(company.issuePrefix ?? company.id, privacy: .public): taking note of \(current.count) open tasks")
+        }
+
+        var cards: [AttentionItem] = []
+        // Lo que ya no está a nombre del mismo agente deja de mirarse, y sus tarjetas se retiran.
+        pending = pending.filter { _, handoff in
+            handoff.companyId != company.id || current[handoff.issueId]?.isAssigned(to: handoff.agentId) == true
+        }
+        retireMovedOn(company, current: current)
+        // Las tarjetas de «no se pudo comprobar» que siguen a la vista se vuelven a mirar, también tras un reinicio.
+        for (key, entry) in unverified where entry.companyId == company.id && entry.showing && pending[entry.issueId] == nil {
+            pending[entry.issueId] = Pending(
+                key: key, companyId: company.id, issueId: entry.issueId, agentId: entry.assigneeAgentId,
+                seenAt: entry.seenAt, since: entry.since
+            )
+        }
+        // Los despertares que fallaron: su tarjeta, mientras el agente no se ponga en camino.
+        for (key, attempt) in attempts.sorted(by: { $0.value.at < $1.value.at })
+        where attempt.companyId == company.id && attempt.showsCard {
+            if let card = await failedCard(attempt, key: key, company: company, decisions: decisions) { cards.append(card) }
+        }
+        for handoff in pending.values.filter({ $0.companyId == company.id }).sorted(by: { $0.seenAt < $1.seenAt }) {
+            guard let issue = current[handoff.issueId] else { continue }
+            if attempts[handoff.key] != nil {
+                pending[handoff.issueId] = nil
                 continue
             }
-            let handoff: Handoff
-            switch await stage(of: summary) {
-            case let .none(reason):
-                note(summary.id, summary, reason)
-                retireUnverified(issueId: summary.id, except: nil)
+            let hasCard = unverified[handoff.key]?.showing == true
+            if !hasCard, now.timeIntervalSince(handoff.seenAt) < Self.margin {
+                note(handoff.key, issue, "waiting for the margin")
                 continue
-            case let .unreadable(partial, problem):
-                // Sin saber qué traspaso es, sigue la tarjeta del despertar que falló, si la hay.
-                if let (key, attempt) = attempts.filter({ $0.value.issueId == summary.id && $0.value.showsCard })
-                    .max(by: { $0.value.at < $1.value.at }) {
-                    note(key, summary, "couldn't read \(problem.path): \(problem.detail)")
-                    if let card = await failedCard(attempt, key: key, company: company, decisions: decisions) { cards.append(card) }
-                    continue
-                }
-                if let card = await unverifiedCard(partial, problem, summary: summary, company: company, decisions: decisions, now: now) {
+            }
+            if let next = handoff.nextCheck, now < next { continue }
+            let decision: Decision
+            if let run = issue.activeRun, run.agentId == handoff.agentId {
+                // La lista ya dice que el agente corre en la tarea: no hace falta leer más.
+                decision = .wait("agent has an active run on the task")
+            } else {
+                decision = await consider(handoff, issue: issue, company: company, now: now)
+            }
+            switch decision {
+            case let .unreadable(problem, agentKnown):
+                if let card = await unverifiedCard(
+                    handoff, problem, agentKnown: agentKnown, issue: issue, company: company, decisions: decisions, now: now
+                ) {
                     cards.append(card)
                 }
                 continue
-            case let .agent(found):
-                handoff = found
-            }
-            // Una tarjeta de otro traspaso de esta tarea ya no vale.
-            retireUnverified(issueId: summary.id, except: handoff.key)
-            if let attempt = attempts[handoff.key] {
-                guard attempt.showsCard else { continue }
-                if let card = await failedCard(attempt, key: handoff.key, company: company, decisions: decisions) {
-                    cards.append(card)
+            case .settled:
+                pending[handoff.issueId] = nil
+            case let .wait(reason):
+                note(handoff.key, issue, reason)
+                // Una corrida en curso según la lista no cuesta lecturas: se mira en cada vuelta.
+                if issue.activeRun?.agentId != handoff.agentId {
+                    var waiting = handoff
+                    waiting.waits += 1
+                    let interval = min(Self.maxWaitInterval, 60 * pow(2, Double(waiting.waits - 1)))
+                    waiting.nextCheck = now.addingTimeInterval(interval)
+                    pending[handoff.issueId] = waiting
                 }
-                continue
+            case let .drop(reason):
+                note(handoff.key, issue, reason)
+                pending[handoff.issueId] = nil
             }
-            // La tarjeta era de un traspaso anterior: este también espera su margen.
-            if unverified[handoff.key]?.showing != true, recent(summary, now: now) {
-                note(summary.id, summary, "waiting for the margin")
-                continue
-            }
-            if let problem = await consider(handoff, summary: summary, company: company, now: now) {
-                let partial = PartialHandoff(key: handoff.key, agentId: handoff.agentId)
-                if let card = await unverifiedCard(partial, problem, summary: summary, company: company, decisions: decisions, now: now) {
-                    cards.append(card)
-                }
-                continue
-            }
+            // Se pudo leer: la tarjeta de «no se pudo comprobar», si la había, ya no hace falta.
             transientFailures[handoff.key] = nil
-            retireUnverified(issueId: summary.id, except: nil)
+            retireUnverified(key: handoff.key)
             if let attempt = attempts[handoff.key], attempt.showsCard,
                let card = await failedCard(attempt, key: handoff.key, company: company, decisions: decisions) {
                 cards.append(card)
             }
         }
         prune(now: now)
+        lastCards[company.id] = cards
         return cards
     }
 
-    /// Si la tarea cambió hace menos que el margen. Sin un `updatedAt` legible, el margen cuenta desde que la app
-    /// la vio en la lista.
-    private func recent(_ summary: ReviewIssue, now: Date) -> Bool {
-        if let since = summary.updatedAt.flatMap(Self.date) { return now.timeIntervalSince(since) < Self.margin }
-        let seen = firstSeen[summary.id] ?? now
-        firstSeen[summary.id] = seen
-        return now.timeIntervalSince(seen) < Self.margin
-    }
-
-    /// Lo que no se pudo leer de la lista, para el registro. `nil`: nada.
-    private static func listProblem(_ issues: [ReviewIssue], unreadable: Int) -> String? {
-        var missing: [String] = []
-        if issues.contains(where: { $0.status == nil }) { missing.append("status") }
-        if issues.contains(where: { !$0.assigneeKnown }) { missing.append("assigneeAgentId") }
-        if issues.contains(where: { $0.updatedAt.flatMap(date) == nil }) { missing.append("updatedAt") }
-        var parts: [String] = []
-        if unreadable > 0 { parts.append("couldn't read \(unreadable) of the in-review issues") }
-        if !missing.isEmpty { parts.append("in-review issues without a readable " + missing.joined(separator: ", ")) }
-        return parts.isEmpty ? nil : parts.joined(separator: "; ")
-    }
-
-    /// La etapa pendiente de una tarea de la lista: la guardada si la tarea no cambió; si no, la lee. Una lectura
-    /// que no se pudo hacer no se guarda: se vuelve a intentar en la vuelta siguiente, para retirar la tarjeta
-    /// en cuanto Paperclip conteste bien.
-    private func stage(of summary: ReviewIssue) async -> StageReading {
-        if let cached = stages[summary.id], cached.updatedAt == summary.updatedAt { return cached.reading }
-        let reading: StageReading
-        let path = "api/issues/\(summary.id)"
-        do {
-            let issue: IssueDetail = try await read(path)
-            reading = issue.reading(path: path)
-            transientFailures[Handoff.key(summary.id, nil, nil, nil)] = nil
-        } catch {
-            reading = .unreadable(PartialHandoff(key: Handoff.key(summary.id, nil, nil, nil), agentId: nil), error)
+    /// Guarda la lista de esta vuelta y la devuelve por tarea. Una tarea que no se pudo leer bien conserva lo
+    /// que se vio de ella antes: así, cuando se vuelva a leer, no parece que cambió.
+    private func record(
+        _ listed: [ListedIssue],
+        of company: PaperclipCompany,
+        previous: Snapshot?,
+        now: Date
+    ) -> [String: ListedIssue] {
+        var issues: [String: ListedIssue] = [:]
+        for issue in listed {
+            if issue.readable {
+                // Una tarea que salió de los estados de trabajo (la lista la trae igual si cambió el filtro).
+                guard Self.workStatuses.contains(issue.status ?? "") else { continue }
+                issues[issue.id] = issue
+            } else {
+                issues[issue.id] = previous?.issues[issue.id] ?? issue
+            }
         }
-        if case .unreadable = reading { return reading }
-        stages[summary.id] = (summary.updatedAt, reading)
-        return reading
+        snapshots[company.id] = Snapshot(
+            at: now, serverAt: now.addingTimeInterval(clockOffset[company.id] ?? 0), issues: issues
+        )
+        return issues
     }
 
-    /// Un traspaso sin intento: lo despierta si de verdad se quedó dormido. Devuelve lo que no pudo leer, si
-    /// algo no se pudo leer: entonces no despierta a nadie.
-    private func consider(_ handoff: Handoff, summary: ReviewIssue, company: PaperclipCompany, now: Date) async -> ReadProblem? {
-        let target = WakeTarget(agentId: handoff.agentId, issueId: summary.id, issueIdentifier: summary.identifier)
-        let agent: ReviewAgent
+    /// Los traspasos entre la lectura anterior y esta: la tarea cambió de agente a cargo (de otro agente, de una
+    /// persona o de nadie), o apareció en la lista ya a nombre de un agente (nueva, reabierta o salida de
+    /// `backlog` o de `blocked`). Que el agente tome su tarea o la deje en revisión no cambia el asignado.
+    private func detectHandoffs(_ listed: [ListedIssue], in company: PaperclipCompany, previous: Snapshot, now: Date) {
+        for issue in listed where issue.readable && Self.workStatuses.contains(issue.status ?? "") {
+            guard let agentId = issue.assigneeAgentId else { continue }
+            if let before = previous.issues[issue.id] {
+                // Antes no se pudo leer quién la tenía: no se sabe si cambió.
+                guard before.readable, before.assigneeAgentId != agentId else { continue }
+            }
+            // `statusVersion` sube con cada cambio de estado o de asignado: dos traspasos de la misma tarea no
+            // comparten clave. Si no viene, la hora en que se vio.
+            let version = issue.statusVersion.map(String.init) ?? "t\(Int(now.timeIntervalSince1970))"
+            let key = [issue.id, version, agentId].joined(separator: ":")
+            pending[issue.id] = Pending(
+                key: key, companyId: company.id, issueId: issue.id, agentId: agentId, seenAt: now,
+                since: previous.serverAt
+            )
+            // Las tarjetas de un traspaso anterior de esta tarea ya no valen.
+            retireCards(issueId: issue.id, except: key)
+            note(key, issue, "handed over to agent \(agentId)")
+        }
+    }
+
+    /// Retira las tarjetas de las tareas que salieron de la lista o pasaron a otro: ya no están trabadas con
+    /// ese agente.
+    private func retireMovedOn(_ company: PaperclipCompany, current: [String: ListedIssue]) {
+        var changed = false
+        for (key, attempt) in attempts where attempt.companyId == company.id && attempt.showsCard {
+            guard current[attempt.issueId]?.isAssigned(to: attempt.agentId) == false || current[attempt.issueId] == nil
+            else { continue }
+            attempts[key]?.outcome = .recovered
+            changed = true
+            log.notice("\(attempt.identifier ?? attempt.issueId, privacy: .public): the task moved on, card dropped")
+        }
+        if changed { save() }
+        for (key, entry) in unverified where entry.companyId == company.id && entry.showing {
+            guard current[entry.issueId]?.isAssigned(to: entry.assigneeAgentId) == false || current[entry.issueId] == nil
+            else { continue }
+            retireUnverified(key: key, reason: "the task moved on")
+        }
+    }
+
+    /// Un traspaso pasado el margen y sin intento: lo despierta si el agente de verdad se quedó dormido. Si algo
+    /// no se pudo leer, no despierta a nadie.
+    private func consider(_ handoff: Pending, issue: ListedIssue, company: PaperclipCompany, now: Date) async -> Decision {
+        let path = "api/issues/\(handoff.issueId)"
+        let detail: IssueDetail
+        do {
+            detail = try await read(path)
+        } catch {
+            // La lista sí dijo quién la tiene: el botón puede ir.
+            return .unreadable(error, agentKnown: true)
+        }
+        if let problem = detail.problem(for: handoff.agentId, path: path) {
+            return .unreadable(problem.problem, agentKnown: problem.agentKnown)
+        }
+        // Paperclip salta los despertares de una tarea `blocked` o cerrada.
+        guard Self.workStatuses.contains(detail.status) else { return .drop("task is \(detail.status)") }
+        guard detail.assigneeAgentId == handoff.agentId else { return .drop("handed over to someone else") }
+        if let reason = detail.notTheStageAgent(handoff.agentId) { return .drop(reason) }
+
+        let agent: HandoffAgent
         do {
             agent = try await read("api/agents/\(handoff.agentId)")
         } catch {
-            return error
+            return .unreadable(error, agentKnown: true)
         }
         if Self.unavailableAgentStatuses.contains(agent.status) {
-            note(handoff.key, summary, "agent is \(agent.status)" + (agent.pauseReason.map { " (\($0))" } ?? ""))
-            return nil
+            return .wait("agent is \(agent.status)" + (agent.pauseReason.map { " (\($0))" } ?? ""))
         }
         if let budget = agent.budgetMonthlyCents, budget > 0, (agent.spentMonthlyCents ?? 0) >= budget {
-            note(handoff.key, summary, "agent is out of budget")
-            return nil
+            return .wait("agent is out of budget")
         }
         let runs: [LiveRun]
         do {
-            runs = try await liveRuns(on: summary.id)
+            runs = try await liveRuns(on: handoff.issueId)
         } catch {
-            return error
+            return .unreadable(error, agentKnown: true)
         }
         if runs.contains(where: { $0.agentId == handoff.agentId }) {
-            note(handoff.key, summary, "agent has a queued or running run")
-            return nil
+            return .wait("agent has a queued or running run")
         }
         let mine: [WakeEvent]
         do {
-            mine = try await wakes(of: handoff.agentId, on: summary.id)
+            mine = try await wakes(of: handoff.agentId, on: handoff.issueId)
         } catch {
-            return error
+            return .unreadable(error, agentKnown: true)
         }
-        // Solo cuenta lo del revisor: un despertar pendiente de otro agente (p. ej. el del ingeniero, que quedó
+        // Solo cuenta lo del agente a cargo: un despertar pendiente de otro (p. ej. el del ingeniero, que quedó
         // huérfano al pasar la tarea a revisión) no lo lleva a la tarea.
-        if mine.contains(where: { Self.pendingWakeStatuses.contains($0.status ?? "") }) {
-            note(handoff.key, summary, "agent has a pending wake-up")
-            return nil
+        if mine.contains(where: { Self.onItsWay($0, liveRuns: runs) }) {
+            return .wait("agent has a pending wake-up")
         }
-        // Paperclip los da del más nuevo al más viejo. Si lo último fue una corrida, el revisor ya pasó por la
-        // tarea después del traspaso (p. ej. espera una tarjeta de la persona): no se quedó dormido, y para
-        // este traspaso no se vuelve a mirar.
-        if let latest = mine.first, Self.ranWakeStatuses.contains(latest.status ?? "") {
-            record(Attempt(
-                at: now, outcome: .notNeeded, companyId: company.id, issueId: summary.id, agentId: handoff.agentId,
-                agentName: nil, identifier: summary.identifier, title: summary.title
-            ), for: handoff.key)
-            note(handoff.key, summary, "agent already ran after the handoff")
-            return nil
+        // El último despertar suyo lo descartó Paperclip a propósito: el agente se despierta cuando eso cambie.
+        let requested = { (event: WakeEvent) in event.requestedAt.flatMap(Self.date) ?? .distantPast }
+        if let latest = mine.max(by: { requested($0) < requested($1) }),
+           let reason = latest.reason, Self.heldWakeReasons.contains(reason) {
+            return .drop("Paperclip held the agent's wake-up on purpose (\(reason))")
+        }
+        if mine.contains(where: { $0.status == "deferred_issue_execution" }) {
+            // Espera a una corrida que ya no está: Paperclip no lo va a soltar solo (pasó en una reasignación
+            // hecha desde la corrida del agente anterior). Un despertar nuevo lo destraba.
+            note(handoff.key, issue, "agent's deferred wake-up has no run to wait for")
+        }
+        // Una corrida suya pedida después de la lectura anterior al traspaso (p. ej. el rescate de Paperclip,
+        // `issue_continuation_needed`, aunque ya haya terminado): ya pasó por la tarea y no se quedó dormido.
+        if mine.contains(where: { event in
+            Self.ranWakeStatuses.contains(event.status ?? "")
+                && (event.requestedAt.flatMap(Self.date).map { $0 > handoff.since } ?? false)
+        }) {
+            // No se guarda: un traspaso ya resuelto no vuelve a verse (la clave cambia con cada traspaso).
+            note(handoff.key, issue, "agent already ran after the handoff")
+            return .settled
         }
 
         var attempt = Attempt(
-            at: now, outcome: .requested, companyId: company.id, issueId: summary.id, agentId: handoff.agentId,
-            agentName: agent.name.flatMap { $0.isEmpty ? nil : $0 }, identifier: summary.identifier, title: summary.title
+            at: now, outcome: .requested, companyId: company.id, issueId: handoff.issueId, agentId: handoff.agentId,
+            agentName: agent.name.flatMap { $0.isEmpty ? nil : $0 }, identifier: issue.identifier, title: issue.title
         )
         record(attempt, for: handoff.key)
         let outcome = await resolver.wake(
-            target,
+            WakeTarget(agentId: handoff.agentId, issueId: handoff.issueId, issueIdentifier: issue.identifier),
             reason: Self.wakeReason,
             triggerDetail: "system",
-            idempotencyKey: "paperclip-dispatch:review-wake:\(handoff.key)"
+            idempotencyKey: "paperclip-dispatch:handoff-wake:\(handoff.key)"
         )
         attempt.outcome = switch outcome {
         case .accepted, .alreadyRunning, .notStuck: .done
         case .skipped, .failed: .failed
         }
         record(attempt, for: handoff.key)
-        note(handoff.key, summary, "woke the reviewer: \(outcome)")
-        return nil
+        note(handoff.key, issue, "woke the agent: \(outcome)")
+        return .settled
     }
 
-    /// La tarjeta de un despertar que falló, mientras el revisor siga sin ponerse en camino. Si no se puede leer
+    /// La tarjeta de un despertar que falló, mientras el agente siga sin ponerse en camino. Si no se puede leer
     /// si va en camino, la tarjeta sigue.
     private func failedCard(
         _ attempt: Attempt,
@@ -355,13 +491,15 @@ final class ReviewWaker {
         // En camino ahora, o un despertar suyo pedido después del intento que ya corrió o va a correr (p. ej. el
         // botón de la tarjeta, con una corrida que terminó antes de esta vuelta).
         var onItsWay = false
+        let attemptedAt = attempt.at.addingTimeInterval(clockOffset[company.id] ?? 0)
         do {
-            if try await liveRuns(on: attempt.issueId).contains(where: { $0.agentId == attempt.agentId }) {
+            let runs = try await liveRuns(on: attempt.issueId)
+            if runs.contains(where: { $0.agentId == attempt.agentId }) {
                 onItsWay = true
             } else {
                 onItsWay = try await wakes(of: attempt.agentId, on: attempt.issueId).contains { event in
-                    guard let requested = event.requestedAt.flatMap(Self.date), requested > attempt.at else { return false }
-                    return Self.pendingWakeStatuses.union(Self.ranWakeStatuses).contains(event.status ?? "")
+                    guard let requested = event.requestedAt.flatMap(Self.date), requested > attemptedAt else { return false }
+                    return Self.ranWakeStatuses.contains(event.status ?? "") || Self.onItsWay(event, liveRuns: runs)
                 }
             }
         } catch {
@@ -371,7 +509,7 @@ final class ReviewWaker {
             var recovered = attempt
             recovered.outcome = .recovered
             record(recovered, for: key)
-            log.notice("\(attempt.identifier ?? attempt.issueId, privacy: .public): reviewer is on its way, card dropped")
+            log.notice("\(attempt.identifier ?? attempt.issueId, privacy: .public): the agent is on its way, card dropped")
             return nil
         }
         // Decisions ya la muestra con el mismo despertar (p. ej. porque bloquea a otra tarea).
@@ -384,88 +522,100 @@ final class ReviewWaker {
     /// La tarjeta de un despertar que falló, con el botón «Despertar a …».
     static func failedItem(_ attempt: Attempt, key: String, issuePrefix: String?) -> AttentionItem? {
         card(
-            id: "dispatch-review-wake:\(key)",
+            id: "dispatch-handoff-wake:\(key)",
             issueId: attempt.issueId,
             identifier: attempt.identifier,
             title: attempt.title,
             agentId: attempt.agentId,
             agentName: attempt.agentName,
             issuePrefix: issuePrefix,
-            whyNow: String(localized: "In review, but Paperclip didn’t wake up the reviewing agent."),
+            whyNow: String(localized: "Paperclip didn’t wake up the agent it handed this task to."),
             text: attempt.agentName.map {
-                String(localized: "In review, but Paperclip didn’t wake up \($0) to review it, and the app’s automatic wake-up didn’t work either.")
-            } ?? String(localized: "In review, but Paperclip didn’t wake up the reviewing agent to review it, and the app’s automatic wake-up didn’t work either.")
+                String(localized: "It went to \($0), but Paperclip didn’t wake it up, and the app’s automatic wake-up didn’t work either.")
+            } ?? String(localized: "It went to an agent, but Paperclip didn’t wake it up, and the app’s automatic wake-up didn’t work either.")
         )
     }
 
     /// Un traspaso que no se pudo comprobar: no se despierta a nadie y, pasado el margen, va la tarjeta que lo
     /// dice, una vez por traspaso. Un fallo de red o un 5xx espera a la revisión siguiente.
     private func unverifiedCard(
-        _ partial: PartialHandoff,
+        _ handoff: Pending,
         _ problem: ReadProblem,
-        summary: ReviewIssue,
+        agentKnown: Bool,
+        issue: ListedIssue,
         company: PaperclipCompany,
         decisions: [AttentionItem],
         now: Date
     ) async -> AttentionItem? {
-        let key = partial.key
-        note(key, summary, "couldn't read \(problem.path): \(problem.detail)" + (problem.transient ? " (may be temporary)" : ""))
-        // La tarjeta que ya se muestra para esta tarea sigue igual: lo que no se pudo leer ahora no arma otra.
-        var shown = unverified.first { $0.value.issueId == summary.id && $0.value.showing }
-        if shown == nil, unverified[key] == nil {
+        let key = handoff.key
+        note(key, issue, "couldn't read \(problem.path): \(problem.detail)" + (problem.transient ? " (may be temporary)" : ""))
+        // La tarjeta que ya se muestra sigue igual: lo que no se pudo leer ahora no arma otra.
+        if unverified[key] == nil {
             if problem.transient {
                 transientFailures[key, default: 0] += 1
                 guard transientFailures[key, default: 0] >= Self.transientFailuresForCard else { return nil }
             }
-            // Pasado el margen desde el traspaso, también si la tarea tenía la tarjeta de un traspaso anterior.
-            guard !recent(summary, now: now) else { return nil }
             // El nombre, para el texto: con el lector de siempre, porque puede ser justo lo que no se pudo leer.
+            let agentId = agentKnown ? handoff.agentId : nil
             var name: String?
-            if let agentId = partial.agentId { name = await resolver.agentName(agentId) }
-            let entry = Unverified(
-                at: now, showing: true, companyId: company.id, issueId: summary.id, agentId: partial.agentId,
-                agentName: name, identifier: summary.identifier, title: summary.title
+            if let agentId { name = await resolver.agentName(agentId) }
+            unverified[key] = Unverified(
+                at: now, showing: true, companyId: company.id, issueId: handoff.issueId,
+                assigneeAgentId: handoff.agentId, seenAt: handoff.seenAt, since: handoff.since, agentId: agentId,
+                agentName: name, identifier: issue.identifier, title: issue.title
             )
-            unverified[key] = entry
             saveUnverified()
-            shown = (key, entry)
-            log.notice("\(summary.identifier ?? summary.id, privacy: .public): couldn't check the reviewer, card sent")
+            log.notice("\(issue.identifier ?? issue.id, privacy: .public): couldn't check the agent, card sent")
         }
         // Una sola vez por traspaso: la que ya se retiró no vuelve.
-        guard let (shownKey, entry) = shown else { return nil }
-        // Decisions ya muestra esa tarea trabada.
-        if decisions.contains(where: { $0.wakeTarget?.issueId == summary.id }) { return nil }
-        return Self.unverifiedItem(entry, key: shownKey, issuePrefix: company.issuePrefix)
+        guard let entry = unverified[key], entry.showing else { return nil }
+        // Decisions ya muestra esa tarea trabada con el mismo agente (o con cualquiera, si no se sabe quién está a
+        // cargo).
+        if decisions.contains(where: { item in
+            item.wakeTarget?.issueId == handoff.issueId && (entry.agentId == nil || item.wakeTarget?.agentId == entry.agentId)
+        }) {
+            return nil
+        }
+        return Self.unverifiedItem(entry, key: key, issuePrefix: company.issuePrefix)
     }
 
     /// La tarjeta de un traspaso que no se pudo comprobar: no afirma lo que no se leyó, y lleva el botón solo si
-    /// se sabe quién es el revisor.
+    /// se sabe quién está a cargo.
     static func unverifiedItem(_ entry: Unverified, key: String, issuePrefix: String?) -> AttentionItem? {
         card(
-            id: "dispatch-review-unverified:\(key)",
+            id: "dispatch-handoff-unverified:\(key)",
             issueId: entry.issueId,
             identifier: entry.identifier,
             title: entry.title,
             agentId: entry.agentId,
             agentName: entry.agentName,
             issuePrefix: issuePrefix,
-            whyNow: String(localized: "In review, but the app couldn’t check whether the reviewer is on its way."),
+            whyNow: String(localized: "The app couldn’t check whether the agent in charge is on its way."),
             text: entry.agentName.map {
-                String(localized: "In review, but the app couldn’t check whether \($0) is on its way to review it: Paperclip’s answer couldn’t be read. Check the task in Paperclip.")
-            } ?? String(localized: "In review, but the app couldn’t check whether the reviewing agent is on its way to review it: Paperclip’s answer couldn’t be read. Check the task in Paperclip.")
+                String(localized: "It went to \($0), but the app couldn’t check whether it’s on its way: Paperclip’s answer couldn’t be read. Check the task in Paperclip.")
+            } ?? String(localized: "The app couldn’t check whether the agent in charge of this task is on its way: Paperclip’s answer couldn’t be read. Check the task in Paperclip.")
         )
     }
 
-    /// Retira las tarjetas de «no se pudo comprobar» de una tarea (salvo la de `except`): ya se puede leer, o
-    /// son de otro traspaso. No vuelven.
-    private func retireUnverified(issueId: String, except key: String?) {
+    /// Retira las tarjetas de una tarea, salvo las del traspaso `except`: son de un traspaso anterior.
+    private func retireCards(issueId: String, except key: String) {
         var changed = false
-        for (other, entry) in unverified where entry.issueId == issueId && entry.showing && other != key {
-            unverified[other]?.showing = false
+        for (other, attempt) in attempts where attempt.issueId == issueId && attempt.showsCard && other != key {
+            attempts[other]?.outcome = .recovered
             changed = true
-            log.notice("\(entry.identifier ?? issueId, privacy: .public): can read the review again, card dropped")
         }
-        if changed { saveUnverified() }
+        if changed { save() }
+        for (other, entry) in unverified where entry.issueId == issueId && entry.showing && other != key {
+            retireUnverified(key: other, reason: "a new handoff")
+        }
+    }
+
+    /// Retira la tarjeta de «no se pudo comprobar» de un traspaso: ya se puede leer, o ya no hace falta. No vuelve.
+    private func retireUnverified(key: String, reason: String = "can read the task again") {
+        guard let entry = unverified[key], entry.showing else { return }
+        unverified[key]?.showing = false
+        saveUnverified()
+        log.notice("\(entry.identifier ?? entry.issueId, privacy: .public): \(reason, privacy: .public), card dropped")
     }
 
     /// La tarjeta de «Tarea trabada», con la forma de las de Decisions (`blocker_attention`) para que la Mac y
@@ -512,15 +662,69 @@ final class ReviewWaker {
         return try? JSONDecoder().decode(AttentionItem.self, from: data)
     }
 
+    /// Las tareas de la company en los estados de trabajo, con todas sus páginas (por id, de menor a mayor).
+    /// También la hora de Paperclip al leer la primera página.
+    private func openIssues(of company: PaperclipCompany) async throws(ReadProblem) -> ([ListedIssue], Date?) {
+        let path = "api/companies/\(company.id)/issues"
+        var issues: [ListedIssue] = []
+        var unreadable = 0
+        var after: String?
+        var serverDate: Date?
+        for _ in 0..<Self.maxPages {
+            var query = [
+                URLQueryItem(name: "status", value: Self.workStatuses.joined(separator: ",")),
+                URLQueryItem(name: "sortField", value: "id"),
+                URLQueryItem(name: "sortDir", value: "asc"),
+                URLQueryItem(name: "limit", value: String(Self.pageLimit)),
+            ]
+            if let after { query.append(URLQueryItem(name: "afterId", value: after)) }
+            let (page, date): ([Lossy<ListedIssue>], Date?) = try await fetch(path, query: query)
+            if after == nil { serverDate = date }
+            let read = page.compactMap(\.value)
+            unreadable += page.count - read.count
+            issues += read
+            guard page.count >= Self.pageLimit else {
+                noteList(company, Self.listProblem(issues, unreadable: unreadable))
+                return (issues, serverDate)
+            }
+            // Sin una tarea legible en la página no se puede pedir la siguiente.
+            guard let last = read.last?.id, last != after else {
+                throw ReadProblem(path: path, detail: "couldn't read the ids of a page", transient: false)
+            }
+            after = last
+        }
+        throw ReadProblem(path: path, detail: "more than \(Self.maxPages) pages", transient: false)
+    }
+
+    /// Lo que no se pudo leer de la lista, para el registro. `nil`: nada.
+    private static func listProblem(_ issues: [ListedIssue], unreadable: Int) -> String? {
+        var missing: [String] = []
+        if issues.contains(where: { $0.status == nil }) { missing.append("status") }
+        if issues.contains(where: { !$0.assigneeKnown }) { missing.append("assigneeAgentId") }
+        if issues.contains(where: { $0.statusVersion == nil }) { missing.append("statusVersion") }
+        if issues.contains(where: { !$0.activeRunKnown }) { missing.append("activeRun") }
+        var parts: [String] = []
+        if unreadable > 0 { parts.append("couldn't read \(unreadable) of the open tasks") }
+        if !missing.isEmpty { parts.append("open tasks without a readable " + missing.joined(separator: ", ")) }
+        return parts.isEmpty ? nil : parts.joined(separator: "; ")
+    }
+
+    /// Si un despertar pendiente va a llevar al agente a la tarea. Uno diferido (`deferred_issue_execution`)
+    /// espera a que termine la corrida que tiene la tarea: sin ninguna corrida en ella, no va a salir solo.
+    private static func onItsWay(_ event: WakeEvent, liveRuns: [LiveRun]) -> Bool {
+        guard let status = event.status, pendingWakeStatuses.contains(status) else { return false }
+        return status != "deferred_issue_execution" || !liveRuns.isEmpty
+    }
+
     /// Las corridas en cola o en curso de la tarea. Falla si alguna no se puede leer: así «sin corridas» no se
     /// confunde con «no se pudieron leer».
     private func liveRuns(on issueId: String) async throws(ReadProblem) -> [LiveRun] {
         try await read("api/issues/\(issueId)/live-runs")
     }
 
-    /// Los despertares de un agente en una tarea, del más nuevo al más viejo. Falla si algún evento no se puede
-    /// leer o si un despertar viene sin el id de su agente (así no se sabe de quién es), y si uno del agente trae
-    /// un estado que la app no conoce.
+    /// Los despertares de un agente en una tarea. Falla si algún evento no se puede leer o si un despertar viene
+    /// sin el id de su agente (así no se sabe de quién es), y si uno del agente trae un estado que la app no
+    /// conoce.
     private func wakes(of agentId: String, on issueId: String) async throws(ReadProblem) -> [WakeEvent] {
         let path = "api/issues/\(issueId)/diagnostics/wakes"
         let diagnostics: WakeDiagnostics = try await read(path)
@@ -533,8 +737,13 @@ final class ReviewWaker {
 
     /// Lee una respuesta de Paperclip y, si no se puede, dice qué ruta y qué no se pudo leer.
     private func read<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws(ReadProblem) -> T {
+        try await fetch(path, query: query).0
+    }
+
+    /// Como `read`, con la hora de Paperclip en esa respuesta.
+    private func fetch<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws(ReadProblem) -> (T, Date?) {
         do {
-            return try await api.get(path, query: query)
+            return try await api.getWithServerDate(path, query: query)
         } catch let error as DecodingError {
             throw ReadProblem(path: path, detail: Self.describe(error), transient: false)
         } catch let PaperclipAPI.APIError.http(status, message) {
@@ -582,6 +791,10 @@ final class ReviewWaker {
             unverified = keptUnverified
             saveUnverified()
         }
+        // Lo de la memoria, solo de lo que todavía se mira.
+        let live = Set(pending.values.map(\.key)).union(attempts.filter { $0.value.showsCard }.keys)
+        lastDecision = lastDecision.filter { live.contains($0.key) }
+        transientFailures = transientFailures.filter { live.contains($0.key) }
     }
 
     private func save() {
@@ -595,7 +808,7 @@ final class ReviewWaker {
     }
 
     /// Lo que se decidió de un traspaso, en el registro de macOS (`log show`), solo cuando cambia.
-    private func note(_ key: String, _ issue: ReviewIssue, _ decision: String) {
+    private func note(_ key: String, _ issue: ListedIssue, _ decision: String) {
         note(key, issue.identifier ?? issue.id, decision)
     }
 
@@ -622,76 +835,82 @@ final class ReviewWaker {
 
     // MARK: - Lo que se lee de la API
 
-    /// Un traspaso: la tarea, la etapa, la vuelta de revisión y el agente. Un intento por cada uno.
-    struct Handoff {
-        let key: String
-        let agentId: String
-
-        /// Lo que no se pudo leer va como `?`.
-        static func key(_ issueId: String, _ stageId: String?, _ round: Int?, _ agentId: String?) -> String {
-            [issueId, stageId ?? "?", round.map(String.init) ?? "?", agentId ?? "?"].joined(separator: ":")
-        }
-    }
-
-    /// Un traspaso que no se pudo leer entero. `agentId`, solo si se leyó bien al participante.
-    struct PartialHandoff {
-        let key: String
-        let agentId: String?
-    }
-
-    /// La etapa de una tarea en revisión.
-    enum StageReading {
-        /// No es una etapa pendiente a cargo del agente que la tiene (sin etapas, la revisa una persona…).
-        case none(String)
-        case agent(Handoff)
-        case unreadable(PartialHandoff, ReadProblem)
-    }
-
-    /// Una tarea de la lista de las que están en revisión, leída campo por campo: solo el `id` es obligatorio,
-    /// y lo demás se vuelve a leer de la tarea.
-    struct ReviewIssue: Decodable {
+    /// Una tarea de la lista, leída campo por campo: solo el `id` es obligatorio. Una tarea sin un estado o un
+    /// asignado legibles no se usa para ver traspasos (`readable`).
+    private struct ListedIssue: Decodable {
         let id: String
         let identifier: String?
         let title: String?
+        /// Solo un estado que la app conoce.
         let status: String?
         let assigneeAgentId: String?
-        /// Si la lista dice quién la tiene (aunque sea `null`, una persona o nadie).
+        /// Si la lista dice quién la tiene (aunque sea `null`: una persona o nadie).
         let assigneeKnown: Bool
-        let updatedAt: String?
+        let statusVersion: Int?
+        /// La corrida que tiene la tarea ahora, si se pudo leer.
+        let activeRun: ActiveRun?
+        let activeRunKnown: Bool
 
-        private enum CodingKeys: String, CodingKey { case id, identifier, title, status, assigneeAgentId, updatedAt }
+        struct ActiveRun: Decodable {
+            let agentId: String
+            let status: String
+
+            private enum CodingKeys: String, CodingKey { case agentId, status }
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                agentId = try container.decode(String.self, forKey: .agentId)
+                status = try container.decodeKnown(.status, in: HandoffWaker.liveRunStatuses)
+            }
+        }
+
+        var readable: Bool { status != nil && assigneeKnown }
+
+        /// `false` solo si se sabe que la tiene otro (o nadie); `true` si se sabe que es de este agente o si no
+        /// se pudo leer.
+        func isAssigned(to agentId: String) -> Bool { !assigneeKnown || assigneeAgentId == agentId }
+
+        private enum CodingKeys: String, CodingKey {
+            case id, identifier, title, status, assigneeAgentId, statusVersion, activeRun
+        }
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             id = try container.decode(String.self, forKey: .id)
             identifier = try? container.decodeIfPresent(String.self, forKey: .identifier)
             title = try? container.decodeIfPresent(String.self, forKey: .title)
-            status = try? container.decodeIfPresent(String.self, forKey: .status)
+            status = (try? container.decodeKnown(.status, in: HandoffWaker.issueStatuses))
+            // Un `null` se leyó bien (nadie, o una persona); `try?` no lo distingue de un error.
             let assignee = Result { try container.decodeIfPresent(String.self, forKey: .assigneeAgentId) }
-            assigneeAgentId = try? assignee.get()
-            assigneeKnown = container.contains(.assigneeAgentId) && (try? assignee.get()) != nil
-            updatedAt = try? container.decodeIfPresent(String.self, forKey: .updatedAt)
+            assigneeAgentId = (try? assignee.get()) ?? nil
+            assigneeKnown = container.contains(.assigneeAgentId) && Self.succeeded(assignee)
+            statusVersion = try? container.decodeIfPresent(Int.self, forKey: .statusVersion)
+            let run = Result { try container.decodeIfPresent(ActiveRun.self, forKey: .activeRun) }
+            activeRun = (try? run.get()) ?? nil
+            activeRunKnown = container.contains(.activeRun) && Self.succeeded(run)
+        }
+
+        private static func succeeded<T>(_ result: Result<T, Error>) -> Bool {
+            if case .success = result { return true }
+            return false
         }
     }
 
-    /// Una tarea leída sola, con su etapa (`executionPolicy` y `executionState`). Se lee campo por campo para
-    /// saber qué no se pudo leer y armar la clave del traspaso con lo que sí.
-    struct IssueDetail: Decodable {
-        let id: String
+    /// Una tarea leída sola, con su etapa (`executionPolicy` y `executionState`), campo por campo para saber qué
+    /// no se pudo leer.
+    private struct IssueDetail: Decodable {
         let status: String
         let assigneeAgentId: String?
-        private let policyStages: Int?
+        private let hasStages: Bool
         private let state: State?
         /// Lo que no se pudo leer de la etapa.
-        private let problem: String?
+        private let stageProblem: String?
 
-        private enum CodingKeys: String, CodingKey { case id, status, assigneeAgentId, executionPolicy, executionState }
+        private enum CodingKeys: String, CodingKey { case status, assigneeAgentId, executionPolicy, executionState }
         private enum PolicyKeys: String, CodingKey { case stages }
 
         struct State {
             let status: String?
-            let stageId: String?
-            let round: Int?
             let participantType: String?
             let agentId: String?
             let problem: String?
@@ -699,101 +918,98 @@ final class ReviewWaker {
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decode(String.self, forKey: .id)
-            status = try container.decode(String.self, forKey: .status)
+            status = try container.decodeKnown(.status, in: HandoffWaker.issueStatuses)
             assigneeAgentId = try container.decodeIfPresent(String.self, forKey: .assigneeAgentId)
             // Las dos claves vienen siempre, aunque sea en `null`: si falta una, la respuesta cambió.
             guard container.contains(.executionPolicy), container.contains(.executionState) else {
-                policyStages = nil
+                hasStages = false
                 state = nil
-                problem = "missing executionPolicy or executionState"
+                stageProblem = "missing executionPolicy or executionState"
                 return
             }
             if try container.decodeNil(forKey: .executionPolicy) {
-                policyStages = 0
+                hasStages = false
                 state = nil
-                problem = nil
+                stageProblem = nil
                 return
             }
             guard let policy = try? container.nestedContainer(keyedBy: PolicyKeys.self, forKey: .executionPolicy),
                   let stages = try? policy.decode([PresentValue].self, forKey: .stages)
             else {
-                policyStages = nil
+                hasStages = false
                 state = nil
-                problem = "unexpected executionPolicy.stages"
+                stageProblem = "unexpected executionPolicy.stages"
                 return
             }
-            policyStages = stages.count
+            hasStages = !stages.isEmpty
             if try container.decodeNil(forKey: .executionState) {
                 state = nil
-                problem = nil
+                stageProblem = nil
                 return
             }
             state = try? container.decode(StateReader.self, forKey: .executionState).state
-            problem = state == nil ? "executionState is not an object" : nil
+            stageProblem = state == nil ? "executionState is not an object" : nil
         }
 
-        /// La etapa pendiente a cargo de un agente, si la tarea sigue a su nombre; o lo que no se pudo leer.
-        func reading(path: String) -> StageReading {
-            func unreadable(_ detail: String) -> StageReading {
-                .unreadable(
-                    PartialHandoff(key: Handoff.key(id, state?.stageId, state?.round, state?.agentId), agentId: state?.agentId),
-                    ReadProblem(path: path, detail: detail, transient: false)
-                )
+        /// Solo en revisión importa la etapa: su participante tiene que ser el agente a cargo. Lo que no se pudo
+        /// leer de ella, y si igual se sabe quién está a cargo (sin leer al participante, el botón no va).
+        func problem(for agentId: String, path: String) -> (problem: ReadProblem, agentKnown: Bool)? {
+            func unreadable(_ detail: String) -> (problem: ReadProblem, agentKnown: Bool) {
+                (ReadProblem(path: path, detail: detail, transient: false), state?.agentId == agentId)
             }
-            if let problem { return unreadable(problem) }
-            guard status == "in_review" else { return .none("no longer in review") }
-            guard let policyStages, policyStages > 0 else { return .none("no review stages") }
-            guard let state else { return .none("no review stage in progress") }
+            guard status == "in_review", assigneeAgentId == agentId else { return nil }
+            if let stageProblem { return unreadable(stageProblem) }
+            guard hasStages, let state else { return nil }
             guard let stageStatus = state.status else { return unreadable("missing executionState.status") }
-            guard ReviewWaker.stageStatuses.contains(stageStatus) else {
+            guard HandoffWaker.stageStatuses.contains(stageStatus) else {
                 return unreadable("unknown executionState.status “\(stageStatus)”")
             }
-            guard stageStatus == "pending" else { return .none("review stage is \(stageStatus)") }
-            if state.participantType == "user" { return .none("a person reviews it") }
+            guard stageStatus == "pending" else { return nil }
+            if state.participantType == "user" { return nil }
             if let problem = state.problem { return unreadable(problem) }
-            guard let stageId = state.stageId else { return unreadable("missing executionState.currentStageId") }
-            guard let round = state.round else { return unreadable("unexpected executionState.changesRequestedCount") }
-            guard let agentId = state.agentId else { return unreadable("missing currentParticipant.agentId") }
-            guard assigneeAgentId == agentId else { return .none("not assigned to the stage’s agent") }
-            return .agent(Handoff(key: Handoff.key(id, stageId, round, agentId), agentId: agentId))
+            guard state.agentId != nil else { return unreadable("missing currentParticipant.agentId") }
+            return nil
+        }
+
+        /// En revisión con una etapa pendiente, por qué no hay que mirar si su participante no es el agente a
+        /// cargo (p. ej. la revisa una persona). `nil`: sí es él, o no hay etapa pendiente.
+        func notTheStageAgent(_ agentId: String) -> String? {
+            guard status == "in_review", hasStages, let state, state.status == "pending" else { return nil }
+            if state.participantType == "user" { return "a person reviews it" }
+            return state.agentId == agentId ? nil : "not assigned to the stage’s agent"
         }
 
         /// `executionState`, sin fallar: lo que no se puede leer queda en `problem`.
         private struct StateReader: Decodable {
             let state: State
 
-            private enum Keys: String, CodingKey { case status, currentStageId, currentParticipant, changesRequestedCount }
+            private enum Keys: String, CodingKey { case status, currentParticipant }
             private enum ParticipantKeys: String, CodingKey { case type, agentId }
 
             init(from decoder: Decoder) throws {
                 let container = try decoder.container(keyedBy: Keys.self)
                 let status = try? container.decode(String.self, forKey: .status)
-                let stageId = try? container.decode(String.self, forKey: .currentStageId)
-                // Las versiones viejas no la traen: sin ella, es la primera vuelta.
-                let round: Int? = container.contains(.changesRequestedCount)
-                    ? try? container.decode(Int.self, forKey: .changesRequestedCount) : 0
                 var type: String?
                 var agentId: String?
                 var problem: String?
                 if let participant = try? container.nestedContainer(keyedBy: ParticipantKeys.self, forKey: .currentParticipant) {
                     type = try? participant.decode(String.self, forKey: .type)
-                    if let type, !ReviewWaker.participantTypes.contains(type) {
+                    if let type, !HandoffWaker.participantTypes.contains(type) {
                         problem = "unknown currentParticipant.type “\(type)”"
                     } else if type == nil {
                         problem = "missing currentParticipant.type"
                     } else if type == "agent" {
                         agentId = try? participant.decode(String.self, forKey: .agentId)
                     }
-                } else {
+                } else if status == "pending" {
                     problem = "missing currentParticipant"
                 }
-                state = State(status: status, stageId: stageId, round: round, participantType: type, agentId: agentId, problem: problem)
+                state = State(status: status, participantType: type, agentId: agentId, problem: problem)
             }
         }
     }
 
-    private struct ReviewAgent: Decodable {
+    private struct HandoffAgent: Decodable {
         let name: String?
         let status: String
         let pauseReason: String?
@@ -805,7 +1021,7 @@ final class ReviewWaker {
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             name = try? container.decodeIfPresent(String.self, forKey: .name)
-            status = try container.decodeKnown(.status, in: ReviewWaker.agentStatuses)
+            status = try container.decodeKnown(.status, in: HandoffWaker.agentStatuses)
             pauseReason = try? container.decodeIfPresent(String.self, forKey: .pauseReason)
             budgetMonthlyCents = try container.decodeIfPresent(Int.self, forKey: .budgetMonthlyCents)
             spentMonthlyCents = try container.decodeIfPresent(Int.self, forKey: .spentMonthlyCents)
@@ -822,7 +1038,7 @@ final class ReviewWaker {
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             agentId = try container.decode(String.self, forKey: .agentId)
-            status = try container.decodeKnown(.status, in: ReviewWaker.liveRunStatuses)
+            status = try container.decodeKnown(.status, in: HandoffWaker.liveRunStatuses)
         }
     }
 
@@ -832,23 +1048,26 @@ final class ReviewWaker {
 
     /// Un evento de `diagnostics/wakes`. Un despertar trae su agente, su estado y cuándo se pidió; si no, la
     /// lista entera no se lee. Un estado desconocido o una fecha ilegible quedan en `problem`: solo importan si
-    /// el despertar es del revisor.
+    /// el despertar es del agente a cargo.
     private struct WakeEvent: Decodable {
         let kind: String
         let agentId: String?
         let status: String?
         let requestedAt: String?
+        /// Por qué lo pidió o lo descartó Paperclip (`other` si no es uno de los suyos conocidos).
+        let reason: String?
         let problem: String?
 
-        private enum CodingKeys: String, CodingKey { case kind, agentId, status, requestedAt }
+        private enum CodingKeys: String, CodingKey { case kind, agentId, status, requestedAt, reason }
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            kind = try container.decodeKnown(.kind, in: ReviewWaker.wakeEventKinds)
+            kind = try container.decodeKnown(.kind, in: HandoffWaker.wakeEventKinds)
             guard kind == "wake_request" else {
                 agentId = nil
                 status = nil
                 requestedAt = nil
+                reason = nil
                 problem = nil
                 return
             }
@@ -858,9 +1077,10 @@ final class ReviewWaker {
             self.agentId = agentId
             self.status = status
             requestedAt = requested
-            problem = if !ReviewWaker.wakeStatuses.contains(status) {
+            reason = try? container.decodeIfPresent(String.self, forKey: .reason)
+            problem = if !HandoffWaker.wakeStatuses.contains(status) {
                 "unknown status “\(status)” in a wake of \(agentId)"
-            } else if ReviewWaker.date(requested) == nil {
+            } else if HandoffWaker.date(requested) == nil {
                 "unreadable requestedAt “\(requested)” in a wake of \(agentId)"
             } else {
                 nil
@@ -881,22 +1101,22 @@ private extension KeyedDecodingContainer {
 }
 
 /// En la pestaña Paperclip de Ajustes: el interruptor con su explicación y el enlace al bug.
-struct ReviewWakeSection: View {
+struct HandoffWakeSection: View {
     @Bindable var preferences: Preferences
 
     private static let issueURL = URL(string: "https://github.com/paperclipai/paperclip/issues/18315")!
 
     var body: some View {
         Section {
-            Toggle(isOn: $preferences.wakeStrandedReviewers) {
-                Text("Wake up reviewers Paperclip forgets")
-                Text("When an agent hands a task over for review, Paperclip sometimes doesn’t wake up the reviewing agent, and the task sits in review with no one on it. If \(Int(ReviewWaker.margin / 60)) minutes go by and the reviewer still isn’t working on it, the app wakes it up, once.")
+            Toggle(isOn: $preferences.wakeMissedHandoffs) {
+                Text("Wake up agents Paperclip forgets")
+                Text("When a task goes to an agent (for review, back to whoever did it, or to someone new), Paperclip sometimes loses its wake-up, and the task sits with no one working on it. If \(Int(HandoffWaker.margin / 60)) minutes go by and that agent still isn’t on it, the app wakes it up, once.")
             }
         } header: {
-            Text("Reviews")
+            Text("Handoffs")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text("It’s on by default because it’s a known Paperclip bug: without it, those tasks wait until someone notices. It works quietly; only if the wake-up fails do you get the stuck-task notification with its button. It will go away once Paperclip fixes the bug.")
+                Text("It’s on by default because it’s a known Paperclip bug: without it, those tasks wait until someone notices. It only looks at handoffs it sees while it’s open and works quietly; only if the wake-up fails do you get the stuck-task notification with its button. It will go away once Paperclip fixes the bug.")
                     .settingsFootnote()
                 Link("Paperclip issue #18315 on GitHub", destination: Self.issueURL)
                     .font(.footnote)

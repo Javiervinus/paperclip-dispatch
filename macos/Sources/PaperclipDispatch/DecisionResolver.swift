@@ -220,9 +220,9 @@ struct DecisionResolver {
 
     /// Despierta al agente en la tarea, como la acción «Nudge» que propone Paperclip: con la API oficial y a
     /// nombre del usuario, igual que los botones de la web que vuelven a despertar a un agente. Solo cuando lo
-    /// pide la persona (un botón), o una vez por traspaso para el revisor que Paperclip se salta (`ReviewWaker`,
-    /// con su propio `reason`); nunca para reintentar. Antes mira que la tarea siga a nombre del agente: un
-    /// aviso viejo no despierta a nadie en una tarea que ya se resolvió.
+    /// pide la persona (un botón), o una vez por traspaso para el agente que Paperclip no despierta
+    /// (`HandoffWaker`, con su propio `reason`); nunca para reintentar. Antes mira que la tarea siga a nombre
+    /// del agente: un aviso viejo no despierta a nadie en una tarea que ya se resolvió.
     func wake(
         _ target: WakeTarget,
         reason: String = "blocked_task_nudge",

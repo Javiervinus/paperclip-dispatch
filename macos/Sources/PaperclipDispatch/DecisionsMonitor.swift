@@ -31,7 +31,7 @@ final class DecisionsMonitor {
 
     private let api: PaperclipAPI
     private let resolver: DecisionResolver
-    private let reviewWaker: ReviewWaker
+    private let handoffWaker: HandoffWaker
     private let preferences: Preferences
     private let notifications: NotificationBridge
     private let isLooking: () -> Bool
@@ -50,7 +50,7 @@ final class DecisionsMonitor {
     ) {
         self.api = api
         resolver = DecisionResolver(api: api)
-        reviewWaker = ReviewWaker(api: api, resolver: resolver)
+        handoffWaker = HandoffWaker(api: api, resolver: resolver)
         self.preferences = preferences
         self.notifications = notifications
         self.isLooking = isLooking
@@ -99,9 +99,10 @@ final class DecisionsMonitor {
                     query: [URLQueryItem(name: "limit", value: String(Attention.pageLimit))]
                 )
                 total += attention.deskBadgeCount ?? attention.totalCount ?? attention.items.count
-                // El revisor que Paperclip se saltó: si no se pudo despertar, su tarjeta va con las de Decisions.
-                let stranded = preferences.wakeStrandedReviewers
-                    ? await reviewWaker.check(company, decisions: attention.items) : []
+                // El agente al que Paperclip le pasó una tarea sin despertarlo: si no se pudo despertar, su tarjeta
+                // va con las de Decisions.
+                let stranded = preferences.wakeMissedHandoffs
+                    ? await handoffWaker.check(company, decisions: attention.items) : []
                 let items = attention.items + stranded
                 let complete = attention.nextCursor == nil
                 let review = Self.review(items, complete: complete, previous: seen[company.id])

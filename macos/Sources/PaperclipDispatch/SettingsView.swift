@@ -461,7 +461,7 @@ private struct PaperclipPane: View {
                         .settingsFootnote()
                 }
             }
-            ReviewWakeSection(preferences: preferences)
+            HandoffWakeSection(preferences: preferences)
         }
     }
 
