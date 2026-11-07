@@ -10,6 +10,14 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Arreglado
+
+- **Una versión nueva de Paperclip ya no aparece como error.** Cuando salía una, el panel de
+  actualizaciones decía «No pude revisar Paperclip» con la respuesta en bruto de Paperclip, en vez de ofrecer
+  actualizar.
+
 ## 0.4.0 — 2026-11-02
 
 ### Nuevo

@@ -9,6 +9,13 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Fixed
+
+- **A new Paperclip version no longer shows up as an error.** When one came out, the updates panel said
+  “Couldn’t check Paperclip” with the raw answer from Paperclip, instead of offering to update.
+
 ## 0.4.0 — 2026-11-02
 
 ### Added
