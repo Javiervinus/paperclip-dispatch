@@ -22,6 +22,9 @@ final class UpdateController {
     static let installCLICommand = "npm install -g paperclipai"
     /// Lo que devuelve zsh cuando no encuentra el comando.
     private static let commandNotFound: Int32 = 127
+    /// Con `--check`, el CLI sale con 0 si está al día y con 10 si hay una versión nueva: las dos son
+    /// respuestas buenas.
+    private static let checkSuccessStatuses: Set<Int32> = [0, 10]
     /// Las versiones publicadas de Paperclip; cada una tiene su página en `tag/v<versión>`.
     private static let releasesURL = URL(string: "https://github.com/paperclipai/paperclip/releases")!
     /// Un solo aviso de «Paperclip actualizado»: el de la próxima vez reemplaza al anterior.
@@ -94,7 +97,7 @@ final class UpdateController {
                 return
             }
             unavailable = nil
-            guard result.status == 0, var check = Self.decode(result.output) else {
+            guard var check = Self.decode(result) else {
                 checkError = result.tail(Self.errorTailLines)
                 publish()
                 return
@@ -240,9 +243,12 @@ final class UpdateController {
         _ = await host.present(alert)
     }
 
-    /// El shell de inicio puede imprimir algo antes: se toma solo el objeto JSON.
-    static func decode(_ output: String) -> Check? {
-        guard let start = output.firstIndex(of: "{"), let end = output.lastIndex(of: "}"), start < end else {
+    /// La respuesta de `checkCommand`. El shell de inicio puede imprimir algo antes: se toma solo el objeto JSON.
+    static func decode(_ result: Shell.Result) -> Check? {
+        let output = result.output
+        guard checkSuccessStatuses.contains(result.status),
+              let start = output.firstIndex(of: "{"), let end = output.lastIndex(of: "}"), start < end
+        else {
             return nil
         }
         return try? JSONDecoder().decode(Check.self, from: Data(output[start...end].utf8))

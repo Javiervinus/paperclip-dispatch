@@ -274,7 +274,7 @@ enum SettingsSnapshot {
     /// La versión y el permiso de avisos, como los ve la app.
     private static func load(_ status: AppStatus) async {
         let result = await Shell.run(["-c", UpdateController.checkCommand])
-        if result.status == 0, let check = UpdateController.decode(result.output) {
+        if let check = UpdateController.decode(result) {
             status.paperclipVersion = check.currentVersion
             status.latestVersion = check.updateAvailable ? check.targetVersion : nil
             status.lastCheckedAt = .now

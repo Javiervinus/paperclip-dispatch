@@ -60,7 +60,7 @@ enum Snapshot {
     /// La versión de Paperclip instalada, como la ve la app.
     static func installedVersion() async -> UpdateController.Check? {
         let result = await Shell.run(["-c", UpdateController.checkCommand])
-        return result.status == 0 ? UpdateController.decode(result.output) : nil
+        return UpdateController.decode(result)
     }
 
     /// El botón de actualizaciones de verdad, al día con la versión de Paperclip dada (para los ensayos).
