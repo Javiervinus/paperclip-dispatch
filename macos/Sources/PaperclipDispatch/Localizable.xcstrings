@@ -3449,6 +3449,16 @@
         }
       }
     },
+    "Paperclip didn’t stop in time, so it wasn’t updated.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip no se detuvo a tiempo, así que no se actualizó."
+          }
+        }
+      }
+    },
     "Paperclip didn’t wake up the agent it handed this task to.": {
       "localizations": {
         "es": {
@@ -3621,6 +3631,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Paperclip actualizado (ensayo)"
+          }
+        }
+      }
+    },
+    "Paperclip was updated but didn’t start again. Open it with “paperclipai service start”.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip se actualizó, pero no volvió a arrancar. Ábrelo con «paperclipai service start»."
           }
         }
       }
