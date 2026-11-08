@@ -6,9 +6,21 @@ enum Shell {
         let status: Int32
         let output: String
 
-        /// Las últimas líneas, para mostrar un error sin todo el registro.
+        /// Las últimas líneas, para mostrar un error sin todo el registro, como quedarían a la vista en una
+        /// terminal: sin colores ni animaciones de espera.
         func tail(_ count: Int) -> String {
-            output.split(separator: "\n", omittingEmptySubsequences: true).suffix(count).joined(separator: "\n")
+            output.split(separator: "\n")
+                .map(Self.visible)
+                .filter { !$0.isEmpty }
+                .suffix(count)
+                .joined(separator: "\n")
+        }
+
+        /// Una animación de espera redibuja la misma línea (vuelve al principio con \r o ESC[1G): queda a la
+        /// vista solo lo último que se dibujó, sin los códigos de la terminal.
+        private static func visible(_ line: Substring) -> String {
+            let lastDrawn = line.split(separator: #/\r|\e\[1G/#, omittingEmptySubsequences: false).last ?? line
+            return lastDrawn.replacing(#/\e\[[0-9;?]*[A-Za-z]/#, with: "").trimmingCharacters(in: .whitespaces)
         }
     }
 
