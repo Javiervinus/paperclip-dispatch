@@ -9,6 +9,14 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Fixed
+
+- **Updating Paperclip from the app now sticks.** When Paperclip asks you to sign in, its own updater
+  couldn’t confirm the new version, undid the update after a minute and left Paperclip on the old one. The
+  app now backs up the database, stops Paperclip, updates it and starts it again, showing each step.
+
 ## 0.4.1 — 2026-11-07
 
 ### Fixed

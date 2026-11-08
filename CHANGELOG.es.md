@@ -10,6 +10,15 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Arreglado
+
+- **Actualizar Paperclip desde la app ya funciona.** Cuando Paperclip pide iniciar sesión, su propio
+  actualizador no lograba confirmar la versión nueva, deshacía la actualización al minuto y dejaba Paperclip
+  en la anterior. Ahora la app respalda la base de datos, detiene Paperclip, lo actualiza y lo vuelve a
+  arrancar, mostrando cada paso.
+
 ## 0.4.1 — 2026-11-07
 
 ### Arreglado
