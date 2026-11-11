@@ -10,6 +10,13 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Arreglado
+
+- **Si Paperclip se apaga con su ventana abierta, la app ahora se da cuenta.** En pocos segundos la página
+  deja paso a «No se puede abrir Paperclip» con «Encender Paperclip», y vuelve sola cuando Paperclip responde.
+
 ## 0.4.2 — 2026-11-07
 
 ### Arreglado
