@@ -36,7 +36,6 @@ final class UpdateController {
     private static let serviceStatusCommand = "paperclipai service status --json"
     private static let backupCommand = "paperclipai db:backup"
     private static let serviceStopCommand = "paperclipai service stop"
-    private static let serviceStartCommand = "paperclipai service start"
     private static let updateStoppedCommand = "paperclipai update --latest --no-backup </dev/null"
     private static let stoppedUpdateSteps = 4
     /// Detenerse tarda unos segundos (cierra las conexiones y la base); arrancar, un poco más si hay
@@ -245,13 +244,16 @@ final class UpdateController {
         let update = await Shell.run(["-c", Self.updateStoppedCommand])
         // Arranca aunque la actualización haya fallado: Paperclip vuelve con la versión que quedó.
         setStep(4)
-        let start = await Shell.run(["-c", Self.serviceStartCommand])
+        // Con launchctl y no con `paperclipai service start`, que reactiva el arranque al iniciar sesión
+        // (ver `PaperclipLocator.startService`).
+        let startError = await PaperclipLocator.startService(PaperclipLocator.installed()?.instanceId ?? "default")
         let healthy = await Self.waitForService(within: Self.startTimeout) { $0.active && $0.health?.ok == true }
         if update.status != 0 { return update }
         guard healthy else {
             return Shell.Result(
-                status: start.status == 0 ? 1 : start.status,
-                output: start.output + "\n" + String(localized: "Paperclip was updated but didn’t start again. Open it with “paperclipai service start”.")
+                status: 1,
+                output: (startError.map { $0 + "\n" } ?? "")
+                    + String(localized: "Paperclip was updated but didn’t start again. Open it with “paperclipai service start”.")
             )
         }
         return update

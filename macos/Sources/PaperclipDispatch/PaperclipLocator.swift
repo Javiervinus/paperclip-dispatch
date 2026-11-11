@@ -46,6 +46,7 @@ enum PaperclipLocator {
     }
 
     static let defaultPort = 3100
+    /// El servicio de launchd de la instancia `default`; las otras le suman su id, como su CLI.
     static let serviceLabel = "ing.paperclip.paperclipai"
     static let installCommand = "npx paperclipai@latest onboard --yes"
     static let websiteURL = AppInfo.paperclipURL
@@ -94,7 +95,7 @@ enum PaperclipLocator {
             let url = [runtime?["dashboardUrl"], auth?["publicBaseUrl"]]
                 .compactMap { ($0 as? String).flatMap(serverURL) }
                 .first ?? loopbackURL(port: port)
-            return LocalPaperclip(instanceId: id, url: url, port: port, hasService: hasService)
+            return LocalPaperclip(instanceId: id, url: url, port: port, hasService: hasService(id))
         }
         return nil
     }
@@ -159,12 +160,53 @@ enum PaperclipLocator {
             )
             return nil
         }
-        let domain = "gui/\(getuid())"
-        let kickstart = await Shell.run(["-c", "launchctl kickstart \(domain)/\(serviceLabel)"])
+        return await startService(local.instanceId)
+    }
+
+    // MARK: Servicio
+
+    /// Enciende el servicio sin tocar si arranca al iniciar sesión. Devuelve un error para mostrar, o nil.
+    ///
+    /// No usa `paperclipai service start`: su CLI lee mal si el servicio está desactivado (busca `=> true`
+    /// en `launchctl print-disabled`, y macOS 26 escribe `=> disabled`), así que siempre lo reactiva y
+    /// apagaría «Iniciar Paperclip al iniciar sesión» sin avisar.
+    static func startService(_ instanceId: String) async -> String? {
+        let target = serviceTarget(instanceId)
+        let kickstart = await Shell.run(["-c", "launchctl kickstart \(target)"])
         if kickstart.status == 0 { return nil }
-        // Si el servicio no está cargado, se carga (y arranca solo: RunAtLoad).
-        let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) \(shellQuoted(servicePlist.path))"])
+        // Si no está cargado, se carga (y arranca solo: RunAtLoad). launchd no carga un servicio desactivado:
+        // se activa para cargarlo y se vuelve a desactivar, que no lo detiene.
+        let disabled = await startsAtLogin(instanceId) == false
+        if disabled { _ = await Shell.run(["-c", "launchctl enable \(target)"]) }
+        let bootstrap = await Shell.run(["-c", "launchctl bootstrap \(domain) \(shellQuoted(servicePlist(instanceId).path))"])
+        if disabled { _ = await Shell.run(["-c", "launchctl disable \(target)"]) }
         return bootstrap.status == 0 ? nil : String(localized: "macOS couldn’t start the Paperclip service: \(bootstrap.tail(2))")
+    }
+
+    /// Si el servicio arranca al iniciar sesión, o nil si no se pudo leer. Es lo que cambia
+    /// `paperclipai service install --no-start-on-login`: `launchctl enable` o `disable`.
+    static func startsAtLogin(_ instanceId: String) async -> Bool? {
+        let result = await Shell.run(["-c", "launchctl print-disabled \(domain)"])
+        guard result.status == 0 else { return nil }
+        let label = "\"\(serviceLabel(instanceId))\""
+        guard let line = result.output.split(separator: "\n").first(where: { $0.contains(label) }) else { return true }
+        return !(line.contains("=> disabled") || line.contains("=> true"))
+    }
+
+    /// Activa o desactiva el arranque al iniciar sesión, sin encender ni apagar el servicio: los agentes
+    /// siguen con lo que estaban haciendo.
+    static func setStartsAtLogin(_ enabled: Bool, instanceId: String) async -> String? {
+        let result = await Shell.run(["-c", "launchctl \(enabled ? "enable" : "disable") \(serviceTarget(instanceId))"])
+        return result.status == 0 ? nil : result.tail(2)
+    }
+
+    /// Instala el servicio con el comando oficial: lo enciende ya y al iniciar sesión.
+    static func installService(_ instanceId: String) async -> Shell.Result {
+        await Shell.run(["-c", "paperclipai service install --instance \(shellQuoted(instanceId))"])
+    }
+
+    static func hasService(_ instanceId: String) -> Bool {
+        FileManager.default.fileExists(atPath: servicePlist(instanceId).path)
     }
 
     /// Abre la Terminal con el instalador oficial (`onboard --yes`: modo local, sin login, y lo enciende).
@@ -222,13 +264,19 @@ enum PaperclipLocator {
         ProcessInfo.processInfo.environment["PAPERCLIP_INSTANCE_ID"].flatMap { $0.isEmpty ? nil : $0 } ?? "default"
     }
 
-    private static var servicePlist: URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appending(path: "Library/LaunchAgents/\(serviceLabel).plist")
+    private static var domain: String { "gui/\(getuid())" }
+
+    private static func serviceLabel(_ instanceId: String) -> String {
+        instanceId == "default" ? serviceLabel : "\(serviceLabel).\(instanceId)"
     }
 
-    private static var hasService: Bool {
-        FileManager.default.fileExists(atPath: servicePlist.path)
+    private static func serviceTarget(_ instanceId: String) -> String {
+        shellQuoted("\(domain)/\(serviceLabel(instanceId))")
+    }
+
+    private static func servicePlist(_ instanceId: String) -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/LaunchAgents/\(serviceLabel(instanceId)).plist")
     }
 
     private static func loopbackURL(port: Int) -> URL {
