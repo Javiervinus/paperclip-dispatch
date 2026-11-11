@@ -9,6 +9,16 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Added
+
+- **When Paperclip is off, the app offers to start it on its own from then on.** “Start It at Login” starts it
+  now in the background, without a Terminal window, and every time you log in.
+- **If Paperclip doesn’t start, the app shows why.** After a minute it runs Paperclip’s own doctor and lists
+  what failed, with what Paperclip suggests and a Repair button. You can also run it from Settings →
+  Paperclip → Paperclip’s Setup.
+
 ## 0.5.0 — 2026-11-11
 
 ### Added

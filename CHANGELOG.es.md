@@ -10,6 +10,16 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Nuevo
+
+- **Con Paperclip apagado, la app ofrece que se encienda solo de ahí en adelante.** «Encenderlo al iniciar
+  sesión» lo enciende ya en segundo plano, sin ventana de Terminal, y cada vez que inicias sesión.
+- **Si Paperclip no arranca, la app muestra por qué.** Al minuto corre el doctor del propio Paperclip y
+  lista lo que falló, con lo que sugiere Paperclip y un botón Reparar. También se puede correr desde
+  Ajustes → Paperclip → Instalación de Paperclip.
+
 ## 0.5.0 — 2026-11-11
 
 ### Nuevo
