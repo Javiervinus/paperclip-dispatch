@@ -42,6 +42,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private static let unavailableStatusCodes: Set<Int> = [502, 503, 504]
     /// Cada cuánto se vuelve a probar un Paperclip que no responde.
     private static let offlineRetryInterval: Duration = .seconds(3)
+    /// Con la página abierta, cada cuánto se comprueba que Paperclip siga respondiendo.
+    private static let onlineCheckInterval: Duration = .seconds(5)
+    /// Fallos seguidos antes de tapar la página: un corte corto de la red (al despertar la Mac) no la tapa.
+    private static let failuresBeforeOffline = 3
     /// WebKit corta la carga cuando la respuesta se vuelve descarga (WebKitErrorFrameLoadInterruptedByPolicyChange).
     private static let interruptedByPolicyCode = 102
     /// Lo que se le ofrece a una hoja para que diga cuánto mide.
@@ -98,8 +102,14 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private let offline = OfflineModel()
     private var offlineView: NSView?
     private var offlineWatch: Task<Void, Never>?
+    /// Con la página cargada, se entera de que Paperclip se apagó. La página no recarga sola: sin esto, se
+    /// queda con su propio error («Unable to load Paperclip») y sin cómo encenderlo.
+    private var onlineWatch: Task<Void, Never>?
     /// La página que no cargó, para volver a ella cuando Paperclip responda.
     private var failedURL: URL?
+
+    /// Paperclip se está actualizando desde la app: se detiene a propósito y no hay que ofrecer encenderlo.
+    var isPaperclipUpdating: (() -> Bool)?
 
     /// Se eligió el tema en el menú de Paperclip (true = oscuro): la app lo adopta como ajuste.
     var onThemeChosen: ((_ dark: Bool) -> Void)?
@@ -715,6 +725,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         hideOffline()
         syncPageState()
         refreshDocumentKind()
+        watchOnline()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
@@ -734,6 +745,8 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     /// Tapa la página con OfflineView y vuelve a probar sola hasta que Paperclip responda.
     private func showOffline(reason: String) {
+        onlineWatch?.cancel()
+        onlineWatch = nil
         offline.serverURL = config.serverURL
         offline.reason = reason
         offline.startError = nil
@@ -777,6 +790,32 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
                     retryOffline()
                     return
                 }
+            }
+        }
+    }
+
+    /// Con la página cargada, comprueba que Paperclip siga respondiendo. Si deja de hacerlo varias veces
+    /// seguidas, la tapa con OfflineView, que ofrece encenderlo y vuelve a esta página cuando responde.
+    private func watchOnline() {
+        onlineWatch?.cancel()
+        onlineWatch = Task { [weak self] in
+            var failures = 0
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.onlineCheckInterval)
+                guard !Task.isCancelled, let self else { return }
+                if isPaperclipUpdating?() == true {
+                    failures = 0
+                    continue
+                }
+                if case .success = await PaperclipLocator.probe(config.serverURL) {
+                    failures = 0
+                    continue
+                }
+                failures += 1
+                guard failures >= Self.failuresBeforeOffline, !Task.isCancelled else { continue }
+                failedURL = webView.url.flatMap { config.isInternal($0) ? $0 : nil } ?? config.serverURL
+                showOffline(reason: String(localized: "It isn’t accepting connections: Paperclip may not be running."))
+                return
             }
         }
     }

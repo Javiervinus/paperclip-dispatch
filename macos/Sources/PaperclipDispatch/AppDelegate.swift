@@ -75,6 +75,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pageNotifications: pageNotifications
         )
         self.windowController = windowController
+        windowController.isPaperclipUpdating = { [weak self] in self?.status.updateProgress != nil }
         let updates = UpdateController(
             config: config,
             isLocal: PaperclipLocator.isOnThisMac(config.serverURL),
