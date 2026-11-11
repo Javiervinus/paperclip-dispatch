@@ -417,6 +417,7 @@ private struct PaperclipPane: View {
     let actions: SettingsActions
 
     @State private var startup = PaperclipStartup()
+    @State private var doctor = DoctorModel()
 
     var body: some View {
         SettingsForm {
@@ -481,6 +482,7 @@ private struct PaperclipPane: View {
             }
             if actions.isLocalServer, startup.available {
                 PaperclipStartupSection(startup: startup)
+                DoctorSection(doctor: doctor)
             }
             HandoffWakeSection(preferences: preferences)
         }
@@ -545,6 +547,27 @@ private struct PaperclipStartupSection: View {
         } footer: {
             Text("Turning it off doesn’t stop Paperclip now: it just won’t start on its own next time.")
                 .settingsFootnote()
+        }
+    }
+}
+
+/// El diagnóstico de Paperclip (`paperclipai doctor`), a mano.
+private struct DoctorSection: View {
+    let doctor: DoctorModel
+
+    var body: some View {
+        Section {
+            LabeledContent {
+                Button("Check") { doctor.run() }
+                    .buttonStyle(.glass)
+                    .disabled(doctor.isRunning)
+            } label: {
+                Text("Paperclip’s Setup")
+                Text("Runs Paperclip’s doctor: configuration, database, port, Node.js and its service.")
+            }
+            if doctor.state != .idle {
+                DoctorReportView(doctor: doctor)
+            }
         }
     }
 }

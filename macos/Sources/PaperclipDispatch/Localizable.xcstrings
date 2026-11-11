@@ -1013,12 +1013,42 @@
         }
       }
     },
+    "Check": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar"
+          }
+        }
+      }
+    },
+    "Check Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar de nuevo"
+          }
+        }
+      }
+    },
     "Check Now": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Buscar ahora"
+          }
+        }
+      }
+    },
+    "Check Paperclip’s Setup…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar la instalación de Paperclip…"
           }
         }
       }
@@ -1049,6 +1079,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Revisando Node.js…"
+          }
+        }
+      }
+    },
+    "Checking Paperclip’s setup…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisando la instalación de Paperclip…"
           }
         }
       }
@@ -1449,6 +1489,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "No pude leer la versión instalada."
+          }
+        }
+      }
+    },
+    "Couldn’t read what Paperclip’s doctor answered:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se entendió lo que respondió el doctor de Paperclip:"
           }
         }
       }
@@ -3675,6 +3725,36 @@
         }
       }
     },
+    "Paperclip’s Setup": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalación de Paperclip"
+          }
+        }
+      }
+    },
+    "Paperclip’s doctor found:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El doctor de Paperclip encontró:"
+          }
+        }
+      }
+    },
+    "Paperclip’s setup looks fine.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La instalación de Paperclip está bien."
+          }
+        }
+      }
+    },
     "Paperclip’s sidebar on glass, like in macOS 26 apps.": {
       "localizations": {
         "es": {
@@ -3985,6 +4065,26 @@
         }
       }
     },
+    "Repair": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reparar"
+          }
+        }
+      }
+    },
+    "Repairing what Paperclip can fix on its own…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reparando lo que Paperclip sabe arreglar solo…"
+          }
+        }
+      }
+    },
     "Reply from wherever you are": {
       "localizations": {
         "es": {
@@ -4111,6 +4211,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Revisar los correos de bienvenida"
+          }
+        }
+      }
+    },
+    "Runs Paperclip’s doctor: configuration, database, port, Node.js and its service.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corre el doctor de Paperclip: configuración, base de datos, puerto, Node.js y su servicio."
+          }
+        }
+      }
+    },
+    "Runs paperclipai doctor --repair, which fixes what Paperclip knows how to fix.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corre paperclipai doctor --repair, que arregla lo que Paperclip sabe arreglar."
           }
         }
       }
@@ -4395,6 +4515,16 @@
         }
       }
     },
+    "So you don’t have to start it by hand, Paperclip can start on its own when you log in, in the background.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para no tener que encenderlo a mano, Paperclip puede encenderse solo al iniciar sesión, en segundo plano."
+          }
+        }
+      }
+    },
     "Some plugins have new versions: %@. Update them from here whenever you like.": {
       "localizations": {
         "es": {
@@ -4437,6 +4567,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gastado: %1$@ de un presupuesto de %2$@."
+          }
+        }
+      }
+    },
+    "Start It at Login": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encenderlo al iniciar sesión"
           }
         }
       }

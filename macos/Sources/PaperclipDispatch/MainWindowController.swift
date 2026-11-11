@@ -347,6 +347,11 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     // MARK: - Lo que usan el AppDelegate y UpdateController
 
+    /// Corre el diagnóstico de Paperclip en la ventana sin conexión. Para el ensayo de la bienvenida.
+    func checkPaperclipSetup() {
+        offline.doctor.run()
+    }
+
     func reload() {
         if offlineView != nil {
             retryOffline()
@@ -774,6 +779,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         }
         if case let .stopped(local) = await PaperclipLocator.detect() {
             offline.local = local
+            await offline.startup.refresh()
         } else {
             offline.local = nil
         }
@@ -827,7 +833,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private func hideOffline() {
         offlineWatch?.cancel()
         offlineWatch = nil
-        offline.starting = false
+        offline.reset()
         guard let offlineView else { return }
         offlineView.removeFromSuperview()
         self.offlineView = nil

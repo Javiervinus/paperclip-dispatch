@@ -136,6 +136,8 @@ enum WelcomeSnapshot {
     private static let offlineContentSize = NSSize(width: 960, height: 620)
     /// Lo que tarda en fallar la carga de la dirección muerta y en mostrarse el aviso.
     private static let settleTime: Duration = .seconds(4)
+    /// Cuándo se corre el diagnóstico en `offline-doctor`: con el aviso ya mostrado y tiempo para que termine.
+    private static let doctorDelay: Duration = .seconds(1)
 
     static func run(to directory: URL) async {
         let version = await Snapshot.installedVersion()?.currentVersion ?? Snapshot.sampleVersion
@@ -187,6 +189,7 @@ enum WelcomeSnapshot {
         var controllers: [NSWindowController] = []
         var tipWindows: [NSWindow] = []
         var windows: [Snapshot.Window] = []
+        var doctors: [MainWindowController] = []
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for item in cases {
                 let controller = WelcomeWindowController(model: item.make())
@@ -214,6 +217,23 @@ enum WelcomeSnapshot {
                 controllers.append(offline)
                 windows.append(Snapshot.Window(window: window, file: "offline-\(name).png"))
             }
+            // La misma, con lo que encontró el diagnóstico de Paperclip (el de esta Mac, o el de PAPERCLIP_HOME).
+            let doctor = MainWindowController(
+                config: AppConfig(serverURL: Snapshot.placeholderServerURL),
+                liquidGlass: false,
+                rehearsal: true
+            )
+            if let window = doctor.window {
+                window.appearance = NSAppearance(named: appearance)
+                Snapshot.hide(window, contentSize: offlineContentSize)
+                controllers.append(doctor)
+                doctors.append(doctor)
+                windows.append(Snapshot.Window(window: window, file: "offline-doctor-\(name).png"))
+            }
+        }
+        Task {
+            try? await Task.sleep(for: doctorDelay)
+            for doctor in doctors { doctor.checkPaperclipSetup() }
         }
         try? await Task.sleep(for: settleTime)
         await Snapshot.capture(windows, in: directory)

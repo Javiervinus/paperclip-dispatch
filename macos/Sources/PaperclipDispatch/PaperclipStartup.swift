@@ -51,6 +51,24 @@ final class PaperclipStartup {
         }
     }
 
+    /// Desde la ventana con Paperclip apagado: lo deja arrancando al iniciar sesión y lo enciende ya, en
+    /// segundo plano. Devuelve un error para mostrar, o nil.
+    func enableAndStart() async -> String? {
+        guard !busy, let local = PaperclipLocator.installed() else { return nil }
+        busy = true
+        error = nil
+        defer { busy = false }
+        var failure: String?
+        if local.hasService {
+            failure = await PaperclipLocator.setStartsAtLogin(true, instanceId: local.instanceId)
+            if failure == nil { failure = await PaperclipLocator.startService(local.instanceId) }
+        } else {
+            failure = await install(local)
+        }
+        await refresh()
+        return failure
+    }
+
     /// Sin servicio todavía. Si Paperclip ya corre en una Terminal, el servicio arrancaría otro encima, con
     /// el mismo puerto y la misma base de datos: primero hay que cerrar esa ventana.
     private func install(_ local: LocalPaperclip) async -> String? {
