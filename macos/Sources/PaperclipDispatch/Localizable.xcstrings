@@ -2209,6 +2209,16 @@
         }
       }
     },
+    "It runs in the background, without a Terminal window, even with this app closed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corre en segundo plano, sin ventana de Terminal, aunque esta app esté cerrada."
+          }
+        }
+      }
+    },
     "It starts in a Terminal window, which has to stay open.": {
       "localizations": {
         "es": {
@@ -3479,6 +3489,16 @@
         }
       }
     },
+    "Paperclip is running in a Terminal window. Close that window and turn this on again: from then on it runs in the background.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paperclip está corriendo en una ventana de Terminal. Ciérrala y vuelve a activar esto: desde ahí corre en segundo plano."
+          }
+        }
+      }
+    },
     "Paperclip is running on this Mac": {
       "localizations": {
         "es": {
@@ -4431,6 +4451,16 @@
         }
       }
     },
+    "Start Paperclip at Login": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar Paperclip al iniciar sesión"
+          }
+        }
+      }
+    },
     "Starting Paperclip. Keep this window open: it runs here.": {
       "localizations": {
         "es": {
@@ -5107,6 +5137,16 @@
         }
       }
     },
+    "This needs the Paperclip command. Install it with %@ and try again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para esto hace falta el comando de Paperclip. Instálalo con %@ y vuelve a intentarlo."
+          }
+        }
+      }
+    },
     "This one isn’t from a task: answer it with the buttons or in Paperclip.": {
       "localizations": {
         "es": {
@@ -5233,6 +5273,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Activar"
+          }
+        }
+      }
+    },
+    "Turning it off doesn’t stop Paperclip now: it just won’t start on its own next time.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desactivarlo no apaga Paperclip ahora: la próxima vez no se encenderá por su cuenta."
           }
         }
       }

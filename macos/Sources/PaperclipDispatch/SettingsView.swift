@@ -416,6 +416,8 @@ private struct PaperclipPane: View {
     let status: AppStatus
     let actions: SettingsActions
 
+    @State private var startup = PaperclipStartup()
+
     var body: some View {
         SettingsForm {
             Section {} header: {
@@ -477,7 +479,14 @@ private struct PaperclipPane: View {
                         .settingsFootnote()
                 }
             }
+            if actions.isLocalServer, startup.available {
+                PaperclipStartupSection(startup: startup)
+            }
             HandoffWakeSection(preferences: preferences)
+        }
+        .task { await startup.refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            Task { await startup.refresh() }
         }
     }
 
@@ -515,6 +524,27 @@ private struct PaperclipPane: View {
             StatusBadge(text: String(localized: "Up to date"), symbol: "checkmark.circle.fill", tint: .primary, bounce: status.lastCheckedAt)
         } else if status.updateCheckError != nil {
             StatusBadge(text: String(localized: "Not checked"), symbol: "exclamationmark.triangle.fill", tint: .orange)
+        }
+    }
+}
+
+/// «Iniciar Paperclip al iniciar sesión»: el servicio de Paperclip, para no tener que encenderlo a mano.
+private struct PaperclipStartupSection: View {
+    let startup: PaperclipStartup
+
+    var body: some View {
+        Section {
+            Toggle(isOn: Binding { startup.state == .on } set: { startup.set($0) }) {
+                Text("Start Paperclip at Login")
+                Text("It runs in the background, without a Terminal window, even with this app closed.")
+            }
+            .disabled(startup.state == .checking || startup.busy)
+            if let error = startup.error {
+                WarningRow(text: error)
+            }
+        } footer: {
+            Text("Turning it off doesn’t stop Paperclip now: it just won’t start on its own next time.")
+                .settingsFootnote()
         }
     }
 }
