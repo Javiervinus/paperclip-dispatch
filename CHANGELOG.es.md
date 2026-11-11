@@ -10,6 +10,17 @@ La app muestra la sección más nueva en su panel de actualizaciones, así que c
 frase en negrita que se entiende sola y suma una o dos más, como mucho. Desde el sexto punto, el panel
 manda aquí.
 
+## Unreleased
+
+### Nuevo
+
+- **Paperclip puede encenderse solo al iniciar sesión.** Activa Ajustes → Paperclip → Iniciar Paperclip al
+  iniciar sesión: corre en segundo plano, sin ventana de Terminal, aunque la app esté cerrada.
+
+### Arreglado
+
+- **Actualizar Paperclip desde la app ya no cambia si se enciende al iniciar sesión.**
+
 ## 0.4.3 — 2026-11-11
 
 ### Arreglado

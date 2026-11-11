@@ -9,6 +9,17 @@ are in Spanish in [CHANGELOG.es.md](CHANGELOG.es.md): keep both in step.
 The app shows the newest section in its updates panel, so each item starts with a bold sentence that
 stands on its own and adds one or two more at most. Past the fifth item, the panel links here.
 
+## Unreleased
+
+### Added
+
+- **Paperclip can start on its own when you log in.** Turn on Settings → Paperclip → Start Paperclip at
+  Login: it runs in the background, without a Terminal window, even with the app closed.
+
+### Fixed
+
+- **Updating Paperclip from the app no longer changes whether it starts at login.**
+
 ## 0.4.3 — 2026-11-11
 
 ### Fixed
